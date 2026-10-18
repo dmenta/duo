@@ -169,15 +169,21 @@ select {
     flex: none;
     align-self: center;
 }
+/* Si falta lugar se recortan primero las dimensiones y después el nombre */
 .file-name {
+    flex: 0 1 auto;
+    min-width: 4em;
     font-weight: 650;
     color: var(--text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    min-width: 0;
 }
 .file-dims {
+    flex: 0 1000 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-size: 13px;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
@@ -185,12 +191,15 @@ select {
 .dl-split {
     flex: none;
 }
+/* La toolbar comparte el ancho con el panel: el texto de la descarga se va antes que el nombre */
+@media (max-width: 1240px) {
+    .dl-split .lbl {
+        display: none;
+    }
+}
 @media (max-width: 760px) {
     .brand-name,
     .file-dims {
-        display: none;
-    }
-    .dl-split .lbl {
         display: none;
     }
 }
@@ -339,14 +348,12 @@ select {
     overflow: hidden;
     padding: 18px;
 }
-/* El canvas se centra dentro del escenario y se achica para entrar en el espacio que quede.
-   Abajo deja lugar para la indicación de arrastrar o pegar. */
+/* El canvas se centra en el escenario; su tamaño en pantalla lo calcula fitCanvas()
+   para ajustarlo a la vista (achicando o agrandando). Arriba deja lugar al selector de vista. */
 .stage canvas {
     position: absolute;
-    inset: 60px 32px 40px;
+    inset: 60px 32px 24px;
     margin: auto;
-    max-width: calc(100% - 64px);
-    max-height: calc(100% - 100px);
     display: block;
     box-shadow:
         0 1px 0 rgba(0, 0, 0, 0.08),
@@ -374,20 +381,79 @@ select {
         0 4px 16px rgba(0, 0, 0, 0.18),
         inset 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent);
 }
-.stage-hint {
+/* Estado vacío: zona de carga */
+.empty {
     position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 12px;
-    margin: 0;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px;
+}
+.dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
     text-align: center;
-    pointer-events: none;
-    font-size: 12px;
+    cursor: pointer;
+    width: min(520px, 100%);
+    padding: 44px 28px;
+    border: 2px dashed color-mix(in srgb, var(--text) 28%, transparent);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--surface) 55%, transparent);
+    color: var(--text);
+    transition:
+        border-color 0.15s,
+        background-color 0.15s;
+}
+.dropzone:hover,
+.stage.drag .dropzone {
+    border-color: var(--accent);
+    background: var(--surface);
+}
+.dz-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    margin-bottom: 4px;
+    background: var(--text);
+    color: var(--surface);
+}
+.dz-title {
+    font-size: 17px;
+    font-weight: 650;
+}
+.dz-sub {
+    font-size: 13px;
     color: var(--muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding: 0 12px;
+}
+.link-btn {
+    border: 0;
+    background: none;
+    padding: 4px 6px;
+    color: var(--muted);
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.link-btn:hover {
+    color: var(--text);
+}
+/* Sin imagen: solo la zona de carga. Con imagen: todo lo demás. */
+body.no-image #view,
+body.no-image .view-seg,
+body.no-image .file-info {
+    display: none;
+}
+body:not(.no-image) .empty {
+    display: none;
 }
 .stage.drag::after {
     content: 'Soltá la imagen acá';
@@ -406,7 +472,7 @@ select {
 .toast {
     position: absolute;
     left: 50%;
-    bottom: 40px;
+    bottom: 20px;
     z-index: 3;
     transform: translate(-50%, 8px);
     opacity: 0;

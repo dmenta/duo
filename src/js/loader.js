@@ -1,7 +1,7 @@
 "use strict";
 /* Carga de imágenes e imagen de prueba.
    Expone: setSource, recomputeGray, loadFile, sampleImage
-   Usa: state, buf, PREVIEW_MAX, FULL_MAX, computeIdx, scheduleRender, setStatus, enc, YfromL */
+   Usa: state, buf, PREVIEW_MAX, FULL_MAX, computeIdx, scheduleRender, setStatus, setHasImage, enc, YfromL */
 
 function scaled(src, max) {
   const s = Math.min(1, max / Math.max(src.width, src.height));
@@ -24,6 +24,7 @@ function setSource(src, name) {
   document.getElementById("fileName").title = name;
   document.getElementById("fileDims").textContent =
     `${buf.full.w} × ${buf.full.h} px${capped ? " · reducida para exportar" : ""}`;
+  setHasImage(true);
 }
 
 // Recalcular niveles de gris (cambió la imagen o el método de conversión)
