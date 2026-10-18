@@ -15,7 +15,9 @@ viewSeg.addEventListener("click", e => {
 const fileIn = document.getElementById("file");
 const stage = document.getElementById("stage");
 document.getElementById("openBtn").addEventListener("click", () => fileIn.click());
-document.getElementById("openSub").textContent = `Arrastrala a la vista o pegala con ${IS_MAC ? "⌘V" : "Ctrl+V"}`;
+const pasteKey = IS_MAC ? "⌘V" : "Ctrl+V";
+document.getElementById("openBtn").title = `Abrir imagen… También podés arrastrarla a la vista o pegarla con ${pasteKey}`;
+document.getElementById("stageHint").textContent = `Arrastrá una imagen acá o pegala con ${pasteKey}`;
 fileIn.addEventListener("change", () => { loadFile(fileIn.files[0]); fileIn.value = ""; });
 ["dragenter", "dragover"].forEach(t => stage.addEventListener(t, e => { e.preventDefault(); stage.classList.add("drag"); }));
 // dragleave también se dispara al pasar entre elementos internos: solo cuenta si el puntero salió de #stage

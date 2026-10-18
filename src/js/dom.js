@@ -55,7 +55,10 @@ function attachMenu(toggle, menu, { onOpen } = {}) {
     if (returnFocus) toggle.focus();
   };
   toggle.addEventListener("click", e => menu.hidden ? open(e.detail === 0) : close(false));  // detail 0 = teclado
-  toggle.addEventListener("keydown", e => { if (e.key === "ArrowDown") { e.preventDefault(); open(true); } });
+  toggle.addEventListener("keydown", e => {
+    if (e.key === "ArrowDown") { e.preventDefault(); open(true); }
+    else if (e.key === "Escape" && !menu.hidden) { e.preventDefault(); close(false); }  // abierto con el mouse
+  });
   menu.addEventListener("keydown", e => {
     const list = items(), n = list.length, i = list.indexOf(document.activeElement);
     if (e.key === "Escape") { e.preventDefault(); close(true); return; }

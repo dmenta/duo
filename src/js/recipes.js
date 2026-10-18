@@ -63,10 +63,9 @@ const recipeName = document.getElementById("recipeName");
 const recipeStrip = document.getElementById("recipeStrip");
 const recipeList = document.getElementById("recipeList");
 const recipeSave = document.getElementById("recipeSave");
-const recipeMoreBtn = document.getElementById("recipeMoreBtn");
-const recipeMenu = document.getElementById("recipeMenu");
+const saveMenuBtn = document.getElementById("saveMenuBtn");
+const saveMenu = document.getElementById("saveMenu");
 const recipeImport = document.getElementById("recipeImport");
-const act = name => recipeMenu.querySelector(`[data-act="${name}"]`);
 
 function recipeStatus() {
   const active = findRecipe(state.active);
@@ -81,24 +80,35 @@ function syncRecipeUI() {
   recipeBtn.title = active ? (dirty ? `${active.name}: cambios sin guardar` : active.name) : "La configuración actual no está guardada";
   recipeStrip.style.background = stripCSS(getRecipe());
   recipeSave.disabled = own && !dirty;
-  act("rename").disabled = !own;
-  act("delete").disabled = !own;
-  act("exportall").disabled = library.length === 0;
 }
 
+const ICON_RENAME = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 2.5l3 3L6 13H3v-3z"/></svg>';
+const ICON_DELETE = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4.5h11M6 4.5V3h4v1.5M4 4.5l.7 9h6.6l.7-9"/></svg>';
+const ICON_IMPORT = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10"/></svg>';
+const ICON_EXPORT = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10.5v-8M4.5 6L8 2.5 11.5 6M3 13.5h10"/></svg>';
+
+// Lista: de fábrica y propias; las propias se renombran o eliminan desde acá
 function renderList() {
   const cur = state.active;
   const item = (r, kind) => {
     const on = !!cur && cur.kind === kind && cur.id === r.id;
-    return `<button role="menuitemradio" aria-checked="${on}" tabindex="-1" class="ritem" data-kind="${kind}" data-id="${esc(r.id)}">
+    const main = `<button role="menuitemradio" aria-checked="${on}" tabindex="-1" class="ritem" data-kind="${kind}" data-id="${esc(r.id)}">
       <span class="rname">${esc(r.name)}</span><span class="rstrip" style="background:${stripCSS(r.recipe)}"></span></button>`;
+    if (kind === "builtin") return `<div class="rrow">${main}</div>`;
+    return `<div class="rrow">${main}
+      <button role="menuitem" tabindex="-1" class="ricon" data-op="rename" data-id="${esc(r.id)}" title="Renombrar" aria-label="Renombrar ${esc(r.name)}">${ICON_RENAME}</button>
+      <button role="menuitem" tabindex="-1" class="ricon danger" data-op="delete" data-id="${esc(r.id)}" title="Eliminar" aria-label="Eliminar ${esc(r.name)}">${ICON_DELETE}</button></div>`;
   };
   recipeList.innerHTML =
     `<div class="rgroup">De fábrica</div>${BUILTIN_RECIPES.map(r => item(r, "builtin")).join("")}
      <div class="rgroup">Mis recetas</div>` +
     (library.length
       ? [...library].sort(byName).map(r => item(r, "user")).join("")
-      : `<p class="rempty">Todavía no guardaste recetas. Usá Guardar o importá un archivo.</p>`);
+      : `<p class="rempty">Todavía no guardaste recetas. Usá Guardar o importá un archivo.</p>`) +
+    `<div class="rfoot">
+       <button role="menuitem" tabindex="-1" data-op="import">${ICON_IMPORT}Importar…</button>
+       <button role="menuitem" tabindex="-1" data-op="exportall" ${library.length ? "" : "disabled"}>${ICON_EXPORT}Exportar mis recetas</button>
+     </div>`;
 }
 
 // Aplicar una receta de la biblioteca: es un paso del historial, se puede deshacer
@@ -144,23 +154,28 @@ async function saveRecipeAs() {
   if (saveLibrary()) { setActiveRecipe({ kind: "user", id: item.id }); setStatus(`Receta «${item.name}» guardada.`); }
 }
 
-async function renameRecipe() {
-  const { active, own } = recipeStatus(); if (!own) return;
-  const name = await askText({ title: "Renombrar receta", label: "Nombre", value: active.name, max: RECIPE_NAME_MAX, confirm: "Renombrar" });
-  if (!name || name === active.name) return;
-  if (findByName(name, active.id)) { setStatus(`Ya existe una receta llamada «${name}».`, "error"); return; }
-  active.name = name;
+async function renameRecipe(id) {
+  const item = library.find(r => r.id === id); if (!item) return;
+  const name = await askText({ title: "Renombrar receta", label: "Nombre", value: item.name, max: RECIPE_NAME_MAX, confirm: "Renombrar" });
+  if (!name || name === item.name) return;
+  if (findByName(name, item.id)) { setStatus(`Ya existe una receta llamada «${name}».`, "error"); return; }
+  item.name = name;
   if (saveLibrary()) setStatus(`Receta renombrada a «${name}».`);
   syncRecipeUI();
 }
 
-async function deleteRecipe() {
-  const { active, own } = recipeStatus(); if (!own) return;
-  const ok = await askConfirm({ title: "Eliminar receta", message: `¿Eliminar «${active.name}»? Esta acción no se puede deshacer, pero la configuración actual queda aplicada.`, confirm: "Eliminar", danger: true });
+async function deleteRecipe(id) {
+  const item = library.find(r => r.id === id); if (!item) return;
+  const isActive = !!state.active && state.active.kind === "user" && state.active.id === id;
+  const ok = await askConfirm({
+    title: "Eliminar receta",
+    message: `¿Eliminar «${item.name}»? Esta acción no se puede deshacer.${isActive ? " La configuración actual queda aplicada." : ""}`,
+    confirm: "Eliminar", danger: true
+  });
   if (!ok) return;
-  library = library.filter(r => r.id !== active.id);
-  if (saveLibrary()) setStatus(`Receta «${active.name}» eliminada.`);
-  setActiveRecipe(null);
+  library = library.filter(r => r.id !== id);
+  if (saveLibrary()) setStatus(`Receta «${item.name}» eliminada.`);
+  if (isActive) setActiveRecipe(null); else syncRecipeUI();
 }
 
 /* ---------- Exportar e importar ---------- */
@@ -205,15 +220,20 @@ recipeImport.addEventListener("change", async () => {
 
 /* ---------- Eventos ---------- */
 attachMenu(recipeBtn, recipeList, { onOpen: renderList });
+const LIST_OPS = { rename: renameRecipe, delete: deleteRecipe, import: () => recipeImport.click(), exportall: exportAll };
 recipeList.addEventListener("click", e => {
+  const op = e.target.closest("[data-op]");
+  if (op) { LIST_OPS[op.dataset.op](op.dataset.id); return; }
   const b = e.target.closest(".ritem");
   if (b) applyFromLibrary({ kind: b.dataset.kind, id: b.dataset.id });
 });
-attachMenu(recipeMoreBtn, recipeMenu, { onOpen: syncRecipeUI });
-const ACTIONS = { saveas: saveRecipeAs, rename: renameRecipe, delete: deleteRecipe, export: exportCurrent, exportall: exportAll, import: () => recipeImport.click() };
-recipeMenu.querySelectorAll("[data-act]").forEach(b => b.addEventListener("click", () => ACTIONS[b.dataset.act]()));
+
+attachMenu(saveMenuBtn, saveMenu);
+const SAVE_OPS = { saveas: saveRecipeAs, export: exportCurrent };
+saveMenu.querySelectorAll("[data-act]").forEach(b => b.addEventListener("click", () => SAVE_OPS[b.dataset.act]()));
 recipeSave.addEventListener("click", saveRecipe);
 recipeSave.title = `Guardar receta (${IS_MAC ? "⌘S" : "Ctrl+S"})`;
+document.getElementById("saveAsHint").textContent = IS_MAC ? "⇧⌘S" : "Ctrl+Shift+S";
 
 window.addEventListener("keydown", e => {
   if (!(e.ctrlKey || e.metaKey) || e.altKey || e.key.toLowerCase() !== "s") return;
