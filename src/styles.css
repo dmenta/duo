@@ -800,37 +800,40 @@ select {
 }
 
 .block {
-    padding: 20px 20px 24px;
+    padding: 16px 20px 20px;
 }
 .block + .block {
     border-top: 6px solid var(--bg);
 }
+/* Títulos de bloque discretos: el panel es herramienta, la imagen es la protagonista */
 .block-head {
     display: flex;
-    align-items: baseline;
-    gap: 10px;
-    margin: 0 0 14px;
+    align-items: center;
+    gap: 8px;
+    min-height: 30px;
+    margin: 0 0 12px;
 }
 .block-head .num {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
-    background: var(--text);
-    color: var(--surface);
-    font-weight: 700;
-    font-size: 14px;
     flex: none;
-    transform: translateY(-2px);
+    background: color-mix(in srgb, var(--text) 12%, transparent);
+    color: var(--text);
+    font-weight: 650;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
 }
 .block-head h2 {
     margin: 0;
-    font-size: 24px;
-    line-height: 1.1;
-    font-weight: 700;
-    font-variation-settings: 'wdth' 75;
+    font-size: 17px;
+    line-height: 1.2;
+    font-weight: 650;
+    font-variation-settings: 'wdth' 85;
+    letter-spacing: 0.005em;
 }
 .block-head p {
     margin: 0;
