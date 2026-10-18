@@ -43,7 +43,7 @@ async function save(filename, blob, desc) {
   const done = `Guardado: ${filename}${desc ? ` (${desc})` : ""}`;
   if (downloads) {
     try { await downloads.save({ filename, data: blob }); setStatus(done); }
-    catch (err) { setStatus(err && err.code === "declined" ? "Descarga cancelada." : "No se pudo guardar el archivo en esta vista."); }
+    catch (err) { err && err.code === "declined" ? setStatus("Descarga cancelada.") : setStatus("No se pudo guardar el archivo en esta vista.", "error"); }
     return;
   }
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename;
@@ -68,7 +68,7 @@ const EXPORTS = {
     await save(`${slug(state.name)}-gris.png`, blob, desc);
   },
   zip: async () => {
-    if (typeof JSZip === "undefined") { setStatus("No se pudo cargar el compresor. Descargá cada imagen por separado."); return; }
+    if (typeof JSZip === "undefined") { setStatus("No se pudo cargar el compresor. Descargá cada imagen por separado.", "error"); return; }
     const zip = new JSZip(), base = slug(state.name);
     zip.file(`${base}-duotono.png`, (await exportPNG("result")).blob);
     zip.file(`${base}-gris.png`, (await exportPNG("gray")).blob);

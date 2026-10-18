@@ -20,8 +20,10 @@ function setSource(src, name) {
   state.name = name;
   recomputeGray();
   const capped = Math.max(src.width, src.height) > FULL_MAX;
-  document.getElementById("meta").textContent =
-    `${name} · ${buf.full.w} × ${buf.full.h} px${capped ? " (reducida para exportar)" : ""}`;
+  document.getElementById("fileName").textContent = name;
+  document.getElementById("fileName").title = name;
+  document.getElementById("fileDims").textContent =
+    `${buf.full.w} × ${buf.full.h} px${capped ? " · reducida para exportar" : ""}`;
 }
 
 // Recalcular niveles de gris (cambió la imagen o el método de conversión)
@@ -33,10 +35,10 @@ function recomputeGray() {
 }
 
 function loadFile(file) {
-  if (!file || !file.type.startsWith("image/")) { setStatus("Ese archivo no es una imagen. Probá con JPG, PNG o WebP."); return; }
+  if (!file || !file.type.startsWith("image/")) { setStatus("Ese archivo no es una imagen. Probá con JPG, PNG o WebP.", "error"); return; }
   const url = URL.createObjectURL(file), img = new Image();
   img.onload = () => { setSource(img, file.name.replace(/\.[^.]+$/, "") || "imagen"); URL.revokeObjectURL(url); setStatus(""); };
-  img.onerror = () => { setStatus("No se pudo leer la imagen. Probá con otro formato."); URL.revokeObjectURL(url); };
+  img.onerror = () => { setStatus("No se pudo leer la imagen. Probá con otro formato.", "error"); URL.revokeObjectURL(url); };
   img.src = url;
 }
 

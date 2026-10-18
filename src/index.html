@@ -65,16 +65,25 @@
         </div>
       </header>
       <div class="viewbar">
+        <div class="file-info">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linejoin="round" aria-hidden="true">
+            <rect x="1.75" y="2.75" width="12.5" height="10.5" rx="1.5" />
+            <path d="M1.75 11l3.5-3.5 3 3 2-2 4 4" />
+            <circle cx="10.5" cy="5.75" r="1" />
+          </svg>
+          <span class="file-name" id="fileName"></span>
+          <span class="file-dims" id="fileDims"></span>
+        </div>
         <div class="seg" id="viewSeg" role="group" aria-label="Vista">
           <button data-v="original" aria-pressed="false">Original</button>
           <button data-v="gray" aria-pressed="false">Gris</button>
           <button data-v="result" aria-pressed="true">Resultado</button>
         </div>
-        <span class="status" id="status" role="status"></span>
-        <span class="meta" id="meta"></span>
       </div>
       <div class="stage" id="stage">
         <canvas id="view" aria-label="Vista previa"></canvas>
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
       </div>
     </section>
 
