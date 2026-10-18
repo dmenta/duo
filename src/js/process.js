@@ -1,6 +1,6 @@
 "use strict";
 /* Procesamiento: imagen -> niveles de gris -> tintas -> píxeles.
-   Expone: grayWeights, computeIdx, inkLUT, buildLUT, grayLUT, paint
+   Expone: grayWeights, computeIdx, inkLUT, buildLUT, grayLUT, paint, paintRegion
    Usa: state, buf, N, LIN, enc, hexToLin, YfromL, LfromY, coverage, makeCurve */
 
 function grayWeights() {
@@ -9,6 +9,15 @@ function grayWeights() {
     : [state.gray.r / 100, state.gray.g / 100, state.gray.b / 100];
 }
 
+// Luminancia lineal Y (0..1) -> índice de tono, precalculado: evita la raíz cúbica de L* por píxel.
+// Con 65536 pasos el error es menor a 1/7 de nivel incluso en las sombras profundas.
+const Y_STEPS = 65535;
+const IDX_FROM_Y = (() => {
+  const t = new Uint16Array(Y_STEPS + 1);
+  for (let i = 0; i <= Y_STEPS; i++) t[i] = Math.round((1 - LfromY(i / Y_STEPS) / 100) * (N - 1));
+  return t;
+})();
+
 // Cada píxel -> índice de tono (0 = blanco, N-1 = negro) según L*.
 // La transparencia no se mezcla acá: se conserva aparte en img.data para exportar.
 function computeIdx(img) {
@@ -16,7 +25,7 @@ function computeIdx(img) {
   for (let p = 0, i = 0; p < n; p++, i += 4) {
     let Y = wr * LIN[d[i]] + wg * LIN[d[i + 1]] + wb * LIN[d[i + 2]];
     Y = Y < 0 ? 0 : Y > 1 ? 1 : Y;
-    out[p] = Math.round((1 - LfromY(Y) / 100) * (N - 1));
+    out[p] = IDX_FROM_Y[(Y * Y_STEPS + 0.5) | 0];
   }
   return out;
 }
@@ -71,5 +80,26 @@ function paint(img, idx, mode, out) {
     const a = d[i + 3];
     if (a < 255) { const t = a / 255; for (let c = 0; c < 3; c++) o[i + c] = enc(LIN[o[i + c]] * t + (1 - t)); }
     o[i + 3] = 255;
+  }
+}
+
+// Pinta la región (x0, y0, w, h) de la imagen calculando el gris al vuelo: se usa al 100%,
+// donde solo se procesa lo visible y siempre con la conversión a gris vigente
+function paintRegion(img, x0, y0, w, h, mode, out) {
+  const [wr, wg, wb] = grayWeights(), d = img.data, o = out.data, lut = buf.resultLUT, iw = img.w;
+  for (let y = 0, i = 0; y < h; y++) {
+    for (let x = 0, s = ((y0 + y) * iw + x0) * 4; x < w; x++, s += 4, i += 4) {
+      if (mode === "original") { o[i] = d[s]; o[i + 1] = d[s + 1]; o[i + 2] = d[s + 2]; }
+      else {
+        let Y = wr * LIN[d[s]] + wg * LIN[d[s + 1]] + wb * LIN[d[s + 2]];
+        Y = Y < 0 ? 0 : Y > 1 ? 1 : Y;
+        const k = IDX_FROM_Y[(Y * Y_STEPS + 0.5) | 0];
+        if (mode === "result") { o[i] = lut[k * 3]; o[i + 1] = lut[k * 3 + 1]; o[i + 2] = lut[k * 3 + 2]; }
+        else { const v = grayLUT[k]; o[i] = v; o[i + 1] = v; o[i + 2] = v; }
+      }
+      const a = d[s + 3];
+      if (a < 255) { const t = a / 255; for (let c = 0; c < 3; c++) o[i + c] = enc(LIN[o[i + c]] * t + (1 - t)); }
+      o[i + 3] = 255;
+    }
   }
 }

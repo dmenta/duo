@@ -38,7 +38,7 @@ grayMode.addEventListener("change", () => {
 });
 for (const k of ["r", "g", "b"]) {
   mixIns[k].addEventListener("input", () => { state.gray[k] = +mixIns[k].value; syncMixer(); recomputeGray(); });
-  mixIns[k].addEventListener("change", commitHistory);  // una entrada por arrastre
+  mixIns[k].addEventListener("change", () => commitHistory());  // una entrada por arrastre
 }
 filterBtns.forEach(b => b.addEventListener("click", () => {
   const [r, g, bl] = parseMix(b);

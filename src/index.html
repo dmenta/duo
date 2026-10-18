@@ -87,6 +87,12 @@
           <button data-v="gray" aria-pressed="false">Gris</button>
           <button data-v="result" aria-pressed="true">Resultado</button>
         </div>
+        <div class="seg zoom-seg" id="zoomSeg" role="group" aria-label="Zoom">
+          <button data-z="fit" aria-pressed="true"
+            title="Ajustar a la vista (Ctrl+0). También con doble clic.">Ajustar</button>
+          <button data-z="actual" aria-pressed="false"
+            title="Tamaño real (Ctrl+1). También con doble clic.">100%</button>
+        </div>
         <canvas id="view" aria-label="Vista previa"></canvas>
         <div class="empty" id="emptyState">
           <button class="dropzone" id="dropzone" type="button">
@@ -203,6 +209,7 @@
   <script src="js/ui-inks.js"></script>
   <script src="js/ui-gray.js"></script>
   <script src="js/ui-stage.js"></script>
+  <script src="js/zoom.js"></script>
   <script src="js/png.js"></script>
   <script src="js/export.js"></script>
   <script src="js/dialogs.js"></script>

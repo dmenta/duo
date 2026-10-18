@@ -1,7 +1,7 @@
 "use strict";
 /* Zona de la imagen: selector de vista, abrir, arrastrar y pegar.
    Expone: syncViewSeg, setHasImage, fitCanvas
-   Usa: state, buf, scheduleRender, loadFile, sampleImage, IS_MAC */
+   Usa: state, buf, zoom, scheduleRender, loadFile, sampleImage, IS_MAC */
 
 const viewSeg = document.getElementById("viewSeg");
 function syncViewSeg() {
@@ -21,12 +21,12 @@ document.getElementById("dzSub").textContent = `También podés pegarla con ${pa
 document.getElementById("dropzone").addEventListener("click", () => fileIn.click());
 document.getElementById("sampleBtn").addEventListener("click", () => sampleImage());
 
-// Con o sin imagen: muestra la zona de carga o el visor, y habilita las descargas
+// Con o sin imagen: muestra la zona de carga o el visor, y habilita las descargas.
+// El tamaño del canvas no se toca acá: lo resuelven setZoom (al cargar) y el ResizeObserver.
 const dlButtons = ["expDuo", "expMenuBtn"].map(id => document.getElementById(id));
 function setHasImage(has) {
   document.body.classList.toggle("no-image", !has);
   dlButtons.forEach(b => b.disabled = !has);
-  if (has) fitCanvas();
 }
 
 // Ajustar a la vista: el canvas ocupa el mayor tamaño posible dentro del escenario,
@@ -35,6 +35,7 @@ const FIT_INSET = { top: 60, right: 32, bottom: 24, left: 32 };
 const viewEl = document.getElementById("view");
 function fitCanvas() {
   if (!buf.full) return;
+  if (zoom.mode === "actual") { scheduleRender(); return; }  // al 100% el tamaño lo define la porción visible
   const r = stage.getBoundingClientRect();
   const aw = r.width - FIT_INSET.left - FIT_INSET.right, ah = r.height - FIT_INSET.top - FIT_INSET.bottom;
   if (aw <= 0 || ah <= 0) return;

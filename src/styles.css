@@ -172,7 +172,7 @@ select {
 /* Si falta lugar se recortan primero las dimensiones y después el nombre */
 .file-name {
     flex: 0 1 auto;
-    min-width: 4em;
+    min-width: 0;
     font-weight: 650;
     color: var(--text);
     overflow: hidden;
@@ -342,6 +342,8 @@ select {
     position: relative;
     flex: 1;
     min-height: 200px;
+    user-select: none;
+    -webkit-user-select: none; /* el doble clic y el arrastre no seleccionan texto */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -374,6 +376,19 @@ select {
     left: 50%;
     transform: translateX(-50%);
     z-index: 2;
+}
+/* Zoom: arriba a la derecha, abajo queda libre para los avisos */
+.zoom-seg {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 2;
+}
+.zoom-seg button {
+    padding: 5px 12px;
+}
+.view-seg,
+.zoom-seg {
     background: color-mix(in srgb, var(--surface) 78%, transparent);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
@@ -449,8 +464,26 @@ select {
 /* Sin imagen: solo la zona de carga. Con imagen: todo lo demás. */
 body.no-image #view,
 body.no-image .view-seg,
+body.no-image .zoom-seg,
 body.no-image .file-info {
     display: none;
+}
+/* Tamaño real: el canvas muestra la porción visible, píxeles nítidos */
+body.zoom-actual .stage canvas {
+    inset: 0;
+    image-rendering: pixelated;
+}
+body.zoom-actual .stage.can-pan {
+    cursor: grab;
+}
+body.zoom-actual .stage.can-pan.panning {
+    cursor: grabbing;
+}
+@media (max-width: 640px) {
+    .zoom-seg {
+        top: auto;
+        bottom: 14px;
+    }
 }
 body:not(.no-image) .empty {
     display: none;

@@ -1,0 +1,85 @@
+"use strict";
+/* Zoom con dos modos: ajustar a la vista o tamaño real (1 píxel de imagen = 1 píxel CSS).
+   Al 100% la imagen se desplaza arrastrando o con la rueda; doble clic alterna los modos.
+   Expone: zoom, zoomViewport, setZoom
+   Usa: buf, scheduleRender, fitCanvas */
+
+const zoom = { mode: "fit", x: 0, y: 0 };  // x, y: esquina superior izquierda visible, en píxeles de imagen
+const zoomSeg = document.getElementById("zoomSeg");
+const zoomStage = document.getElementById("stage");
+const clampTo = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+// Porción visible al 100%: tamaño del canvas y origen dentro de la imagen
+function zoomViewport() {
+  const r = zoomStage.getBoundingClientRect();
+  const W = Math.max(1, Math.floor(r.width)), H = Math.max(1, Math.floor(r.height));
+  const iw = buf.full.w, ih = buf.full.h;
+  const cw = Math.min(W, iw), ch = Math.min(H, ih);
+  zoom.x = clampTo(zoom.x, 0, iw - cw);
+  zoom.y = clampTo(zoom.y, 0, ih - ch);
+  zoomStage.classList.toggle("can-pan", cw < iw || ch < ih);
+  return { W, H, cw, ch, x: Math.round(zoom.x), y: Math.round(zoom.y) };
+}
+
+// focus (opcional): { ix, iy, sx, sy } = punto de la imagen que debe quedar bajo el punto sx, sy del escenario
+function setZoom(mode, focus) {
+  zoom.mode = mode;
+  if (mode === "actual" && buf.full) {
+    const r = zoomStage.getBoundingClientRect(), iw = buf.full.w, ih = buf.full.h;
+    const cw = Math.min(Math.floor(r.width), iw), ch = Math.min(Math.floor(r.height), ih);
+    const left = (r.width - cw) / 2, top = (r.height - ch) / 2;
+    if (focus) { zoom.x = focus.ix - (focus.sx - left); zoom.y = focus.iy - (focus.sy - top); }
+    else { zoom.x = (iw - cw) / 2; zoom.y = (ih - ch) / 2; }
+  }
+  document.body.classList.toggle("zoom-actual", mode === "actual");
+  zoomSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.z === mode)));
+  if (mode === "fit") fitCanvas();
+  scheduleRender();
+}
+
+zoomSeg.addEventListener("click", e => { const b = e.target.closest("button"); if (b) setZoom(b.dataset.z); });
+
+// Doble clic: alterna; al pasar a 100% conserva bajo el cursor el punto clickeado
+zoomStage.addEventListener("dblclick", e => {
+  if (!buf.full || e.target.closest("button")) return;
+  if (zoom.mode === "actual") { setZoom("fit"); return; }
+  const c = document.getElementById("view").getBoundingClientRect(), s = zoomStage.getBoundingClientRect();
+  if (e.clientX < c.left || e.clientX > c.right || e.clientY < c.top || e.clientY > c.bottom) return;
+  setZoom("actual", {
+    ix: (e.clientX - c.left) / c.width * buf.full.w, iy: (e.clientY - c.top) / c.height * buf.full.h,
+    sx: e.clientX - s.left, sy: e.clientY - s.top
+  });
+});
+
+// Desplazamiento al 100%: arrastrar o rueda
+let panning = null;
+zoomStage.addEventListener("pointerdown", e => {
+  if (zoom.mode !== "actual" || !buf.full || e.button !== 0 || e.target.closest("button")) return;
+  panning = { px: e.clientX, py: e.clientY, x: zoom.x, y: zoom.y };
+  zoomStage.setPointerCapture(e.pointerId);
+  zoomStage.classList.add("panning");
+});
+zoomStage.addEventListener("pointermove", e => {
+  if (!panning) return;
+  zoom.x = panning.x - (e.clientX - panning.px);
+  zoom.y = panning.y - (e.clientY - panning.py);
+  scheduleRender();
+});
+const endPan = () => { panning = null; zoomStage.classList.remove("panning"); };
+zoomStage.addEventListener("pointerup", endPan);
+zoomStage.addEventListener("pointercancel", endPan);
+zoomStage.addEventListener("wheel", e => {
+  if (zoom.mode !== "actual" || !buf.full) return;
+  e.preventDefault();
+  zoom.x += e.shiftKey ? e.deltaY : e.deltaX;
+  zoom.y += e.shiftKey ? 0 : e.deltaY;
+  scheduleRender();
+}, { passive: false });
+
+// Atajos: Ctrl+0 ajustar, Ctrl+1 tamaño real
+window.addEventListener("keydown", e => {
+  if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || !buf.full) return;
+  if (document.querySelector("dialog[open]")) return;
+  if (e.key === "0") { e.preventDefault(); setZoom("fit"); }
+  else if (e.key === "1") { e.preventDefault(); setZoom("actual"); }
+});
