@@ -1,7 +1,7 @@
 "use strict";
 /* Zona de la imagen: selector de vista, abrir, arrastrar y pegar.
    Expone: syncViewSeg
-   Usa: state, scheduleRender, loadFile */
+   Usa: state, scheduleRender, loadFile, IS_MAC */
 
 const viewSeg = document.getElementById("viewSeg");
 function syncViewSeg() {
@@ -15,6 +15,7 @@ viewSeg.addEventListener("click", e => {
 const fileIn = document.getElementById("file");
 const stage = document.getElementById("stage");
 document.getElementById("openBtn").addEventListener("click", () => fileIn.click());
+document.getElementById("openSub").textContent = `Arrastrala a la vista o pegala con ${IS_MAC ? "⌘V" : "Ctrl+V"}`;
 fileIn.addEventListener("change", () => { loadFile(fileIn.files[0]); fileIn.value = ""; });
 ["dragenter", "dragover"].forEach(t => stage.addEventListener(t, e => { e.preventDefault(); stage.classList.add("drag"); }));
 // dragleave también se dispara al pasar entre elementos internos: solo cuenta si el puntero salió de #stage

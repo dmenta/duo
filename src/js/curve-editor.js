@@ -1,7 +1,7 @@
 "use strict";
 /* Editor interactivo de curvas (canvas).
    Expone: attachCurve(canvas, ink, readout, onEdit) -> redraw
-   Usa: makeCurve, clamp01, scheduleRender, commitHistory */
+   Usa: makeCurve, clamp01, contrastRatio, scheduleRender, commitHistory */
 
 function attachCurve(canvas, ink, readout, onEdit) {
   const PAD = 12;
@@ -27,9 +27,11 @@ function attachCurve(canvas, ink, readout, onEdit) {
     // barra de entrada
     const gb = x.createLinearGradient(X(0), 0, X(1), 0); gb.addColorStop(0, "#fff"); gb.addColorStop(1, "#000");
     x.fillStyle = gb; x.fillRect(X(0), PAD + ih + 3, iw, 5);
-    // curva
+    // curva: si la tinta casi no contrasta con el fondo, lleva un contorno marcado
+    const surface = cs.getPropertyValue("--surface").trim();
+    const lowContrast = contrastRatio(ink.color, surface) < 2.2;
     const f = makeCurve(ink.points);
-    x.lineWidth = 4; x.strokeStyle = text; x.globalAlpha = .18; x.beginPath();
+    x.lineWidth = lowContrast ? 5 : 4; x.strokeStyle = text; x.globalAlpha = lowContrast ? .75 : .18; x.beginPath();
     for (let i = 0; i <= 120; i++) { const v = i / 120; i ? x.lineTo(X(v), Yp(f(v))) : x.moveTo(X(v), Yp(f(v))); }
     x.stroke(); x.globalAlpha = 1; x.lineWidth = 2.25; x.strokeStyle = ink.color; x.stroke();
     // puntos
@@ -86,5 +88,6 @@ function attachCurve(canvas, ink, readout, onEdit) {
     if (i > 0 && i < ink.points.length - 1) { ink.points.splice(i, 1); edited(); draw(); commitHistory(); }
   });
   new ResizeObserver(draw).observe(canvas);
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
   return draw;
 }

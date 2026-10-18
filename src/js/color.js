@@ -1,6 +1,6 @@
 "use strict";
 /* Matemática de color: sRGB <-> lineal, Y <-> L*, tono de tinta -> cobertura.
-   Expone: N, LIN, enc, hexToRgb, hexToLin, YfromL, LfromY, coverage, clamp01 */
+   Expone: N, LIN, enc, hexToRgb, hexToLin, YfromL, LfromY, coverage, clamp01, contrastRatio */
 
 // Resolución de las tablas de tono (niveles de gris internos)
 const N = 1024;
@@ -29,3 +29,10 @@ const LfromY = Y => Y > 0.008856 ? 116 * Math.cbrt(Y) - 16 : 903.3 * Y;
 const coverage = y => 1 - YfromL(100 * (1 - y));
 
 const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+
+// Contraste WCAG entre dos colores hex (1 = iguales, 21 = blanco contra negro)
+function contrastRatio(a, b) {
+  const lum = h => { const [r, g, bl] = hexToLin(h); return 0.2126 * r + 0.7152 * g + 0.0722 * bl; };
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}

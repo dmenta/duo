@@ -3,7 +3,7 @@
    Cada entrada del historial es una copia completa de la receta: no hace falta
    programar la operación inversa de cada comando.
    Expone: getRecipe, applyRecipe, commitHistory, undo, redo, resetRecipe, initHistory
-   Usa: state, makeInk, defaultRecipe, CURVE_PRESETS, MAX_INKS, renderInks, syncGrayUI, recomputeGray */
+   Usa: state, makeInk, defaultRecipe, CURVE_PRESETS, MAX_INKS, renderInks, syncGrayUI, recomputeGray, IS_MAC */
 
 const STORAGE_KEY = "duotono:receta:v1";
 const HISTORY_MAX = 100;
@@ -92,9 +92,8 @@ function initHistory() {
 }
 
 /* ---------- Controles ---------- */
-const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
-undoBtn.title = `Deshacer (${isMac ? "⌘Z" : "Ctrl+Z"})`;
-redoBtn.title = `Rehacer (${isMac ? "⇧⌘Z" : "Ctrl+Y"})`;
+undoBtn.title = `Deshacer (${IS_MAC ? "⌘Z" : "Ctrl+Z"})`;
+redoBtn.title = `Rehacer (${IS_MAC ? "⇧⌘Z" : "Ctrl+Y"})`;
 undoBtn.addEventListener("click", undo);
 redoBtn.addEventListener("click", redo);
 document.getElementById("resetBtn").addEventListener("click", resetRecipe);
