@@ -51,28 +51,61 @@ async function save(filename, blob, desc) {
   setStatus(done);
 }
 
-const expBtns = ["expDuo", "expGray", "expZip"].map(id => document.getElementById(id));
-async function withBusy(btn, fn) {
+/* ---------- Split button de descargas ---------- */
+const dlMain = document.getElementById("expDuo");
+const dlToggle = document.getElementById("expMenuBtn");
+const dlMenu = document.getElementById("expMenu");
+const dlItems = [...dlMenu.querySelectorAll('[role="menuitem"]')];
+const dlAll = [dlMain, dlToggle, ...dlItems];
+
+const EXPORTS = {
+  result: async () => {
+    const { blob, desc } = await exportPNG("result");
+    await save(`${slug(state.name)}-duotono.png`, blob, desc);
+  },
+  gray: async () => {
+    const { blob, desc } = await exportPNG("gray");
+    await save(`${slug(state.name)}-gris.png`, blob, desc);
+  },
+  zip: async () => {
+    if (typeof JSZip === "undefined") { setStatus("No se pudo cargar el compresor. Descargá cada imagen por separado."); return; }
+    const zip = new JSZip(), base = slug(state.name);
+    zip.file(`${base}-duotono.png`, (await exportPNG("result")).blob);
+    zip.file(`${base}-gris.png`, (await exportPNG("gray")).blob);
+    await save(`${base}-duotono.zip`, await zip.generateAsync({ type: "blob" }));
+  }
+};
+
+async function runExport(action) {
   if (!buf.full) return;
-  const lbl = btn.querySelector(".lbl"), t = lbl.textContent;
-  expBtns.forEach(b => b.disabled = true); lbl.textContent = "Procesando…";
+  const lbl = dlMain.querySelector(".lbl"), t = lbl.textContent;
+  dlAll.forEach(b => b.disabled = true); lbl.textContent = "Procesando…";
   await new Promise(r => setTimeout(r, 30));  // deja pintar el estado antes del cálculo
-  try { buildLUT(); await fn(); }
-  finally { expBtns.forEach(b => b.disabled = false); lbl.textContent = t; }
+  try { buildLUT(); await EXPORTS[action](); }
+  finally { dlAll.forEach(b => b.disabled = false); lbl.textContent = t; }
 }
 
-expBtns[0].addEventListener("click", e => withBusy(e.currentTarget, async () => {
-  const { blob, desc } = await exportPNG("result");
-  await save(`${slug(state.name)}-duotono.png`, blob, desc);
-}));
-expBtns[1].addEventListener("click", e => withBusy(e.currentTarget, async () => {
-  const { blob, desc } = await exportPNG("gray");
-  await save(`${slug(state.name)}-gris.png`, blob, desc);
-}));
-expBtns[2].addEventListener("click", e => withBusy(e.currentTarget, async () => {
-  if (typeof JSZip === "undefined") { setStatus("No se pudo cargar el compresor. Descargá cada imagen por separado."); return; }
-  const zip = new JSZip(), base = slug(state.name);
-  zip.file(`${base}-duotono.png`, (await exportPNG("result")).blob);
-  zip.file(`${base}-gris.png`, (await exportPNG("gray")).blob);
-  await save(`${base}-duotono.zip`, await zip.generateAsync({ type: "blob" }));
-}));
+function openMenu(focusFirst) {
+  dlMenu.hidden = false; dlToggle.setAttribute("aria-expanded", "true");
+  if (focusFirst) dlItems[0].focus();
+}
+function closeMenu(returnFocus) {
+  if (dlMenu.hidden) return;
+  dlMenu.hidden = true; dlToggle.setAttribute("aria-expanded", "false");
+  if (returnFocus) dlToggle.focus();
+}
+
+dlMain.addEventListener("click", () => runExport("result"));
+dlToggle.addEventListener("click", e => dlMenu.hidden ? openMenu(e.detail === 0) : closeMenu(false));  // detail 0 = teclado
+dlToggle.addEventListener("keydown", e => { if (e.key === "ArrowDown") { e.preventDefault(); openMenu(true); } });
+dlItems.forEach(item => item.addEventListener("click", () => { closeMenu(true); runExport(item.dataset.action); }));
+dlMenu.addEventListener("keydown", e => {
+  const i = dlItems.indexOf(document.activeElement), n = dlItems.length;
+  if (e.key === "ArrowDown") { e.preventDefault(); dlItems[(i + 1) % n].focus(); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); dlItems[(i - 1 + n) % n].focus(); }
+  else if (e.key === "Home") { e.preventDefault(); dlItems[0].focus(); }
+  else if (e.key === "End") { e.preventDefault(); dlItems[n - 1].focus(); }
+  else if (e.key === "Escape") { e.preventDefault(); closeMenu(true); }
+  else if (e.key === "Tab") closeMenu(false);
+});
+document.addEventListener("pointerdown", e => { if (!e.target.closest(".split")) closeMenu(false); });

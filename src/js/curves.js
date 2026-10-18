@@ -1,6 +1,6 @@
 "use strict";
 /* Curvas de transferencia por tinta.
-   Expone: makeCurve, CURVE_PRESETS
+   Expone: makeCurve, mirrorX, mirrorY, CURVE_PRESETS
    Usa: clamp01 */
 
 // Interpolación cúbica monótona (Fritsch–Carlson): pasa por los puntos sin rebotes.
@@ -23,6 +23,12 @@ function makeCurve(pts) {
     return clamp01((2 * t3 - 3 * t2 + 1) * ys[i] + (t3 - 2 * t2 + t) * h * m[i] + (-2 * t3 + 3 * t2) * ys[i + 1] + (t3 - t2) * h * m[i + 1]);
   };
 }
+
+// Espejar en X: lo que afectaba a las luces pasa a las sombras y viceversa
+const round4 = v => Math.round(v * 1e4) / 1e4;  // evita arrastrar errores de coma flotante en la receta
+const mirrorX = pts => pts.map(([x, y]) => [round4(1 - x), y]).reverse();
+// Espejar en Y: donde había mucha tinta pasa a haber poca
+const mirrorY = pts => pts.map(([x, y]) => [x, round4(1 - y)]);
 
 const CURVE_PRESETS = {
   lineal: { label: "Lineal", pts: [[0, 0], [1, 1]] },

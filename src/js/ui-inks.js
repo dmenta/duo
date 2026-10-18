@@ -1,7 +1,7 @@
 "use strict";
 /* Panel de tintas: tarjetas, color, nombre, curva.
    Expone: renderInks
-   Usa: state, SWATCHES, MAX_INKS, CURVE_PRESETS, newInk, attachCurve, scheduleRender, commitHistory, esc */
+   Usa: state, SWATCHES, MAX_INKS, CURVE_PRESETS, newInk, mirrorX, mirrorY, attachCurve, scheduleRender, commitHistory, esc */
 
 const inksEl = document.getElementById("inks");
 const addInkBtn = document.getElementById("addInk");
@@ -26,6 +26,12 @@ const inkCardHTML = ink => `
       ${Object.entries(CURVE_PRESETS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join("")}
       <option value="custom" disabled>Personalizada</option>
     </select>
+    <button class="icon-btn flip-x" title="Espejar en X: intercambia luces y sombras" aria-label="Espejar la curva horizontalmente">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5v13" stroke-dasharray="1.6 1.6"/><path d="M5.5 4L1.5 12h4z" fill="currentColor"/><path d="M10.5 4l4 8h-4z"/></svg>
+    </button>
+    <button class="icon-btn flip-y" title="Espejar en Y: invierte la cantidad de tinta" aria-label="Espejar la curva verticalmente">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 8h13" stroke-dasharray="1.6 1.6"/><path d="M4 5.5L12 1.5v4z" fill="currentColor"/><path d="M4 10.5l8 4v-4z"/></svg>
+    </button>
   </div>`;
 
 function bindInkCard(el, ink, j) {
@@ -52,6 +58,14 @@ function bindInkCard(el, ink, j) {
   nameIn.addEventListener("input", () => { ink.name = nameIn.value; });
   nameIn.addEventListener("change", commitHistory);  // al terminar de editar
   el.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => { setColor(b.dataset.c, b.dataset.n); commitHistory(); }));
+
+  // Espejar: solo acciones; el resultado queda en los puntos de la curva
+  const setPoints = pts => {
+    ink.points = pts; ink.preset = "custom"; presetSel.value = "custom";
+    redraw(); scheduleRender(); commitHistory();
+  };
+  el.querySelector(".flip-x").addEventListener("click", () => setPoints(mirrorX(ink.points)));
+  el.querySelector(".flip-y").addEventListener("click", () => setPoints(mirrorY(ink.points)));
 
   presetSel.addEventListener("change", () => {
     const p = CURVE_PRESETS[presetSel.value]; if (!p) return;

@@ -26,25 +26,30 @@
         <div class="actions">
           <input type="file" id="file" accept="image/*" class="sr" />
           <button class="btn primary" id="openBtn">Abrir imagen…</button>
-          <div class="dl" role="group" aria-label="Descargas">
-            <button id="expDuo">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
-                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10" />
-              </svg><span class="lbl">Descargar duotono</span>
-            </button>
-            <button id="expGray">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
-                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10" />
-              </svg><span class="lbl">Descargar gris</span>
-            </button>
-            <button id="expZip">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
-                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10" />
-              </svg><span class="lbl">Descargar todo</span>
-            </button>
+          <div class="split">
+            <div class="dl" role="group" aria-label="Descargas">
+              <button id="expDuo">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10" />
+                </svg><span class="lbl">Descargar duotono</span>
+              </button>
+              <button id="expMenuBtn" class="caret" aria-haspopup="menu" aria-expanded="false" aria-controls="expMenu"
+                aria-label="Más opciones de descarga">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M4 6l4 4 4-4" />
+                </svg>
+              </button>
+            </div>
+            <div class="menu" id="expMenu" role="menu" aria-label="Opciones de descarga" hidden>
+              <button role="menuitem" tabindex="-1" data-action="gray">
+                Descargar gris<small>PNG en escala de grises</small>
+              </button>
+              <button role="menuitem" tabindex="-1" data-action="zip">
+                Descargar todo<small>ZIP con el duotono y el gris</small>
+              </button>
+            </div>
           </div>
         </div>
       </header>
