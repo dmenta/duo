@@ -28,7 +28,7 @@ const state = {
 
 // Datos derivados de la imagen cargada
 const buf = {
-  full: null,       // {w, h, data} a resolución de exportación
+  full: null,       // {w, h, data, hasAlpha} a resolución de exportación
   prev: null,       // {w, h, data} reducida para la vista previa
   prevIdx: null,    // Uint16Array: nivel de gris (0..N-1) por píxel de prev
   fullIdx: null,    // idem para full, se calcula al exportar

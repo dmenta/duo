@@ -8,7 +8,10 @@ function scaled(src, max) {
   const w = Math.max(1, Math.round(src.width * s)), h = Math.max(1, Math.round(src.height * s));
   const c = document.createElement("canvas"); c.width = w; c.height = h;
   const ctx = c.getContext("2d"); ctx.imageSmoothingQuality = "high"; ctx.drawImage(src, 0, 0, w, h);
-  return { w, h, data: ctx.getImageData(0, 0, w, h).data };
+  const data = ctx.getImageData(0, 0, w, h).data;
+  let hasAlpha = false;
+  for (let i = 3; i < data.length; i += 4) if (data[i] < 255) { hasAlpha = true; break; }
+  return { w, h, data, hasAlpha };
 }
 
 function setSource(src, name) {

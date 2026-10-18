@@ -9,13 +9,13 @@ function grayWeights() {
     : [state.gray.r / 100, state.gray.g / 100, state.gray.b / 100];
 }
 
-// Cada píxel -> índice de tono (0 = blanco, N-1 = negro) según L*
+// Cada píxel -> índice de tono (0 = blanco, N-1 = negro) según L*.
+// La transparencia no se mezcla acá: se conserva aparte en img.data para exportar.
 function computeIdx(img) {
   const [wr, wg, wb] = grayWeights(), d = img.data, n = img.w * img.h, out = new Uint16Array(n);
   for (let p = 0, i = 0; p < n; p++, i += 4) {
     let Y = wr * LIN[d[i]] + wg * LIN[d[i + 1]] + wb * LIN[d[i + 2]];
     Y = Y < 0 ? 0 : Y > 1 ? 1 : Y;
-    const a = d[i + 3] / 255; if (a < 1) Y = Y * a + (1 - a);  // transparencia sobre blanco
     out[p] = Math.round((1 - LfromY(Y) / 100) * (N - 1));
   }
   return out;
@@ -48,7 +48,7 @@ const grayLUT = (() => {
   return a;
 })();
 
-// Escribe en `out` (ImageData) la vista pedida
+// Escribe en `out` (ImageData) la vista pedida, con la transparencia compuesta sobre blanco
 function paint(img, idx, mode, out) {
   const o = out.data, n = img.w * img.h;
   if (mode === "original") {
@@ -61,11 +61,13 @@ function paint(img, idx, mode, out) {
     }
     return;
   }
-  const lut = buf.resultLUT;
+  const lut = buf.resultLUT, d = img.data;
   for (let p = 0, i = 0; p < n; p++, i += 4) {
     const k = idx[p];
     if (mode === "result") { o[i] = lut[k * 3]; o[i + 1] = lut[k * 3 + 1]; o[i + 2] = lut[k * 3 + 2]; }
     else { const v = grayLUT[k]; o[i] = v; o[i + 1] = v; o[i + 2] = v; }
+    const a = d[i + 3];
+    if (a < 255) { const t = a / 255; for (let c = 0; c < 3; c++) o[i + c] = enc(LIN[o[i + c]] * t + (1 - t)); }
     o[i + 3] = 255;
   }
 }
