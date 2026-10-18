@@ -1,11 +1,13 @@
 :root {
+    --bar-h: 56px; /* alto común de la toolbar y la barra del panel: sus bordes quedan alineados */
     --bg: #dfe1e3;
     --surface: #f6f6f4;
     --sunk: #eceded;
     --text: #1d1e20;
     --muted: #5d6166;
     --line: #c4c7cb;
-    --stage: #cfd2d5;
+    --stage: #e4e5e7;
+    --chrome: #eeeff1;
     --accent: #e3742f;
     --focus: #2b62d9;
     color-scheme: light;
@@ -21,7 +23,8 @@
         --text: #e8e8e6;
         --muted: #a3a6aa;
         --line: #3a3c40;
-        --stage: #141516;
+        --stage: #161719;
+        --chrome: #202124;
         --focus: #7aa2ff;
         color-scheme: dark;
     }
@@ -33,7 +36,8 @@
     --text: #e8e8e6;
     --muted: #a3a6aa;
     --line: #3a3c40;
-    --stage: #141516;
+    --stage: #161719;
+    --chrome: #202124;
     --focus: #7aa2ff;
     color-scheme: dark;
 }
@@ -72,31 +76,37 @@ select {
     outline-offset: 2px;
 }
 
-/* Layout: toolbar arriba a todo el ancho; visor a la izquierda y panel a la derecha */
+/* Layout: el panel ocupa toda la derecha; la toolbar va solo sobre el visor */
 .app {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 380px;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: var(--bar-h) minmax(0, 1fr);
     height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
     height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
 }
 @media (max-width: 900px) {
     .app {
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto;
+        grid-template-rows: var(--bar-h) auto auto;
         height: auto;
+    }
+    .panel {
+        grid-column: 1;
+        grid-row: auto;
     }
 }
 
 /* Toolbar */
 .toolbar {
-    grid-column: 1 / -1;
+    grid-column: 1;
+    grid-row: 1;
+    height: var(--bar-h);
     display: flex;
     align-items: center;
     gap: 8px;
     min-width: 0;
-    padding: 10px 16px;
-    background: var(--surface);
+    padding: 0 16px;
+    background: var(--chrome);
     border-bottom: 1px solid var(--line);
 }
 .brand {
@@ -201,7 +211,7 @@ select {
     flex-direction: column;
     min-width: 0;
     min-height: 0;
-    padding: 16px;
+    background: var(--stage);
 }
 .btn {
     display: inline-flex;
@@ -323,8 +333,6 @@ select {
     position: relative;
     flex: 1;
     min-height: 200px;
-    background: var(--stage);
-    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -335,10 +343,10 @@ select {
    Abajo deja lugar para la indicación de arrastrar o pegar. */
 .stage canvas {
     position: absolute;
-    inset: 18px 18px 34px;
+    inset: 60px 32px 40px;
     margin: auto;
-    max-width: calc(100% - 36px);
-    max-height: calc(100% - 52px);
+    max-width: calc(100% - 64px);
+    max-height: calc(100% - 100px);
     display: block;
     box-shadow:
         0 1px 0 rgba(0, 0, 0, 0.08),
@@ -355,7 +363,7 @@ select {
 /* Selector de vista flotando sobre el borde superior de la imagen */
 .view-seg {
     position: absolute;
-    top: 12px;
+    top: 14px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 2;
@@ -370,7 +378,7 @@ select {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 9px;
+    bottom: 12px;
     margin: 0;
     text-align: center;
     pointer-events: none;
@@ -454,6 +462,8 @@ select {
 
 /* Panel */
 .panel {
+    grid-column: 2;
+    grid-row: 1 / -1;
     background: var(--surface);
     border-left: 1px solid var(--line);
     overflow-y: auto;
@@ -470,14 +480,27 @@ select {
     position: sticky;
     top: 0;
     z-index: 5;
-    padding: 10px 12px;
+    height: var(--bar-h);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
     background: var(--surface);
     border-bottom: 1px solid var(--line);
 }
 .bar-row {
+    flex: 1;
+    min-width: 0;
     display: flex;
     gap: 8px;
     align-items: center;
+}
+.bar-label {
+    flex: none;
+    font-size: 12px;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
 }
 .hbtn {
     display: inline-flex;
@@ -606,21 +629,35 @@ select {
     font-size: 13px;
     color: var(--muted);
 }
+/* Fila de receta propia: la tira usa todo el ancho; los íconos aparecen encima al pasar el cursor */
 .rrow {
-    display: flex;
-    align-items: center;
-    gap: 2px;
+    position: relative;
     border-radius: 5px;
 }
-.rrow:hover {
+.rrow:hover,
+.rrow:focus-within {
     background: var(--sunk);
 }
-.rrow .ritem {
-    flex: 1;
-    min-width: 0;
-}
-.rrow .ritem:hover {
+.rrow .ritem:hover,
+.rrow .ritem:focus-visible {
     background: transparent;
+}
+.ricons {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 2px;
+    padding-left: 14px;
+    background: linear-gradient(90deg, transparent, var(--sunk) 14px);
+    opacity: 0;
+    pointer-events: none;
+}
+.rrow:hover .ricons,
+.rrow:focus-within .ricons {
+    opacity: 1;
+    pointer-events: auto;
 }
 .menu .ricon {
     flex: none;
@@ -631,16 +668,6 @@ select {
     height: 30px;
     padding: 0;
     color: var(--muted);
-    opacity: 0;
-}
-.rrow:hover .ricon,
-.rrow:focus-within .ricon {
-    opacity: 1;
-}
-@media (hover: none) {
-    .menu .ricon {
-        opacity: 1;
-    }
 }
 .menu .ricon:hover,
 .menu .ricon:focus-visible {
@@ -649,6 +676,25 @@ select {
 }
 .menu .ricon.danger:hover {
     color: #b3261e;
+}
+/* Sin cursor (táctil): íconos siempre visibles, ocupando su lugar */
+@media (hover: none) {
+    .rrow {
+        display: flex;
+        align-items: center;
+    }
+    .rrow .ritem {
+        flex: 1;
+        min-width: 0;
+    }
+    .ricons {
+        position: static;
+        transform: none;
+        opacity: 1;
+        pointer-events: auto;
+        background: none;
+        padding: 0;
+    }
 }
 .rfoot {
     display: flex;
@@ -665,6 +711,7 @@ select {
     gap: 6px;
     font-weight: 500;
     font-size: 13px;
+    white-space: nowrap;
 }
 .menu .ritem {
     display: grid;
@@ -683,7 +730,7 @@ select {
     font-weight: 700;
 }
 .rname {
-    font-weight: 550;
+    font-weight: 400;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

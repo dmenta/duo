@@ -1,5 +1,5 @@
 "use strict";
-/* Biblioteca de recetas: de fábrica (solo lectura) y propias (guardadas en el navegador).
+/* Biblioteca de recetas: predeterminadas (solo lectura) y propias (guardadas en el navegador).
    Exportar e importar en archivos .json.
    Expone: BUILTIN_RECIPES, DEFAULT_REF, syncRecipeUI
    Usa: state, defaultRecipe, CURVE_PRESETS, getRecipe, applyRecipe, normalizeRecipe, validRecipe,
@@ -9,7 +9,7 @@
 const LIBRARY_KEY = "duotono:recetas:v1";
 const RECIPE_NAME_MAX = 40;
 
-/* ---------- Recetas de fábrica ---------- */
+/* ---------- Recetas predeterminadas ---------- */
 const presetInk = (name, color, preset) => ({ name, color, preset, points: CURVE_PRESETS[preset].pts });
 const withInks = inks => ({ v: 1, gray: { mode: "lum", r: 21.26, g: 71.52, b: 7.22 }, inks });
 const BUILTIN_RECIPES = [
@@ -87,7 +87,7 @@ const ICON_DELETE = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none"
 const ICON_IMPORT = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10"/></svg>';
 const ICON_EXPORT = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10.5v-8M4.5 6L8 2.5 11.5 6M3 13.5h10"/></svg>';
 
-// Lista: de fábrica y propias; las propias se renombran o eliminan desde acá
+// Lista: propias y predeterminadas; las propias se renombran o eliminan desde acá
 function renderList() {
   const cur = state.active;
   const item = (r, kind) => {
@@ -95,16 +95,16 @@ function renderList() {
     const main = `<button role="menuitemradio" aria-checked="${on}" tabindex="-1" class="ritem" data-kind="${kind}" data-id="${esc(r.id)}">
       <span class="rname">${esc(r.name)}</span><span class="rstrip" style="background:${stripCSS(r.recipe)}"></span></button>`;
     if (kind === "builtin") return `<div class="rrow">${main}</div>`;
-    return `<div class="rrow">${main}
+    return `<div class="rrow">${main}<span class="ricons">
       <button role="menuitem" tabindex="-1" class="ricon" data-op="rename" data-id="${esc(r.id)}" title="Renombrar" aria-label="Renombrar ${esc(r.name)}">${ICON_RENAME}</button>
-      <button role="menuitem" tabindex="-1" class="ricon danger" data-op="delete" data-id="${esc(r.id)}" title="Eliminar" aria-label="Eliminar ${esc(r.name)}">${ICON_DELETE}</button></div>`;
+      <button role="menuitem" tabindex="-1" class="ricon danger" data-op="delete" data-id="${esc(r.id)}" title="Eliminar" aria-label="Eliminar ${esc(r.name)}">${ICON_DELETE}</button></span></div>`;
   };
   recipeList.innerHTML =
-    `<div class="rgroup">De fábrica</div>${BUILTIN_RECIPES.map(r => item(r, "builtin")).join("")}
-     <div class="rgroup">Mis recetas</div>` +
+    `<div class="rgroup">Mis recetas</div>` +
     (library.length
       ? [...library].sort(byName).map(r => item(r, "user")).join("")
       : `<p class="rempty">Todavía no guardaste recetas. Usá Guardar o importá un archivo.</p>`) +
+    `<div class="rgroup">Predeterminadas</div>${BUILTIN_RECIPES.map(r => item(r, "builtin")).join("")}` +
     `<div class="rfoot">
        <button role="menuitem" tabindex="-1" data-op="import">${ICON_IMPORT}Importar…</button>
        <button role="menuitem" tabindex="-1" data-op="exportall" ${library.length ? "" : "disabled"}>${ICON_EXPORT}Exportar mis recetas</button>
