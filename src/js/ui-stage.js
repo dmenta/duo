@@ -17,8 +17,16 @@ const stage = document.getElementById("stage");
 document.getElementById("openBtn").addEventListener("click", () => fileIn.click());
 fileIn.addEventListener("change", () => { loadFile(fileIn.files[0]); fileIn.value = ""; });
 ["dragenter", "dragover"].forEach(t => stage.addEventListener(t, e => { e.preventDefault(); stage.classList.add("drag"); }));
-["dragleave", "drop"].forEach(t => stage.addEventListener(t, e => { e.preventDefault(); stage.classList.remove("drag"); }));
-stage.addEventListener("drop", e => loadFile(e.dataTransfer.files[0]));
+// dragleave también se dispara al pasar entre elementos internos: solo cuenta si el puntero salió de #stage
+stage.addEventListener("dragleave", e => {
+  const r = stage.getBoundingClientRect();
+  if (e.clientX <= r.left || e.clientX >= r.right || e.clientY <= r.top || e.clientY >= r.bottom) stage.classList.remove("drag");
+});
+stage.addEventListener("drop", e => {
+  e.preventDefault();
+  stage.classList.remove("drag");
+  loadFile(e.dataTransfer.files[0]);
+});
 window.addEventListener("paste", e => {
   const f = [...(e.clipboardData?.files || [])].find(f => f.type.startsWith("image/"));
   if (f) loadFile(f);
