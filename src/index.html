@@ -83,22 +83,56 @@
 
     <aside class="panel">
       <div class="panel-bar">
-        <button class="btn" id="undoBtn" aria-label="Deshacer">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M5.5 3.5L2.5 6.5l3 3" />
-            <path d="M2.5 6.5h7a4 4 0 010 8H7" />
-          </svg>Deshacer
-        </button>
-        <button class="btn" id="redoBtn" aria-label="Rehacer">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M10.5 3.5l3 3-3 3" />
-            <path d="M13.5 6.5h-7a4 4 0 000 8H9" />
-          </svg>Rehacer
-        </button>
-        <span class="grow"></span>
-        <button class="btn" id="resetBtn" title="Volver a la receta inicial. Se puede deshacer.">Restablecer</button>
+        <div class="bar-row">
+          <button class="hbtn" id="undoBtn" aria-label="Deshacer">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5.5 3.5L2.5 6.5l3 3" />
+              <path d="M2.5 6.5h7a4 4 0 010 8H7" />
+            </svg>
+          </button>
+          <button class="hbtn" id="redoBtn" aria-label="Rehacer">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M10.5 3.5l3 3-3 3" />
+              <path d="M13.5 6.5h-7a4 4 0 000 8H9" />
+            </svg>
+          </button>
+          <span class="bar-sep" aria-hidden="true"></span>
+          <button class="recipe-btn" id="recipeBtn" aria-haspopup="menu" aria-expanded="false"
+            aria-controls="recipeList">
+            <span class="recipe-name" id="recipeName"></span>
+            <span class="recipe-dot" aria-hidden="true"></span>
+            <svg class="recipe-chev" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 6l4 4 4-4" />
+            </svg>
+            <span class="recipe-strip" id="recipeStrip" aria-hidden="true"></span>
+          </button>
+          <button class="btn save-btn" id="recipeSave">Guardar</button>
+          <button class="hbtn" id="recipeMoreBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="recipeMenu"
+            aria-label="Más acciones de recetas">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <circle cx="3.5" cy="8" r="1.4" />
+              <circle cx="8" cy="8" r="1.4" />
+              <circle cx="12.5" cy="8" r="1.4" />
+            </svg>
+          </button>
+        </div>
+        <div class="menu recipe-list" id="recipeList" role="menu" aria-label="Recetas" hidden></div>
+        <div class="menu more-menu" id="recipeMenu" role="menu" aria-label="Acciones de recetas" hidden>
+          <button role="menuitem" tabindex="-1" data-act="saveas">Guardar como…</button>
+          <button role="menuitem" tabindex="-1" data-act="rename">Renombrar…</button>
+          <button role="menuitem" tabindex="-1" data-act="delete">Eliminar</button>
+          <hr />
+          <button role="menuitem" tabindex="-1" data-act="export">Exportar esta receta<small>Archivo .json para
+              compartir o respaldar</small></button>
+          <button role="menuitem" tabindex="-1" data-act="exportall">Exportar mis recetas<small>Todas las guardadas en
+              este navegador</small></button>
+          <button role="menuitem" tabindex="-1" data-act="import">Importar…<small>Desde un archivo
+              .json</small></button>
+        </div>
+        <input type="file" id="recipeImport" accept=".json,application/json" class="sr" />
       </div>
       <section class="block">
         <div class="block-head"><span class="num">1</span>
@@ -141,6 +175,18 @@
     </aside>
   </div>
 
+  <dialog id="dlg" class="dlg" aria-labelledby="dlgTitle">
+    <form method="dialog">
+      <h3 id="dlgTitle"></h3>
+      <p id="dlgMsg"></p>
+      <label id="dlgField"><span id="dlgLabel"></span><input id="dlgInput" type="text" autocomplete="off" /></label>
+      <div class="dlg-actions">
+        <button class="btn" value="cancel" formnovalidate>Cancelar</button>
+        <button class="btn primary" value="ok" id="dlgOk"></button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- El orden importa: cada archivo usa lo que definen los anteriores -->
   <script src="js/dom.js"></script>
   <script src="js/color.js"></script>
@@ -155,7 +201,9 @@
   <script src="js/ui-stage.js"></script>
   <script src="js/png.js"></script>
   <script src="js/export.js"></script>
+  <script src="js/dialogs.js"></script>
   <script src="js/history.js"></script>
+  <script src="js/recipes.js"></script>
   <script src="js/main.js"></script>
 </body>
 

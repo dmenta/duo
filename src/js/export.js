@@ -1,6 +1,7 @@
 "use strict";
 /* Exportación a PNG y ZIP a resolución completa.
-   Usa: state, buf, computeIdx, buildLUT, paint, grayLUT, encodePNG, setStatus, JSZip (CDN), window.claude (si existe) */
+   Expone: save, slug
+   Usa: state, buf, computeIdx, buildLUT, paint, grayLUT, encodePNG, setStatus, attachMenu, JSZip (CDN), window.claude (si existe) */
 
 let downloads = null;
 if (window.claude && typeof window.claude.use === "function") {
@@ -85,27 +86,6 @@ async function runExport(action) {
   finally { dlAll.forEach(b => b.disabled = false); lbl.textContent = t; }
 }
 
-function openMenu(focusFirst) {
-  dlMenu.hidden = false; dlToggle.setAttribute("aria-expanded", "true");
-  if (focusFirst) dlItems[0].focus();
-}
-function closeMenu(returnFocus) {
-  if (dlMenu.hidden) return;
-  dlMenu.hidden = true; dlToggle.setAttribute("aria-expanded", "false");
-  if (returnFocus) dlToggle.focus();
-}
-
 dlMain.addEventListener("click", () => runExport("result"));
-dlToggle.addEventListener("click", e => dlMenu.hidden ? openMenu(e.detail === 0) : closeMenu(false));  // detail 0 = teclado
-dlToggle.addEventListener("keydown", e => { if (e.key === "ArrowDown") { e.preventDefault(); openMenu(true); } });
-dlItems.forEach(item => item.addEventListener("click", () => { closeMenu(true); runExport(item.dataset.action); }));
-dlMenu.addEventListener("keydown", e => {
-  const i = dlItems.indexOf(document.activeElement), n = dlItems.length;
-  if (e.key === "ArrowDown") { e.preventDefault(); dlItems[(i + 1) % n].focus(); }
-  else if (e.key === "ArrowUp") { e.preventDefault(); dlItems[(i - 1 + n) % n].focus(); }
-  else if (e.key === "Home") { e.preventDefault(); dlItems[0].focus(); }
-  else if (e.key === "End") { e.preventDefault(); dlItems[n - 1].focus(); }
-  else if (e.key === "Escape") { e.preventDefault(); closeMenu(true); }
-  else if (e.key === "Tab") closeMenu(false);
-});
-document.addEventListener("pointerdown", e => { if (!e.target.closest(".split")) closeMenu(false); });
+attachMenu(dlToggle, dlMenu);
+dlItems.forEach(item => item.addEventListener("click", () => runExport(item.dataset.action)));

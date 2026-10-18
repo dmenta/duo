@@ -1,7 +1,7 @@
 "use strict";
 /* Panel de tintas: tarjetas, color, nombre, curva.
    Expone: renderInks
-   Usa: state, SWATCHES, swatchName, cssColorToHex, setStatus, MAX_INKS, CURVE_PRESETS, newInk, mirrorX, mirrorY, attachCurve, scheduleRender, commitHistory, esc */
+   Usa: state, NAME_MAX, SWATCHES, swatchName, cssColorToHex, setStatus, MAX_INKS, CURVE_PRESETS, newInk, mirrorX, mirrorY, attachCurve, scheduleRender, commitHistory, esc */
 
 const inksEl = document.getElementById("inks");
 const addInkBtn = document.getElementById("addInk");
@@ -9,7 +9,7 @@ const addInkBtn = document.getElementById("addInk");
 const inkCardHTML = ink => `
   <div class="ink-head">
     <label class="swatch" title="Elegir color"><input type="color" value="${ink.color}" aria-label="Color de la tinta"></label>
-    <input type="text" class="name" value="${esc(ink.name)}" aria-label="Nombre de la tinta">
+    <input type="text" class="name" value="${esc(ink.name)}" maxlength="${NAME_MAX}" aria-label="Nombre de la tinta">
     <input type="text" class="hex" value="${ink.color}" spellcheck="false" autocomplete="off"
       title="Hex, rgb(), hsl(), oklch() o cualquier color CSS" aria-label="Color: hex, rgb(), hsl(), oklch() o cualquier color CSS">
     <button class="icon-btn rm" title="Quitar tinta" aria-label="Quitar tinta" ${state.inks.length < 2 ? "disabled" : ""}>

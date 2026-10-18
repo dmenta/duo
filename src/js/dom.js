@@ -1,6 +1,6 @@
 "use strict";
 /* Utilidades de DOM.
-   Expone: esc, setStatus(texto, "info" | "error"), IS_MAC, cssColorToHex */
+   Expone: esc, setStatus(texto, "info" | "error"), IS_MAC, cssColorToHex, attachMenu */
 
 const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -38,4 +38,36 @@ function cssColorToHex(input) {
   const [r, g, b, a] = colorProbe.getImageData(0, 0, 1, 1).data;
   if (a === 0) return null;
   return "#" + [r, g, b].map(v => v.toString(16).padStart(2, "0")).join("");
+}
+
+// Menú desplegable accesible: abre con clic o flecha abajo, se recorre con flechas,
+// Inicio y Fin, se cierra con Escape, Tab, clic afuera o al elegir una opción.
+function attachMenu(toggle, menu, { onOpen } = {}) {
+  const items = () => [...menu.querySelectorAll('[role^="menuitem"]:not([disabled])')];
+  const open = focusFirst => {
+    if (onOpen) onOpen();
+    menu.hidden = false; toggle.setAttribute("aria-expanded", "true");
+    if (focusFirst) (menu.querySelector('[aria-checked="true"]:not([disabled])') || items()[0])?.focus();
+  };
+  const close = returnFocus => {
+    if (menu.hidden) return;
+    menu.hidden = true; toggle.setAttribute("aria-expanded", "false");
+    if (returnFocus) toggle.focus();
+  };
+  toggle.addEventListener("click", e => menu.hidden ? open(e.detail === 0) : close(false));  // detail 0 = teclado
+  toggle.addEventListener("keydown", e => { if (e.key === "ArrowDown") { e.preventDefault(); open(true); } });
+  menu.addEventListener("keydown", e => {
+    const list = items(), n = list.length, i = list.indexOf(document.activeElement);
+    if (e.key === "Escape") { e.preventDefault(); close(true); return; }
+    if (e.key === "Tab") { close(false); return; }
+    if (!n) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); list[(i + 1) % n].focus(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); list[(i - 1 + n) % n].focus(); }
+    else if (e.key === "Home") { e.preventDefault(); list[0].focus(); }
+    else if (e.key === "End") { e.preventDefault(); list[n - 1].focus(); }
+  });
+  // Las acciones de cada opción corren primero (en el botón); después se cierra
+  menu.addEventListener("click", e => { if (e.target.closest('[role^="menuitem"]')) close(false); });
+  document.addEventListener("pointerdown", e => { if (!menu.contains(e.target) && !toggle.contains(e.target)) close(false); });
+  return { open, close };
 }

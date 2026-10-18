@@ -1,7 +1,7 @@
 "use strict";
 /* Dibujo de la vista previa.
    Expone: scheduleRender, render
-   Usa: state, buf, buildLUT, paint, syncViewSeg */
+   Usa: state, buf, buildLUT, paint, syncViewSeg, syncRecipeUI */
 
 const viewCanvas = document.getElementById("view");
 const vctx = viewCanvas.getContext("2d");
@@ -23,4 +23,5 @@ function render() {
   vctx.putImageData(out, 0, 0);
   document.documentElement.style.setProperty("--accent", (state.inks[1] || state.inks[0]).color);
   syncViewSeg();
+  syncRecipeUI();  // muestra y marca de cambios sin guardar, en vivo
 }

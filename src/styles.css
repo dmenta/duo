@@ -455,26 +455,232 @@ header.top {
     position: sticky;
     top: 0;
     z-index: 5;
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    padding: 10px 20px;
+    padding: 10px 12px;
     background: var(--surface);
     border-bottom: 1px solid var(--line);
 }
-.panel-bar .btn {
-    padding: 5px 10px;
-    font-size: 14px;
-    font-weight: 500;
+.bar-row {
+    display: flex;
     gap: 6px;
+    align-items: center;
 }
-.panel-bar .btn svg {
+.bar-sep {
+    width: 1px;
+    align-self: stretch;
+    background: var(--line);
+    margin: 2px 2px;
+}
+.hbtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 32px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+}
+.hbtn:hover {
+    border-color: var(--text);
+}
+.hbtn:disabled {
+    opacity: 0.4;
+    cursor: default;
+    border-color: var(--line);
+}
+.hbtn[aria-expanded='true'] {
+    background: var(--sunk);
+}
+.save-btn {
+    padding: 0 11px;
+    height: 34px;
+    font-size: 14px;
+    font-weight: 550;
+}
+
+/* Selector de receta: nombre, marca de cambios y tira de muestra */
+.recipe-btn {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 8px 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--sunk);
+    cursor: pointer;
+    text-align: left;
+}
+.recipe-btn:hover,
+.recipe-btn[aria-expanded='true'] {
+    border-color: var(--text);
+}
+.recipe-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+    font-size: 14px;
+}
+.recipe-btn.unsaved .recipe-name {
+    font-style: italic;
+    font-weight: 500;
+    color: var(--muted);
+}
+.recipe-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex: none;
+    display: none;
+}
+.recipe-btn.dirty .recipe-dot {
+    display: block;
+}
+.recipe-chev {
     flex: none;
     color: var(--muted);
 }
-.panel-bar .grow {
-    flex: 1;
+.recipe-strip {
+    position: absolute;
+    left: 9px;
+    right: 9px;
+    bottom: 4px;
+    height: 4px;
+    border-radius: 2px;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 12%, transparent);
 }
+
+.recipe-list {
+    left: 12px;
+    right: 12px;
+    min-width: 0;
+    max-height: min(60vh, 460px);
+    overflow-y: auto;
+}
+.more-menu {
+    right: 12px;
+}
+.menu hr {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin: 4px 2px;
+}
+.menu button:disabled {
+    opacity: 0.4;
+    cursor: default;
+    background: transparent;
+}
+.rgroup {
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 8px 10px 4px;
+}
+.rempty {
+    margin: 0;
+    padding: 4px 10px 10px;
+    font-size: 13px;
+    color: var(--muted);
+}
+.menu .ritem {
+    display: grid;
+    grid-template-columns: 16px 1fr;
+    gap: 4px 6px;
+    align-items: center;
+    width: 100%;
+}
+.ritem::before {
+    content: '';
+    grid-row: 1 / span 2;
+}
+.ritem[aria-checked='true']::before {
+    content: '✓';
+    color: var(--text);
+    font-weight: 700;
+}
+.rname {
+    font-weight: 550;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.rstrip {
+    grid-column: 2;
+    height: 8px;
+    border-radius: 3px;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 12%, transparent);
+}
+
+/* Diálogos */
+.dlg {
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    width: min(380px, calc(100vw - 32px));
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+.dlg::backdrop {
+    background: rgba(0, 0, 0, 0.4);
+}
+.dlg form {
+    display: grid;
+    gap: 12px;
+    padding: 18px 18px 14px;
+}
+.dlg h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+}
+.dlg p {
+    margin: 0;
+    color: var(--muted);
+}
+.dlg p[hidden],
+.dlg label[hidden] {
+    display: none;
+}
+.dlg label {
+    display: grid;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--muted);
+}
+.dlg input {
+    border: 1px solid var(--line);
+    background: var(--sunk);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 15px;
+    color: var(--text);
+}
+.dlg-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 4px;
+}
+.btn.danger {
+    background: #b3261e;
+    border-color: #b3261e;
+    color: #fff;
+}
+
 .block {
     padding: 20px 20px 24px;
 }

@@ -1,9 +1,10 @@
 "use strict";
 /* Estado de la aplicación y buffers de imagen.
-   Expone: MAX_INKS, PREVIEW_MAX, FULL_MAX, SWATCHES, swatchName, makeInk, newInk, defaultRecipe, state, buf
+   Expone: MAX_INKS, NAME_MAX, PREVIEW_MAX, FULL_MAX, SWATCHES, swatchName, makeInk, newInk, defaultRecipe, state, buf
    Usa: CURVE_PRESETS */
 
 const MAX_INKS = 4;
+const NAME_MAX = 32;       // largo máximo del nombre de una tinta
 const PREVIEW_MAX = 1400;  // lado mayor de la vista previa
 const FULL_MAX = 8000;     // lado mayor máximo para exportar
 
@@ -18,9 +19,10 @@ const swatchName = color => (SWATCHES.find(s => s[1] === color.toLowerCase()) ||
 let uid = 0;
 // Tinta de la receta -> tinta en el estado (con id propio para la interfaz).
 // Si el color es predefinido, su nombre manda: corrige recetas con nombres desfasados.
-const makeInk = ({ name, color, preset, points }) => ({
-  id: ++uid, name: swatchName(color) ?? name, color, preset, points: points.map(p => p.slice())
-});
+const makeInk = ({ name, color, preset, points }) => {
+  color = color.toLowerCase();
+  return { id: ++uid, name: (swatchName(color) ?? name).slice(0, NAME_MAX), color, preset, points: points.map(p => p.slice()) };
+};
 const newInk = (name, color, preset) => makeInk({ name, color, preset, points: CURVE_PRESETS[preset].pts });
 
 // Receta inicial: lo que se usa la primera vez y al restablecer
@@ -38,6 +40,7 @@ const state = {
   gray: { ...defaultRecipe().gray },
   inks: defaultRecipe().inks.map(makeInk),
   view: "result",          // "original" | "gray" | "result"
+  active: null,            // receta de la biblioteca en uso: { kind: "builtin" | "user", id } o null
   name: "imagen-de-prueba"
 };
 
