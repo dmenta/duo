@@ -1,7 +1,7 @@
 "use strict";
 /* Panel de tintas: tarjetas, color, nombre, curva.
    Expone: renderInks
-   Usa: state, SWATCHES, MAX_INKS, CURVE_PRESETS, newInk, mirrorX, mirrorY, attachCurve, scheduleRender, commitHistory, esc */
+   Usa: state, SWATCHES, swatchName, cssColorToHex, setStatus, MAX_INKS, CURVE_PRESETS, newInk, mirrorX, mirrorY, attachCurve, scheduleRender, commitHistory, esc */
 
 const inksEl = document.getElementById("inks");
 const addInkBtn = document.getElementById("addInk");
@@ -10,7 +10,8 @@ const inkCardHTML = ink => `
   <div class="ink-head">
     <label class="swatch" title="Elegir color"><input type="color" value="${ink.color}" aria-label="Color de la tinta"></label>
     <input type="text" class="name" value="${esc(ink.name)}" aria-label="Nombre de la tinta">
-    <input type="text" class="hex" value="${ink.color}" maxlength="7" aria-label="Color en hexadecimal">
+    <input type="text" class="hex" value="${ink.color}" spellcheck="false" autocomplete="off"
+      title="Hex, rgb(), hsl(), oklch() o cualquier color CSS" aria-label="Color: hex, rgb(), hsl(), oklch() o cualquier color CSS">
     <button class="icon-btn rm" title="Quitar tinta" aria-label="Quitar tinta" ${state.inks.length < 2 ? "disabled" : ""}>
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4l8 8M12 4l-8 8"/></svg>
     </button>
@@ -43,21 +44,45 @@ function bindInkCard(el, ink, j) {
   });
 
   const colorIn = el.querySelector("input[type=color]"), hexIn = el.querySelector(".hex"), nameIn = el.querySelector(".name");
-  const setColor = (c, name) => {
-    ink.color = c; colorIn.value = c; hexIn.value = c; el.style.setProperty("--ink", c);
-    ink.name = name; nameIn.value = name;
-    redraw(); scheduleRender();
+
+  // El nombre se edita solo con colores propios; los predefinidos llevan su nombre fijo
+  const syncName = () => {
+    const fixed = swatchName(ink.color) !== undefined;
+    nameIn.value = ink.name;
+    nameIn.readOnly = fixed;
+    nameIn.tabIndex = fixed ? -1 : 0;
+    nameIn.title = fixed ? "Color predefinido. Para ponerle un nombre propio, elegí un color personalizado." : "";
   };
-  colorIn.addEventListener("input", () => setColor(colorIn.value, "Personalizado"));
+  const setColor = c => {
+    const preset = swatchName(c);
+    const wasPreset = swatchName(ink.color) !== undefined;
+    ink.color = c; colorIn.value = c; hexIn.value = c; el.style.setProperty("--ink", c);
+    if (preset) ink.name = preset;                 // predefinido: su nombre
+    else if (wasPreset) ink.name = "Personalizado"; // de predefinido a propio
+    // propio a propio: se conserva el nombre que haya puesto
+    syncName(); redraw(); scheduleRender();
+  };
+  syncName();
+
+  colorIn.addEventListener("input", () => setColor(colorIn.value));
   colorIn.addEventListener("change", commitHistory);  // al cerrar el selector
   hexIn.addEventListener("change", () => {
-    let v = hexIn.value.trim(); if (!v.startsWith("#")) v = "#" + v;
-    if (/^#[0-9a-f]{6}$/i.test(v)) setColor(v.toLowerCase(), "Personalizado"); else hexIn.value = ink.color;
+    const c = cssColorToHex(hexIn.value);
+    if (c) setColor(c);
+    else {
+      if (hexIn.value.trim()) setStatus(`No reconozco «${hexIn.value.trim()}» como color. Probá con #e3742f, rgb(227, 116, 47) u oklch(…).`, "error");
+      hexIn.value = ink.color;
+    }
     commitHistory();
   });
+  hexIn.addEventListener("keydown", e => { if (e.key === "Enter") hexIn.blur(); });
   nameIn.addEventListener("input", () => { ink.name = nameIn.value; });
-  nameIn.addEventListener("change", commitHistory);  // al terminar de editar
-  el.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => { setColor(b.dataset.c, b.dataset.n); commitHistory(); }));
+  nameIn.addEventListener("change", () => {
+    if (!nameIn.value.trim()) { ink.name = "Personalizado"; nameIn.value = ink.name; }
+    commitHistory();  // al terminar de editar
+  });
+  nameIn.addEventListener("keydown", e => { if (e.key === "Enter") nameIn.blur(); });
+  el.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => { setColor(b.dataset.c); commitHistory(); }));
 
   // Espejar: solo acciones; el resultado queda en los puntos de la curva
   const setPoints = pts => {

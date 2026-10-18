@@ -659,10 +659,13 @@ select {
     border-radius: 5px;
     font-weight: 600;
 }
-.ink-head input[type='text']:hover,
-.ink-head input[type='text']:focus {
+.ink-head input[type='text']:not([readonly]):hover,
+.ink-head input[type='text']:not([readonly]):focus {
     border-color: var(--line);
     background: var(--surface);
+}
+.ink-head input.name[readonly] {
+    cursor: default;
 }
 .ink-head input.hex {
     font-variant-numeric: tabular-nums;

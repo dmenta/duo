@@ -1,6 +1,6 @@
 "use strict";
 /* Estado de la aplicación y buffers de imagen.
-   Expone: MAX_INKS, PREVIEW_MAX, FULL_MAX, SWATCHES, makeInk, newInk, defaultRecipe, state, buf
+   Expone: MAX_INKS, PREVIEW_MAX, FULL_MAX, SWATCHES, swatchName, makeInk, newInk, defaultRecipe, state, buf
    Usa: CURVE_PRESETS */
 
 const MAX_INKS = 4;
@@ -12,9 +12,15 @@ const SWATCHES = [
   ["Magenta", "#c4006e"], ["Azul", "#1f4e9c"], ["Cian", "#0093c9"], ["Verde", "#00875a"], ["Amarillo", "#f2c500"]
 ];
 
+// Nombre del color predefinido con ese hex, o undefined si es un color propio
+const swatchName = color => (SWATCHES.find(s => s[1] === color.toLowerCase()) || [])[0];
+
 let uid = 0;
-// Tinta de la receta -> tinta en el estado (con id propio para la interfaz)
-const makeInk = ({ name, color, preset, points }) => ({ id: ++uid, name, color, preset, points: points.map(p => p.slice()) });
+// Tinta de la receta -> tinta en el estado (con id propio para la interfaz).
+// Si el color es predefinido, su nombre manda: corrige recetas con nombres desfasados.
+const makeInk = ({ name, color, preset, points }) => ({
+  id: ++uid, name: swatchName(color) ?? name, color, preset, points: points.map(p => p.slice())
+});
 const newInk = (name, color, preset) => makeInk({ name, color, preset, points: CURVE_PRESETS[preset].pts });
 
 // Receta inicial: lo que se usa la primera vez y al restablecer
