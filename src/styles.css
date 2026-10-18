@@ -8,6 +8,7 @@
     --line: #c4c7cb;
     --stage: #e4e5e7;
     --chrome: #eeeff1;
+    --hover: color-mix(in srgb, var(--text) 8%, var(--surface));
     --accent: #e3742f;
     --focus: #2b62d9;
     color-scheme: light;
@@ -154,9 +155,6 @@ select {
     font-weight: 600;
     white-space: nowrap;
 }
-.tbtn:hover {
-    opacity: 0.9;
-}
 .file-info {
     display: flex;
     align-items: baseline;
@@ -234,16 +232,10 @@ select {
     font-weight: 550;
     white-space: nowrap;
 }
-.btn:hover {
-    border-color: var(--text);
-}
 .btn.primary {
     background: var(--text);
     color: var(--bg);
     border-color: var(--text);
-}
-.btn.primary:hover {
-    opacity: 0.9;
 }
 .btn:disabled {
     opacity: 0.5;
@@ -329,9 +321,6 @@ select {
 .add svg {
     flex: none;
     color: var(--muted);
-}
-.dl button:hover {
-    background: var(--sunk);
 }
 .dl button:disabled {
     opacity: 0.5;
@@ -550,9 +539,6 @@ body:not(.no-image) .empty {
     font-size: 14px;
     font-weight: 550;
 }
-.seg button:hover {
-    color: var(--text);
-}
 .seg button[aria-pressed='true'] {
     background: var(--surface);
     color: var(--text);
@@ -615,13 +601,9 @@ body:not(.no-image) .empty {
     color: var(--text);
     cursor: pointer;
 }
-.hbtn:hover {
-    border-color: var(--text);
-}
 .hbtn:disabled {
     opacity: 0.4;
     cursor: default;
-    border-color: var(--line);
 }
 .save-split {
     flex: none;
@@ -653,10 +635,6 @@ body:not(.no-image) .empty {
     background: var(--sunk);
     cursor: pointer;
     text-align: left;
-}
-.recipe-btn:hover,
-.recipe-btn[aria-expanded='true'] {
-    border-color: var(--text);
 }
 .recipe-name {
     flex: 1;
@@ -1107,17 +1085,13 @@ select {
     border-radius: 5px;
     line-height: 0;
 }
-.icon-btn:hover {
-    color: var(--text);
-    background: var(--surface);
-}
 .icon-btn:disabled {
     opacity: 0.35;
     cursor: default;
 }
 .chips {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     margin: 10px 0 10px;
     flex-wrap: wrap;
 }
@@ -1171,9 +1145,6 @@ select {
     background: var(--surface);
     padding: 6px;
 }
-.curve-foot .icon-btn:hover {
-    border-color: var(--text);
-}
 .curve-foot span {
     font-size: 13px;
     color: var(--muted);
@@ -1197,5 +1168,76 @@ select {
     * {
         transition: none !important;
     }
+}
+
+/* ==========================================================================
+   Estados interactivos: reglas únicas para toda la interfaz
+   1. Botones (con o sin borde) y selects: el hover cambia el fondo; el borde no cambia.
+   2. Botón principal relleno: el hover lo aclara.
+   3. Colores (selector y colores rápidos): hover = anillo suave; elegido = anillo firme.
+   4. Opción ya activa de un selector: cursor normal y sin cambio.
+   5. Deshabilitados: sin hover.
+   El foco de teclado (:focus-visible) es independiente y se ve siempre.
+   ========================================================================== */
+select {
+    cursor: pointer;
+}
+
+/* 1. Fondo */
+.btn:not(.primary):not(.danger):not(:disabled):not([aria-pressed='true']):hover,
+.hbtn:not(:disabled):hover,
+.dl button:not(:disabled):hover,
+.recipe-btn:hover,
+.recipe-btn[aria-expanded='true'],
+.hbtn[aria-expanded='true'],
+.dl .caret[aria-expanded='true'],
+.icon-btn:not(:disabled):hover,
+select:not(:disabled):hover {
+    background: var(--hover);
+}
+.icon-btn:not(:disabled):hover {
+    color: var(--text);
+}
+
+/* 2. Principal relleno */
+.tbtn:hover,
+.btn.primary:not(:disabled):hover {
+    background: color-mix(in srgb, var(--text) 82%, var(--surface));
+    border-color: color-mix(in srgb, var(--text) 82%, var(--surface));
+}
+.btn.danger:not(:disabled):hover {
+    background: #9a2019;
+    border-color: #9a2019;
+}
+
+/* 3. Colores */
+.chip,
+.swatch {
+    transition: box-shadow 0.12s;
+}
+.chip:hover,
+.swatch:hover {
+    box-shadow:
+        0 0 0 2px var(--sunk),
+        0 0 0 3.5px color-mix(in srgb, var(--text) 35%, transparent);
+}
+.chip[aria-pressed='true'] {
+    box-shadow:
+        0 0 0 2px var(--sunk),
+        0 0 0 3.5px var(--text);
+}
+.swatch:focus-within {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+}
+
+/* 4. Selectores: la opción activa no invita a hacer clic */
+.seg button:not([aria-pressed='true']):hover {
+    color: var(--text);
+    background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+.seg button[aria-pressed='true'],
+.filters .btn[aria-pressed='true'] {
+    cursor: default;
 }
 

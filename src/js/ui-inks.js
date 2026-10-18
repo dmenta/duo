@@ -16,7 +16,7 @@ const inkCardHTML = ink => `
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4l8 8M12 4l-8 8"/></svg>
     </button>
   </div>
-  <div class="chips">${SWATCHES.map(([n, c]) => `<button class="chip" style="background:${c}" data-c="${c}" data-n="${n}" title="${n}" aria-label="${n}"></button>`).join("")}</div>
+  <div class="chips">${SWATCHES.map(([n, c]) => `<button class="chip" style="background:${c}" data-c="${c}" data-n="${n}" title="${n}" aria-label="${n}" aria-pressed="${c === ink.color}"></button>`).join("")}</div>
   <div class="curve-box">
     <canvas class="curve" aria-label="Curva de la tinta. Hacé clic para agregar puntos, arrastralos para ajustar y doble clic para quitarlos."></canvas>
     <span class="readout" aria-hidden="true"></span>
@@ -60,8 +60,10 @@ function bindInkCard(el, ink, j) {
     if (preset) ink.name = preset;                 // predefinido: su nombre
     else if (wasPreset) ink.name = "Personalizado"; // de predefinido a propio
     // propio a propio: se conserva el nombre que haya puesto
-    syncName(); redraw(); scheduleRender();
+    syncName(); syncChips(); redraw(); scheduleRender();
   };
+  // Color rápido elegido: el que coincide con el color de la tinta
+  const syncChips = () => el.querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.c === ink.color)));
   syncName();
 
   colorIn.addEventListener("input", () => setColor(colorIn.value));
