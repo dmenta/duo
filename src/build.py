@@ -15,10 +15,12 @@ src = Path(__file__).parent
 out = Path(sys.argv[1]) if len(sys.argv) > 1 else src.parent / "duotono.html"
 html = (src / "index.html").read_text(encoding="utf-8")
 
-link = '<link rel="stylesheet" href="styles.css" />'
-if link not in html:
+# Acepta <link ...> y <link ... /> (elementos void con o sin cierre)
+link_re = re.compile(r'<link rel="stylesheet" href="styles\.css"\s*/?>')
+if not link_re.search(html):
     sys.exit("Falta la referencia a styles.css en index.html")
-html = html.replace(link, "<style>\n" + (src / "styles.css").read_text(encoding="utf-8") + "</style>")
+css = (src / "styles.css").read_text(encoding="utf-8")
+html = link_re.sub(lambda m: "<style>\n" + css + "</style>", html, count=1)
 
 tag_re = re.compile(r'[ \t]*<script src="(js/[^"]+)"></script>\n?')
 paths = tag_re.findall(html)
