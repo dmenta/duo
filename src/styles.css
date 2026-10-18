@@ -75,11 +75,14 @@ select {
 .app {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 380px;
-    min-height: 100vh;
+    /* La app ocupa exactamente la ventana: sin scroll de página en escritorio */
+    height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
 }
 @media (max-width: 900px) {
     .app {
         grid-template-columns: 1fr;
+        height: auto;
     }
 }
 
@@ -88,6 +91,7 @@ select {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    min-height: 0;
     padding: 20px;
     gap: 14px;
 }
@@ -197,7 +201,7 @@ header.top {
 .stage {
     position: relative;
     flex: 1;
-    min-height: 360px;
+    min-height: 200px;
     background: var(--stage);
     border-radius: 4px;
     display: flex;
@@ -206,17 +210,23 @@ header.top {
     overflow: hidden;
     padding: 18px;
 }
+/* El canvas se centra dentro del escenario y se achica para entrar en el espacio que quede */
 .stage canvas {
-    max-width: 100%;
-    max-height: calc(100vh - 230px);
+    position: absolute;
+    inset: 18px;
+    margin: auto;
+    max-width: calc(100% - 36px);
+    max-height: calc(100% - 36px);
     display: block;
     box-shadow:
         0 1px 0 rgba(0, 0, 0, 0.08),
         0 8px 28px rgba(0, 0, 0, 0.18);
 }
 @media (max-width: 900px) {
-    .stage canvas {
-        max-height: 60vh;
+    .stage {
+        flex: none;
+        height: 60vh;
+        height: 60dvh;
     }
 }
 .stage.drag::after {
@@ -284,7 +294,7 @@ header.top {
     background: var(--surface);
     border-left: 1px solid var(--line);
     overflow-y: auto;
-    max-height: 100vh;
+    min-height: 0;
 }
 @media (max-width: 900px) {
     .panel {
