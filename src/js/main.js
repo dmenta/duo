@@ -1,5 +1,4 @@
 "use strict";
 /* Arranque. */
-syncMixer();
-renderInks();
+initHistory();   // restaura la última receta guardada, si hay
 sampleImage();

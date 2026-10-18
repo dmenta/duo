@@ -64,6 +64,26 @@
     </section>
 
     <aside class="panel">
+      <div class="panel-bar">
+        <button class="btn" id="undoBtn" aria-label="Deshacer">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5.5 3.5L2.5 6.5l3 3" />
+            <path d="M2.5 6.5h7a4 4 0 010 8H7" />
+          </svg>Deshacer
+        </button>
+        <button class="btn" id="redoBtn" aria-label="Rehacer">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10.5 3.5l3 3-3 3" />
+            <path d="M13.5 6.5h-7a4 4 0 000 8H9" />
+          </svg>Rehacer
+        </button>
+        <span class="grow"></span>
+        <button class="btn" id="resetBtn" title="Volver a la receta inicial. Se puede deshacer.">
+          Restablecer
+        </button>
+      </div>
       <section class="block">
         <div class="block-head">
           <span class="num">1</span>
@@ -129,6 +149,7 @@
   <script src="js/ui-stage.js"></script>
   <script src="js/png.js"></script>
   <script src="js/export.js"></script>
+  <script src="js/history.js"></script>
   <script src="js/main.js"></script>
 </body>
 

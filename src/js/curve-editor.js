@@ -1,7 +1,7 @@
 "use strict";
 /* Editor interactivo de curvas (canvas).
    Expone: attachCurve(canvas, ink, readout, onEdit) -> redraw
-   Usa: makeCurve, clamp01, scheduleRender */
+   Usa: makeCurve, clamp01, scheduleRender, commitHistory */
 
 function attachCurve(canvas, ink, readout, onEdit) {
   const PAD = 12;
@@ -76,13 +76,14 @@ function attachCurve(canvas, ink, readout, onEdit) {
     else { pts[drag][0] = Math.min(pts[drag + 1][0] - 0.02, Math.max(pts[drag - 1][0] + 0.02, ux)); pts[drag][1] = uy; }
     show(pts[drag][0], pts[drag][1]); edited(); draw();
   });
-  const end = () => { drag = -1; draw(); };
+  // Fin del gesto: una sola entrada de historial (agregar + arrastrar cuenta como una)
+  const end = () => { const was = drag; drag = -1; draw(); if (was >= 0) commitHistory(); };
   canvas.addEventListener("pointerup", end);
   canvas.addEventListener("pointercancel", end);
   canvas.addEventListener("pointerleave", () => { if (drag < 0) readout.classList.remove("on"); });
   canvas.addEventListener("dblclick", e => {
     const i = nearest(e);
-    if (i > 0 && i < ink.points.length - 1) { ink.points.splice(i, 1); edited(); draw(); }
+    if (i > 0 && i < ink.points.length - 1) { ink.points.splice(i, 1); edited(); draw(); commitHistory(); }
   });
   new ResizeObserver(draw).observe(canvas);
   return draw;

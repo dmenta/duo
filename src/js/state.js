@@ -1,6 +1,6 @@
 "use strict";
 /* Estado de la aplicación y buffers de imagen.
-   Expone: MAX_INKS, PREVIEW_MAX, FULL_MAX, SWATCHES, newInk, state, buf
+   Expone: MAX_INKS, PREVIEW_MAX, FULL_MAX, SWATCHES, makeInk, newInk, defaultRecipe, state, buf
    Usa: CURVE_PRESETS */
 
 const MAX_INKS = 4;
@@ -13,15 +13,24 @@ const SWATCHES = [
 ];
 
 let uid = 0;
-const newInk = (name, color, preset) => ({
-  id: ++uid, name, color, preset,
-  points: CURVE_PRESETS[preset].pts.map(p => p.slice())
+// Tinta de la receta -> tinta en el estado (con id propio para la interfaz)
+const makeInk = ({ name, color, preset, points }) => ({ id: ++uid, name, color, preset, points: points.map(p => p.slice()) });
+const newInk = (name, color, preset) => makeInk({ name, color, preset, points: CURVE_PRESETS[preset].pts });
+
+// Receta inicial: lo que se usa la primera vez y al restablecer
+const defaultRecipe = () => ({
+  v: 1,
+  gray: { mode: "lum", r: 21.26, g: 71.52, b: 7.22 },
+  inks: [
+    { name: "Negro", color: "#231f20", preset: "luces", points: CURVE_PRESETS.luces.pts },
+    { name: "Naranja", color: "#e3742f", preset: "medios", points: CURVE_PRESETS.medios.pts }
+  ]
 });
 
 // Configuración que define el resultado
 const state = {
-  gray: { mode: "lum", r: 21.26, g: 71.52, b: 7.22 },
-  inks: [newInk("Negro", "#231f20", "luces"), newInk("Naranja", "#e3742f", "medios")],
+  gray: { ...defaultRecipe().gray },
+  inks: defaultRecipe().inks.map(makeInk),
   view: "result",          // "original" | "gray" | "result"
   name: "imagen-de-prueba"
 };

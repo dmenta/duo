@@ -1,7 +1,7 @@
 "use strict";
 /* Panel de tintas: tarjetas, color, nombre, curva.
    Expone: renderInks
-   Usa: state, SWATCHES, MAX_INKS, CURVE_PRESETS, newInk, attachCurve, scheduleRender, esc */
+   Usa: state, SWATCHES, MAX_INKS, CURVE_PRESETS, newInk, attachCurve, scheduleRender, commitHistory, esc */
 
 const inksEl = document.getElementById("inks");
 const addInkBtn = document.getElementById("addInk");
@@ -43,20 +43,24 @@ function bindInkCard(el, ink, j) {
     redraw(); scheduleRender();
   };
   colorIn.addEventListener("input", () => setColor(colorIn.value, "Personalizado"));
+  colorIn.addEventListener("change", commitHistory);  // al cerrar el selector
   hexIn.addEventListener("change", () => {
     let v = hexIn.value.trim(); if (!v.startsWith("#")) v = "#" + v;
     if (/^#[0-9a-f]{6}$/i.test(v)) setColor(v.toLowerCase(), "Personalizado"); else hexIn.value = ink.color;
+    commitHistory();
   });
   nameIn.addEventListener("input", () => { ink.name = nameIn.value; });
-  el.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => setColor(b.dataset.c, b.dataset.n)));
+  nameIn.addEventListener("change", commitHistory);  // al terminar de editar
+  el.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => { setColor(b.dataset.c, b.dataset.n); commitHistory(); }));
 
   presetSel.addEventListener("change", () => {
     const p = CURVE_PRESETS[presetSel.value]; if (!p) return;
     ink.preset = presetSel.value; ink.points = p.pts.map(q => q.slice());
     redraw(); scheduleRender();
+    commitHistory();
   });
 
-  el.querySelector(".rm").addEventListener("click", () => { state.inks.splice(j, 1); renderInks(); scheduleRender(); });
+  el.querySelector(".rm").addEventListener("click", () => { state.inks.splice(j, 1); renderInks(); scheduleRender(); commitHistory(); });
 }
 
 function renderInks() {
@@ -78,4 +82,5 @@ addInkBtn.addEventListener("click", () => {
   const sw = SWATCHES.find(s => !used.has(s[1])) || SWATCHES[0];
   state.inks.unshift(newInk(sw[0], sw[1], "campana"));  // la nueva queda primera
   renderInks(); scheduleRender();
+  commitHistory();
 });
