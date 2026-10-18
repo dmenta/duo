@@ -8,7 +8,7 @@ html = (src / "index.html").read_text()
 css = (src / "styles.css").read_text()
 js = (src / "scripts.js").read_text()
 
-link = '<link rel="stylesheet" href="styles.css">'
+link = '<link rel="stylesheet" href="styles.css" />'
 tag = '<script src="scripts.js"></script>'
 assert link in html and tag in html, "Faltan las referencias a styles.css o scripts.js"
 html = html.replace(link, "<style>\n" + css + "</style>").replace(tag, "<script>\n" + js + "</script>")

@@ -1,81 +1,121 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Duotono</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..750&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Duotono</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..750&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
-<div class="app">
-  <section class="stage-wrap">
-    <header class="top">
-      <div class="brand">
-        <h1>Duotono</h1>
-        <p>Pasá una foto a escala de grises y teñila con dos o más tintas planas.</p>
-      </div>
-      <div class="actions">
-        <input type="file" id="file" accept="image/*" class="sr">
-        <button class="btn primary" id="openBtn">Abrir imagen…</button>
-        <div class="dl" role="group" aria-label="Descargas">
-          <button id="expDuo"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10"/></svg><span class="lbl">Descargar duotono</span></button>
-          <button id="expGray"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10"/></svg><span class="lbl">Descargar gris</span></button>
-          <button id="expZip"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10"/></svg><span class="lbl">Descargar todo</span></button>
+  <div class="app">
+    <section class="stage-wrap">
+      <header class="top">
+        <div class="brand">
+          <h1>Duotono</h1>
+          <p>
+            Pasá una foto a escala de grises y teñila con dos o más tintas planas.
+          </p>
         </div>
-      </div>
-    </header>
-    <div class="viewbar">
-      <div class="seg" id="viewSeg" role="group" aria-label="Vista">
-        <button data-v="original" aria-pressed="false">Original</button>
-        <button data-v="gray" aria-pressed="false">Gris</button>
-        <button data-v="result" aria-pressed="true">Resultado</button>
-      </div>
-      <span class="status" id="status" role="status"></span>
-      <span class="meta" id="meta"></span>
-    </div>
-    <div class="stage" id="stage">
-      <canvas id="view" aria-label="Vista previa"></canvas>
-    </div>
-    <p class="hint">Podés arrastrar una imagen sobre la vista o pegarla con Ctrl+V.</p>
-  </section>
-
-  <aside class="panel">
-    <section class="block">
-      <div class="block-head"><span class="num">1</span><h2>Conversión a gris</h2></div>
-      <select id="grayMode" aria-label="Método de conversión">
-        <option value="lum">Luminancia perceptual (L*)</option>
-        <option value="mix">Mezclador de canales</option>
-      </select>
-      <div id="mixer" class="mix" hidden>
-        <div class="sublabel">Filtro</div>
-        <div class="filters" id="filters">
-          <button class="btn" data-mix="21.26,71.52,7.22">Neutro</button>
-          <button class="btn" data-mix="90,10,0">Rojo</button>
-          <button class="btn" data-mix="70,40,-10">Naranja</button>
-          <button class="btn" data-mix="10,90,0">Verde</button>
-          <button class="btn" data-mix="0,20,80">Azul</button>
+        <div class="actions">
+          <input type="file" id="file" accept="image/*" class="sr" />
+          <button class="btn primary" id="openBtn">Abrir imagen…</button>
+          <div class="dl" role="group" aria-label="Descargas">
+            <button id="expDuo">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10" />
+              </svg><span class="lbl">Descargar duotono</span>
+            </button>
+            <button id="expGray">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10" />
+              </svg><span class="lbl">Descargar gris</span>
+            </button>
+            <button id="expZip">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10" />
+              </svg><span class="lbl">Descargar todo</span>
+            </button>
+          </div>
         </div>
-        <div class="sublabel">Canales</div>
-        <div class="field"><label for="mr">R</label><input type="range" id="mr" min="-50" max="200" step="1"><output id="mro"></output></div>
-        <div class="field"><label for="mg">G</label><input type="range" id="mg" min="-50" max="200" step="1"><output id="mgo"></output></div>
-        <div class="field"><label for="mb">B</label><input type="range" id="mb" min="-50" max="200" step="1"><output id="mbo"></output></div>
-        <p class="hint" id="mixTotal"></p>
+      </header>
+      <div class="viewbar">
+        <div class="seg" id="viewSeg" role="group" aria-label="Vista">
+          <button data-v="original" aria-pressed="false">Original</button>
+          <button data-v="gray" aria-pressed="false">Gris</button>
+          <button data-v="result" aria-pressed="true">Resultado</button>
+        </div>
+        <span class="status" id="status" role="status"></span>
+        <span class="meta" id="meta"></span>
       </div>
+      <div class="stage" id="stage">
+        <canvas id="view" aria-label="Vista previa"></canvas>
+      </div>
+      <p class="hint">Podés arrastrar una imagen sobre la vista o pegarla con Ctrl+V.</p>
     </section>
 
-    <section class="block">
-      <div class="block-head"><span class="num">2</span><h2>Tintas</h2>
-        <button class="btn add" id="addInk"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>Agregar tinta</button>
-      </div>
-      <div id="inks"></div>
-    </section>
-  </aside>
-</div>
+    <aside class="panel">
+      <section class="block">
+        <div class="block-head">
+          <span class="num">1</span>
+          <h2>Conversión a gris</h2>
+        </div>
+        <select id="grayMode" aria-label="Método de conversión">
+          <option value="lum">Luminancia perceptual (L*)</option>
+          <option value="mix">Mezclador de canales</option>
+        </select>
+        <div id="mixer" class="mix" hidden>
+          <div class="sublabel">Filtro</div>
+          <div class="filters" id="filters">
+            <button class="btn" data-mix="21.26,71.52,7.22">Neutro</button>
+            <button class="btn" data-mix="90,10,0">Rojo</button>
+            <button class="btn" data-mix="70,40,-10">Naranja</button>
+            <button class="btn" data-mix="10,90,0">Verde</button>
+            <button class="btn" data-mix="0,20,80">Azul</button>
+          </div>
+          <div class="sublabel">Canales</div>
+          <div class="field">
+            <label for="mr">R</label><input type="range" id="mr" min="-50" max="200" step="1" /><output
+              id="mro"></output>
+          </div>
+          <div class="field">
+            <label for="mg">G</label><input type="range" id="mg" min="-50" max="200" step="1" /><output
+              id="mgo"></output>
+          </div>
+          <div class="field">
+            <label for="mb">B</label><input type="range" id="mb" min="-50" max="200" step="1" /><output
+              id="mbo"></output>
+          </div>
+          <p class="hint" id="mixTotal"></p>
+        </div>
+      </section>
 
-<script src="scripts.js"></script>
+      <section class="block">
+        <div class="block-head">
+          <span class="num">2</span>
+          <h2>Tintas</h2>
+          <button class="btn add" id="addInk">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" aria-hidden="true">
+              <path d="M8 3v10M3 8h10" />
+            </svg>Agregar tinta
+          </button>
+        </div>
+        <div id="inks"></div>
+      </section>
+    </aside>
+  </div>
+
+  <script src="scripts.js"></script>
 </body>
+
 </html>
