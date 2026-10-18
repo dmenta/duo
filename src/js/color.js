@@ -1,6 +1,7 @@
 "use strict";
 /* Matemática de color: sRGB <-> lineal, Y <-> L*, tono de tinta -> cobertura.
-   Expone: N, LIN, enc, hexToRgb, hexToLin, YfromL, LfromY, coverage, clamp01, contrastRatio */
+   Expone: N, LIN, enc, hexToRgb, hexToLin, YfromL, LfromY, coverage, clamp01, contrastRatio,
+           gradientLin, mixHex */
 
 // Resolución de las tablas de tono (niveles de gris internos)
 const N = 1024;
@@ -35,4 +36,24 @@ function contrastRatio(a, b) {
   const lum = h => { const [r, g, bl] = hexToLin(h); return 0.2126 * r + 0.7152 * g + 0.0722 * bl; };
   const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
+}
+
+// Degradé entre dos colores muestreado en `size` niveles. Se interpola en sRGB (como un
+// linear-gradient de CSS) y se devuelve en RGB lineal para mezclar tintas.
+function gradientLin(fromHex, toHex, size) {
+  const a = hexToRgb(fromHex), b = hexToRgb(toHex), lin = new Float32Array(size * 3);
+  for (let k = 0; k < size; k++) {
+    const t = size > 1 ? k / (size - 1) : 0;
+    for (let c = 0; c < 3; c++) {
+      const v = (a[c] + (b[c] - a[c]) * t) / 255;
+      lin[k * 3 + c] = v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    }
+  }
+  return lin;
+}
+
+// Color hex en la posición t (0..1) entre dos colores, interpolado en sRGB
+function mixHex(fromHex, toHex, t) {
+  const a = hexToRgb(fromHex), b = hexToRgb(toHex);
+  return "#" + a.map((v, c) => Math.round(v + (b[c] - v) * t).toString(16).padStart(2, "0")).join("");
 }

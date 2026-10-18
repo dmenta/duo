@@ -1,22 +1,43 @@
 "use strict";
 /* Panel de tintas: tarjetas, color, nombre, curva.
    Expone: renderInks
+   Expone también el modo de cada tinta: color fijo o degradé (color en blancos -> color2 en negros).
    Usa: state, NAME_MAX, SWATCHES, swatchName, cssColorToHex, setStatus, MAX_INKS, CURVE_PRESETS, newInk, mirrorX, mirrorY, attachCurve, scheduleRender, commitHistory, esc */
 
 const inksEl = document.getElementById("inks");
 const addInkBtn = document.getElementById("addInk");
 
+const hexField = (cls, value, label) => `<input type="text" class="hex ${cls}" value="${value}" spellcheck="false" autocomplete="off"
+      title="Hex, rgb(), hsl(), oklch() o cualquier color CSS" aria-label="${label}: hex, rgb(), hsl(), oklch() o cualquier color CSS">`;
+
 const inkCardHTML = ink => `
   <div class="ink-head">
-    <label class="swatch" title="Elegir color"><input type="color" value="${ink.color}" aria-label="Color de la tinta"></label>
+    <label class="swatch head-swatch" title="Elegir color"><input type="color" class="c-main" value="${ink.color}" aria-label="Color de la tinta"></label>
     <input type="text" class="name" value="${esc(ink.name)}" maxlength="${NAME_MAX}" aria-label="Nombre de la tinta">
-    <input type="text" class="hex" value="${ink.color}" spellcheck="false" autocomplete="off"
-      title="Hex, rgb(), hsl(), oklch() o cualquier color CSS" aria-label="Color: hex, rgb(), hsl(), oklch() o cualquier color CSS">
+    ${hexField("hex-main", ink.color, "Color de la tinta")}
     <button class="icon-btn rm" title="Quitar tinta" aria-label="Quitar tinta" ${state.inks.length < 2 ? "disabled" : ""}>
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4l8 8M12 4l-8 8"/></svg>
     </button>
   </div>
-  <div class="chips">${SWATCHES.map(([n, c]) => `<button class="chip" style="background:${c}" data-c="${c}" data-n="${n}" title="${n}" aria-label="${n}" aria-pressed="${c === ink.color}"></button>`).join("")}</div>
+  <div class="seg ink-mode" role="group" aria-label="Tipo de color">
+    <button data-mode="solid" aria-pressed="true">Color fijo</button>
+    <button data-mode="gradient" aria-pressed="false">Degradé</button>
+  </div>
+  <div class="grad-row" hidden>
+    <div class="grad-end" data-end="color">
+      <span class="end-label">Blancos</span>
+      <label class="swatch sm" title="Color en los blancos"><input type="color" class="c-end" aria-label="Color en los blancos"></label>
+      ${hexField("hex-end", "", "Color en los blancos")}
+    </div>
+    <span class="grad-arrow" aria-hidden="true">→</span>
+    <div class="grad-end" data-end="color2">
+      <span class="end-label">Negros</span>
+      <label class="swatch sm" title="Color en los negros"><input type="color" class="c-end" aria-label="Color en los negros"></label>
+      ${hexField("hex-end", "", "Color en los negros")}
+    </div>
+    <span class="grad-strip" aria-hidden="true"></span>
+  </div>
+  <div class="chips">${SWATCHES.map(([n, c]) => `<button class="chip" style="background:${c}" data-c="${c}" data-n="${n}" title="${n}" aria-label="${n}" aria-pressed="false"></button>`).join("")}</div>
   <div class="curve-box">
     <canvas class="curve" aria-label="Curva de la tinta. Hacé clic para agregar puntos, arrastralos para ajustar y doble clic para quitarlos."></canvas>
     <span class="readout" aria-hidden="true"></span>
@@ -43,48 +64,101 @@ function bindInkCard(el, ink, j) {
     if (ink.preset !== "custom") { ink.preset = "custom"; presetSel.value = "custom"; }
   });
 
-  const colorIn = el.querySelector("input[type=color]"), hexIn = el.querySelector(".hex"), nameIn = el.querySelector(".name");
+  const nameIn = el.querySelector(".name");
+  const headSwatch = el.querySelector(".head-swatch"), mainColor = el.querySelector(".c-main"), mainHex = el.querySelector(".hex-main");
+  const modeSeg = el.querySelector(".ink-mode"), gradRow = el.querySelector(".grad-row"), strip = el.querySelector(".grad-strip");
+  const ends = {};
+  el.querySelectorAll(".grad-end").forEach(e => { ends[e.dataset.end] = { box: e, color: e.querySelector(".c-end"), hex: e.querySelector(".hex-end") }; });
+  // Extremo al que se aplican los colores rápidos (en color fijo, siempre el único color)
+  let activeEnd = ink.color2 ? "color2" : "color";
 
-  // El nombre se edita solo con colores propios; los predefinidos llevan su nombre fijo
+  // El nombre se edita salvo en un color fijo predefinido, que lleva su nombre
   const syncName = () => {
-    const fixed = swatchName(ink.color) !== undefined;
+    const fixed = !ink.color2 && swatchName(ink.color) !== undefined;
     nameIn.value = ink.name;
     nameIn.readOnly = fixed;
     nameIn.tabIndex = fixed ? -1 : 0;
-    nameIn.title = fixed ? "Color predefinido. Para ponerle un nombre propio, elegí un color personalizado." : "";
+    nameIn.title = fixed ? "Color predefinido. Para ponerle un nombre propio, elegí un color personalizado o un degradé." : "";
   };
-  const setColor = c => {
-    const preset = swatchName(c);
-    const wasPreset = swatchName(ink.color) !== undefined;
-    ink.color = c; colorIn.value = c; hexIn.value = c; el.style.setProperty("--ink", c);
-    if (preset) ink.name = preset;                 // predefinido: su nombre
-    else if (wasPreset) ink.name = "Personalizado"; // de predefinido a propio
-    // propio a propio: se conserva el nombre que haya puesto
-    syncName(); syncChips(); redraw(); scheduleRender();
-  };
-  // Color rápido elegido: el que coincide con el color de la tinta
-  const syncChips = () => el.querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.c === ink.color)));
-  syncName();
+  // Color rápido marcado: el que coincide con el extremo activo
+  const syncChips = () => el.querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.c === ink[activeEnd])));
 
-  colorIn.addEventListener("input", () => setColor(colorIn.value));
-  colorIn.addEventListener("change", commitHistory);  // al cerrar el selector
-  hexIn.addEventListener("change", () => {
-    const c = cssColorToHex(hexIn.value);
-    if (c) setColor(c);
-    else {
-      if (hexIn.value.trim()) setStatus(`No reconozco «${hexIn.value.trim()}» como color. Probá con #e3742f, rgb(227, 116, 47) u oklch(…).`, "error");
-      hexIn.value = ink.color;
+  // Refleja colores y modo en toda la tarjeta
+  const syncColors = () => {
+    const grad = !!ink.color2;
+    el.classList.toggle("is-gradient", grad);
+    el.style.setProperty("--ink", ink.color);
+    el.style.setProperty("--ink-bar", grad ? `linear-gradient(${ink.color}, ${ink.color2})` : ink.color);
+    headSwatch.style.background = grad ? `linear-gradient(135deg, ${ink.color} 50%, ${ink.color2} 50%)` : "";
+    mainColor.disabled = grad; mainColor.value = ink.color; mainHex.value = ink.color;
+    gradRow.hidden = !grad;
+    if (grad) {
+      for (const k of ["color", "color2"]) {
+        ends[k].color.value = ink[k]; ends[k].hex.value = ink[k];
+        ends[k].color.parentElement.style.background = ink[k];  // cada extremo muestra su propio color
+        ends[k].box.classList.toggle("active", activeEnd === k);
+      }
+      strip.style.background = `linear-gradient(90deg, ${ink.color}, ${ink.color2})`;
     }
-    commitHistory();
-  });
-  hexIn.addEventListener("keydown", e => { if (e.key === "Enter") hexIn.blur(); });
+    modeSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === (grad ? "gradient" : "solid"))));
+    syncName(); syncChips();
+  };
+
+  // Cambiar un extremo. En color fijo valen las reglas de nombre de siempre.
+  const setEndColor = (end, c) => {
+    if (end === "color" && !ink.color2) {
+      const preset = swatchName(c), wasPreset = swatchName(ink.color) !== undefined;
+      if (preset) ink.name = preset;                 // predefinido: su nombre
+      else if (wasPreset) ink.name = "Personalizado"; // de predefinido a propio
+    }
+    ink[end] = c;
+    syncColors(); redraw(); scheduleRender();
+  };
+
+  const setMode = mode => {
+    if ((mode === "gradient") === !!ink.color2) return;
+    if (mode === "gradient") { ink.color2 = ink.color; activeEnd = "color2"; }  // arranca sin cambio visible
+    else {
+      delete ink.color2; activeEnd = "color";
+      const preset = swatchName(ink.color); if (preset) ink.name = preset;
+    }
+    syncColors(); redraw(); scheduleRender(); commitHistory();
+  };
+  modeSeg.addEventListener("click", e => { const b = e.target.closest("button"); if (b) setMode(b.dataset.mode); });
+
+  // Campo de color: acepta cualquier color CSS
+  const bindHex = (input, end) => {
+    input.addEventListener("change", () => {
+      const c = cssColorToHex(input.value);
+      if (c) setEndColor(end, c);
+      else {
+        if (input.value.trim()) setStatus(`No reconozco «${input.value.trim()}» como color. Probá con #e3742f, rgb(227, 116, 47) u oklch(…).`, "error");
+        input.value = ink[end];
+      }
+      commitHistory();
+    });
+    input.addEventListener("keydown", e => { if (e.key === "Enter") input.blur(); });
+  };
+  const bindPicker = (input, end) => {
+    input.addEventListener("input", () => setEndColor(end, input.value));
+    input.addEventListener("change", () => commitHistory());  // al cerrar el selector
+  };
+  bindPicker(mainColor, "color"); bindHex(mainHex, "color");
+  for (const k of ["color", "color2"]) {
+    bindPicker(ends[k].color, k); bindHex(ends[k].hex, k);
+    // Tocar un extremo lo vuelve el activo para los colores rápidos
+    ends[k].box.addEventListener("pointerdown", () => { activeEnd = k; syncColors(); });
+    ends[k].box.addEventListener("focusin", () => { if (activeEnd !== k) { activeEnd = k; syncColors(); } });
+  }
+
   nameIn.addEventListener("input", () => { ink.name = nameIn.value; });
   nameIn.addEventListener("change", () => {
     if (!nameIn.value.trim()) { ink.name = "Personalizado"; nameIn.value = ink.name; }
     commitHistory();  // al terminar de editar
   });
   nameIn.addEventListener("keydown", e => { if (e.key === "Enter") nameIn.blur(); });
-  el.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => { setColor(b.dataset.c); commitHistory(); }));
+  el.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => { setEndColor(activeEnd, b.dataset.c); commitHistory(); }));
+  syncColors();
 
   // Espejar: solo acciones; el resultado queda en los puntos de la curva
   const setPoints = pts => {
@@ -109,7 +183,6 @@ function renderInks() {
   state.inks.forEach((ink, j) => {
     const el = document.createElement("div");
     el.className = "ink";
-    el.style.setProperty("--ink", ink.color);
     el.innerHTML = inkCardHTML(ink);
     inksEl.appendChild(el);
     bindInkCard(el, ink, j);

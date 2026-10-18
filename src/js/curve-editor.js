@@ -1,7 +1,7 @@
 "use strict";
 /* Editor interactivo de curvas (canvas).
    Expone: attachCurve(canvas, ink, readout, onEdit) -> redraw
-   Usa: makeCurve, clamp01, contrastRatio, scheduleRender, commitHistory */
+   Usa: makeCurve, clamp01, contrastRatio, mixHex, scheduleRender, commitHistory */
 
 function attachCurve(canvas, ink, readout, onEdit) {
   const PAD = 12;
@@ -29,15 +29,21 @@ function attachCurve(canvas, ink, readout, onEdit) {
     x.fillStyle = gb; x.fillRect(X(0), PAD + ih + 3, iw, 5);
     // curva: si la tinta casi no contrasta con el fondo, lleva un contorno marcado
     const surface = cs.getPropertyValue("--surface").trim();
-    const lowContrast = contrastRatio(ink.color, surface) < 2.2;
+    const minContrast = ink.color2
+      ? Math.min(contrastRatio(ink.color, surface), contrastRatio(ink.color2, surface))
+      : contrastRatio(ink.color, surface);
+    const lowContrast = minContrast < 2.2;
+    // En degradé, el trazo recorre los colores de blancos (izquierda) a negros (derecha)
+    let stroke = ink.color;
+    if (ink.color2) { stroke = x.createLinearGradient(X(0), 0, X(1), 0); stroke.addColorStop(0, ink.color); stroke.addColorStop(1, ink.color2); }
     const f = makeCurve(ink.points);
     x.lineWidth = lowContrast ? 5 : 4; x.strokeStyle = text; x.globalAlpha = lowContrast ? .75 : .18; x.beginPath();
     for (let i = 0; i <= 120; i++) { const v = i / 120; i ? x.lineTo(X(v), Yp(f(v))) : x.moveTo(X(v), Yp(f(v))); }
-    x.stroke(); x.globalAlpha = 1; x.lineWidth = 2.25; x.strokeStyle = ink.color; x.stroke();
+    x.stroke(); x.globalAlpha = 1; x.lineWidth = 2.25; x.strokeStyle = stroke; x.stroke();
     // puntos
     ink.points.forEach((p, i) => {
       x.beginPath(); x.arc(X(p[0]), Yp(p[1]), i === drag ? 6 : 4.5, 0, Math.PI * 2);
-      x.fillStyle = ink.color; x.fill(); x.lineWidth = 1.5; x.strokeStyle = text; x.stroke();
+      x.fillStyle = ink.color2 ? mixHex(ink.color, ink.color2, p[0]) : ink.color; x.fill(); x.lineWidth = 1.5; x.strokeStyle = text; x.stroke();
     });
     canvas._map = { X, Yp, iw, ih };
   }

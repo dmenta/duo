@@ -1,7 +1,7 @@
 "use strict";
 /* Procesamiento: imagen -> niveles de gris -> tintas -> píxeles.
    Expone: grayWeights, computeIdx, inkLUT, buildLUT, grayLUT, paint, paintRegion
-   Usa: state, buf, N, LIN, enc, hexToLin, YfromL, LfromY, coverage, makeCurve */
+   Usa: state, buf, N, LIN, enc, hexToLin, gradientLin, YfromL, LfromY, coverage, makeCurve */
 
 function grayWeights() {
   return state.gray.mode === "lum"
@@ -31,9 +31,11 @@ function computeIdx(img) {
 }
 
 // Tabla tono -> color sRGB de `size` niveles para un conjunto de tintas,
-// simulando sobreimpresión multiplicativa en RGB lineal
+// simulando sobreimpresión multiplicativa en RGB lineal.
+// Una tinta en degradé (color2) cambia de color con el nivel: color en el blanco, color2 en el negro.
 function inkLUT(inks, size) {
-  const cols = inks.map(i => hexToLin(i.color));
+  const solid = inks.map(i => hexToLin(i.color));
+  const grads = inks.map(i => i.color2 ? gradientLin(i.color, i.color2, size) : null);
   const covs = inks.map(ink => {
     const f = makeCurve(ink.points), a = new Float32Array(size);
     for (let k = 0; k < size; k++) a[k] = coverage(f(k / (size - 1)));
@@ -42,9 +44,10 @@ function inkLUT(inks, size) {
   const lut = new Uint8Array(size * 3);
   for (let k = 0; k < size; k++) {
     let r = 1, g = 1, b = 1;
-    for (let j = 0; j < cols.length; j++) {
-      const c = covs[j][k], ink = cols[j];
-      r *= 1 - c * (1 - ink[0]); g *= 1 - c * (1 - ink[1]); b *= 1 - c * (1 - ink[2]);
+    for (let j = 0; j < inks.length; j++) {
+      const c = covs[j][k], gr = grads[j], s = solid[j];
+      const ir = gr ? gr[k * 3] : s[0], ig = gr ? gr[k * 3 + 1] : s[1], ib = gr ? gr[k * 3 + 2] : s[2];
+      r *= 1 - c * (1 - ir); g *= 1 - c * (1 - ig); b *= 1 - c * (1 - ib);
     }
     lut[k * 3] = enc(r); lut[k * 3 + 1] = enc(g); lut[k * 3 + 2] = enc(b);
   }

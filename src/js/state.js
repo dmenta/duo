@@ -19,9 +19,16 @@ const swatchName = color => (SWATCHES.find(s => s[1] === color.toLowerCase()) ||
 let uid = 0;
 // Tinta de la receta -> tinta en el estado (con id propio para la interfaz).
 // Si el color es predefinido, su nombre manda: corrige recetas con nombres desfasados.
-const makeInk = ({ name, color, preset, points }) => {
+// Una tinta en degradé lleva color2 (el color en los negros); su nombre siempre es libre.
+const makeInk = ({ name, color, color2, preset, points }) => {
   color = color.toLowerCase();
-  return { id: ++uid, name: (swatchName(color) ?? name).slice(0, NAME_MAX), color, preset, points: points.map(p => p.slice()) };
+  const ink = { id: ++uid, name: "", color };
+  if (color2) ink.color2 = color2.toLowerCase();
+  const fixedName = ink.color2 ? undefined : swatchName(color);
+  ink.name = (fixedName ?? name).slice(0, NAME_MAX);
+  ink.preset = preset;
+  ink.points = points.map(p => p.slice());
+  return ink;
 };
 const newInk = (name, color, preset) => makeInk({ name, color, preset, points: CURVE_PRESETS[preset].pts });
 
