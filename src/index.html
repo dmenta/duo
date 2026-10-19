@@ -54,8 +54,8 @@
           <path d="M1.75 11l3.5-3.5 3 3 2-2 4 4" />
           <circle cx="10.5" cy="5.75" r="1" />
         </svg>
-        <span class="file-name" id="fileName"></span>
-        <span class="file-dims" id="fileDims"></span>
+        <span class="file-name truncate" id="fileName"></span>
+        <span class="file-dims truncate tabular" id="fileDims"></span>
       </div>
       <div class="split dl-split">
         <div class="dl" role="group" aria-label="Descargas">
@@ -105,7 +105,7 @@
           </button>
           <button class="link-btn" id="sampleBtn" type="button">o probá con una imagen de ejemplo</button>
         </div>
-        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+        <div class="toast truncate" id="toast" role="status" aria-live="polite"></div>
       </div>
     </main>
 
@@ -115,7 +115,7 @@
           <span class="bar-label" id="recipeLabel">Receta</span>
           <button class="recipe-btn" aria-describedby="recipeLabel" id="recipeBtn" aria-haspopup="menu"
             aria-expanded="false" aria-controls="recipeList">
-            <span class="recipe-name" id="recipeName"></span>
+            <span class="recipe-name truncate" id="recipeName"></span>
             <span class="recipe-dot" aria-hidden="true"></span>
             <svg class="recipe-chev" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -156,7 +156,7 @@
         <input type="file" id="recipeImport" accept=".json,application/json" class="sr" />
       </div>
       <section class="block">
-        <div class="block-head"><span class="num">1</span>
+        <div class="block-head"><span class="num tabular">1</span>
           <h2>Conversión a gris</h2>
         </div>
         <select id="grayMode" aria-label="Método de conversión">
@@ -173,18 +173,18 @@
             <button class="btn" data-mix="0,20,80">Azul</button>
           </div>
           <div class="sublabel">Canales</div>
-          <div class="field"><label for="mr">R</label><input type="range" id="mr" min="-50" max="200" step="1" /><output
+          <div class="field"><label for="mr">R</label><input type="range" id="mr" min="-50" max="200" step="1" /><output class="tabular"
               id="mro"></output></div>
-          <div class="field"><label for="mg">G</label><input type="range" id="mg" min="-50" max="200" step="1" /><output
+          <div class="field"><label for="mg">G</label><input type="range" id="mg" min="-50" max="200" step="1" /><output class="tabular"
               id="mgo"></output></div>
-          <div class="field"><label for="mb">B</label><input type="range" id="mb" min="-50" max="200" step="1" /><output
+          <div class="field"><label for="mb">B</label><input type="range" id="mb" min="-50" max="200" step="1" /><output class="tabular"
               id="mbo"></output></div>
           <p class="hint" id="mixTotal"></p>
         </div>
       </section>
 
       <section class="block">
-        <div class="block-head"><span class="num">2</span>
+        <div class="block-head"><span class="num tabular">2</span>
           <h2>Tintas</h2>
           <button class="btn add" id="addInk"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"
               stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
@@ -200,7 +200,7 @@
   <template id="recipeRowTpl">
     <div class="rrow">
       <button role="menuitemradio" aria-checked="false" tabindex="-1" class="ritem">
-        <span class="rname"></span><span class="rstrip"></span>
+        <span class="rname truncate"></span><span class="rstrip"></span>
       </button>
       <span class="ricons">
         <button role="menuitem" tabindex="-1" class="ricon" data-op="rename" title="Renombrar">
@@ -219,7 +219,7 @@
       <div class="ink-head">
         <label class="swatch head-swatch" title="Elegir color"><input type="color" class="c-main" aria-label="Color de la tinta"></label>
         <input type="text" class="name" aria-label="Nombre de la tinta">
-        <input type="text" class="hex hex-main" spellcheck="false" autocomplete="off"
+        <input type="text" class="hex hex-main tabular" spellcheck="false" autocomplete="off"
           title="Hex, rgb(), hsl(), oklch() o cualquier color CSS" aria-label="Color de la tinta: hex, rgb(), hsl(), oklch() o cualquier color CSS">
         <button class="icon-btn rm" title="Quitar tinta" aria-label="Quitar tinta">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4l8 8M12 4l-8 8"/></svg>
@@ -233,14 +233,14 @@
         <div class="grad-end" data-end="color">
           <span class="end-label">Blancos</span>
           <label class="swatch sm" title="Color en los blancos"><input type="color" class="c-end" aria-label="Color en los blancos"></label>
-          <input type="text" class="hex hex-end" spellcheck="false" autocomplete="off"
+          <input type="text" class="hex hex-end tabular" spellcheck="false" autocomplete="off"
             title="Hex, rgb(), hsl(), oklch() o cualquier color CSS" aria-label="Color en los blancos: hex, rgb(), hsl(), oklch() o cualquier color CSS">
         </div>
         <span class="grad-arrow" aria-hidden="true">→</span>
         <div class="grad-end" data-end="color2">
           <span class="end-label">Negros</span>
           <label class="swatch sm" title="Color en los negros"><input type="color" class="c-end" aria-label="Color en los negros"></label>
-          <input type="text" class="hex hex-end" spellcheck="false" autocomplete="off"
+          <input type="text" class="hex hex-end tabular" spellcheck="false" autocomplete="off"
             title="Hex, rgb(), hsl(), oklch() o cualquier color CSS" aria-label="Color en los negros: hex, rgb(), hsl(), oklch() o cualquier color CSS">
         </div>
         <span class="grad-strip" aria-hidden="true"></span>
@@ -248,7 +248,7 @@
       <div class="chips"></div>
       <div class="curve-box">
         <canvas class="curve" aria-label="Curva de la tinta. Hacé clic para agregar puntos, arrastralos para ajustar y doble clic para quitarlos."></canvas>
-        <span class="readout" aria-hidden="true"></span>
+        <span class="readout tabular" aria-hidden="true"></span>
       </div>
       <div class="curve-foot">
         <span>Curva</span>
