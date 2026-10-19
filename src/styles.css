@@ -88,6 +88,23 @@ select {
 .tabular {
     font-variant-numeric: tabular-nums;
 }
+/* Fila: elementos alineados al centro vertical, separados 8px */
+.row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+/* Contenido centrado en ambos ejes. Para inline-flex, la regla propia redefine display */
+.center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+/* Ocupa el espacio libre de una fila flex y puede encogerse por debajo de su contenido */
+.grow {
+    flex: 1;
+    min-width: 0;
+}
 
 /* Layout: el panel ocupa toda la derecha; la toolbar va solo sobre el visor */
 .app {
@@ -114,18 +131,12 @@ select {
     grid-column: 1;
     grid-row: 1;
     height: var(--bar-h);
-    display: flex;
-    align-items: center;
-    gap: 8px;
     min-width: 0;
     padding: 0 16px;
     background: var(--chrome);
     border-bottom: 1px solid var(--line);
 }
 .brand {
-    display: flex;
-    align-items: center;
-    gap: 8px;
     flex: none;
 }
 .brand-mark {
@@ -171,8 +182,6 @@ select {
     display: flex;
     align-items: baseline;
     gap: 8px;
-    min-width: 0;
-    flex: 1;
     color: var(--muted);
 }
 .file-info svg {
@@ -338,9 +347,6 @@ select {
     min-height: 200px;
     user-select: none;
     -webkit-user-select: none; /* el doble clic y el arrastre no seleccionan texto */
-    display: flex;
-    align-items: center;
-    justify-content: center;
     overflow: hidden;
     padding: 18px;
 }
@@ -394,10 +400,7 @@ select {
 .empty {
     position: absolute;
     inset: 0;
-    display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
     gap: 12px;
     padding: 24px;
 }
@@ -425,8 +428,6 @@ select {
 }
 .dz-icon {
     display: inline-flex;
-    align-items: center;
-    justify-content: center;
     width: 56px;
     height: 56px;
     border-radius: 50%;
@@ -575,11 +576,6 @@ body:not(.no-image) .empty {
     border-bottom: 1px solid var(--line);
 }
 .bar-row {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    gap: 8px;
-    align-items: center;
 }
 .bar-label {
     flex: none;
@@ -591,8 +587,6 @@ body:not(.no-image) .empty {
 }
 .hbtn {
     display: inline-flex;
-    align-items: center;
-    justify-content: center;
     flex: none;
     width: 34px;
     height: 34px;
@@ -625,8 +619,6 @@ body:not(.no-image) .empty {
 /* Selector de receta: nombre, marca de cambios y tira de muestra */
 .recipe-btn {
     position: relative;
-    flex: 1;
-    min-width: 0;
     height: 34px;
     display: flex;
     align-items: center;
@@ -639,8 +631,6 @@ body:not(.no-image) .empty {
     text-align: left;
 }
 .recipe-name {
-    flex: 1;
-    min-width: 0;
     font-weight: 600;
     font-size: 14px;
 }
@@ -880,16 +870,11 @@ body:not(.no-image) .empty {
 }
 /* Títulos de bloque discretos: el panel es herramienta, la imagen es la protagonista */
 .block-head {
-    display: flex;
-    align-items: center;
-    gap: 8px;
     min-height: 30px;
     margin: 0 0 12px;
 }
 .block-head .num {
     display: inline-flex;
-    align-items: center;
-    justify-content: center;
     width: 20px;
     height: 20px;
     border-radius: 50%;
