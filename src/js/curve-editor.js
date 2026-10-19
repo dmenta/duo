@@ -1,11 +1,24 @@
-"use strict";
-/* Editor interactivo de curvas (canvas).
-   Expone: attachCurve(canvas, ink, readout, onEdit) -> redraw
-   Usa: makeCurve, clamp01, contrastRatio, mixHex, scheduleRender, commitHistory */
+/* Editor interactivo de curvas (canvas). */
+import { clamp01, contrastRatio, mixHex } from "./color.js";
+import { makeCurve } from "./curves.js";
+import { scheduleRender } from "./render.js";
+import { commitHistory } from "./history.js";
 
-function attachCurve(canvas, ink, readout, onEdit) {
+
+/**
+ * Conecta el editor de curva al canvas de una tarjeta de tinta. Edita ink.points en el lugar.
+ * @param {HTMLCanvasElement} canvas
+ * @param {import("./state.js").Ink} ink
+ * @param {HTMLElement} readout  etiqueta que muestra el punto bajo el cursor
+ * @param {() => void} onEdit    se llama en cada cambio de la curva
+ * @param {AbortSignal} signal   al abortarse suelta lo que vive fuera del canvas (tema, tamaño)
+ * @returns {() => void}  redibuja la curva
+ */
+export function attachCurve(canvas, ink, readout, onEdit, signal) {
   const PAD = 12;
   let drag = -1;
+  /** Escala del último dibujo (null si todavía no se dibujó) */
+  let map = null;
 
   function draw() {
     const r = canvas.getBoundingClientRect(), w = r.width, h = r.height, dpr = window.devicePixelRatio || 1;
@@ -34,8 +47,9 @@ function attachCurve(canvas, ink, readout, onEdit) {
       : contrastRatio(ink.color, surface);
     const lowContrast = minContrast < 2.2;
     // En degradé, el trazo recorre los colores de blancos (izquierda) a negros (derecha)
+    /** @type {string | CanvasGradient} */
     let stroke = ink.color;
-    if (ink.color2) { stroke = x.createLinearGradient(X(0), 0, X(1), 0); stroke.addColorStop(0, ink.color); stroke.addColorStop(1, ink.color2); }
+    if (ink.color2) { const g = x.createLinearGradient(X(0), 0, X(1), 0); g.addColorStop(0, ink.color); g.addColorStop(1, ink.color2); stroke = g; }
     const f = makeCurve(ink.points);
     x.lineWidth = lowContrast ? 5 : 4; x.strokeStyle = text; x.globalAlpha = lowContrast ? .75 : .18; x.beginPath();
     for (let i = 0; i <= 120; i++) { const v = i / 120; i ? x.lineTo(X(v), Yp(f(v))) : x.moveTo(X(v), Yp(f(v))); }
@@ -45,15 +59,15 @@ function attachCurve(canvas, ink, readout, onEdit) {
       x.beginPath(); x.arc(X(p[0]), Yp(p[1]), i === drag ? 6 : 4.5, 0, Math.PI * 2);
       x.fillStyle = ink.color2 ? mixHex(ink.color, ink.color2, p[0]) : ink.color; x.fill(); x.lineWidth = 1.5; x.strokeStyle = text; x.stroke();
     });
-    canvas._map = { X, Yp, iw, ih };
+    map = { X, Yp, iw, ih };
   }
 
   function toUnit(e) {
-    const r = canvas.getBoundingClientRect(), m = canvas._map;
+    const r = canvas.getBoundingClientRect(), m = map;
     return [clamp01((e.clientX - r.left - PAD) / m.iw), clamp01(1 - (e.clientY - r.top - PAD) / m.ih)];
   }
   function nearest(e) {
-    const r = canvas.getBoundingClientRect(), m = canvas._map; let best = -1, bd = 14 * 14;
+    const r = canvas.getBoundingClientRect(), m = map; let best = -1, bd = 14 * 14;
     ink.points.forEach((p, i) => {
       const dx = m.X(p[0]) - (e.clientX - r.left), dy = m.Yp(p[1]) - (e.clientY - r.top), d = dx * dx + dy * dy;
       if (d < bd) { bd = d; best = i; }
@@ -64,7 +78,7 @@ function attachCurve(canvas, ink, readout, onEdit) {
   const edited = () => { onEdit(); scheduleRender(); };
 
   canvas.addEventListener("pointerdown", e => {
-    if (!canvas._map) return;
+    if (!map) return;
     e.preventDefault(); canvas.setPointerCapture(e.pointerId);
     drag = nearest(e);
     if (drag < 0) {
@@ -76,7 +90,7 @@ function attachCurve(canvas, ink, readout, onEdit) {
     draw();
   });
   canvas.addEventListener("pointermove", e => {
-    if (!canvas._map) return;
+    if (!map) return;
     if (drag < 0) { const [ux] = toUnit(e); show(ux, makeCurve(ink.points)(ux)); return; }
     const [ux, uy] = toUnit(e), pts = ink.points, last = pts.length - 1;
     if (drag === 0) pts[0][1] = uy;
@@ -93,7 +107,11 @@ function attachCurve(canvas, ink, readout, onEdit) {
     const i = nearest(e);
     if (i > 0 && i < ink.points.length - 1) { ink.points.splice(i, 1); edited(); draw(); commitHistory(); }
   });
-  new ResizeObserver(draw).observe(canvas);
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+  // Los listeners del canvas se van con él; estos dos no, porque los retiene el navegador
+  // y a través de draw retienen la tarjeta entera aunque ya no esté en la página.
+  const ro = new ResizeObserver(draw);
+  ro.observe(canvas);
+  signal.addEventListener("abort", () => ro.disconnect(), { once: true });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw, { signal });
   return draw;
 }

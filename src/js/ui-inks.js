@@ -1,11 +1,15 @@
-"use strict";
 /* Panel de tintas: tarjetas, color, nombre, curva.
-   Expone: renderInks
-   Expone también el modo de cada tinta: color fijo o degradé (color en blancos -> color2 en negros).
-   Usa: state, NAME_MAX, SWATCHES, swatchName, cssColorToHex, setStatus, MAX_INKS, CURVE_PRESETS, newInk, mirrorX, mirrorY, attachCurve, scheduleRender, commitHistory, esc */
+   Incluye el modo de cada tinta: color fijo o degradé (color en blancos -> color2 en negros). */
+import { esc, setStatus, cssColorToHex, byId } from "./dom.js";
+import { mirrorX, mirrorY, CURVE_PRESETS } from "./curves.js";
+import { MAX_INKS, NAME_MAX, SWATCHES, swatchName, newInk, state } from "./state.js";
+import { scheduleRender } from "./render.js";
+import { attachCurve } from "./curve-editor.js";
+import { commitHistory } from "./history.js";
 
-const inksEl = document.getElementById("inks");
-const addInkBtn = document.getElementById("addInk");
+
+const inksEl = byId("inks");
+const addInkBtn = byId("addInk", HTMLButtonElement);
 
 const hexField = (cls, value, label) => `<input type="text" class="hex ${cls}" value="${value}" spellcheck="false" autocomplete="off"
       title="Hex, rgb(), hsl(), oklch() o cualquier color CSS" aria-label="${label}: hex, rgb(), hsl(), oklch() o cualquier color CSS">`;
@@ -56,13 +60,13 @@ const inkCardHTML = ink => `
     </button>
   </div>`;
 
-function bindInkCard(el, ink, j) {
+function bindInkCard(el, ink, j, signal) {
   const presetSel = el.querySelector(".preset");
   presetSel.value = ink.preset;
 
   const redraw = attachCurve(el.querySelector(".curve"), ink, el.querySelector(".readout"), () => {
     if (ink.preset !== "custom") { ink.preset = "custom"; presetSel.value = "custom"; }
-  });
+  }, signal);
 
   const nameIn = el.querySelector(".name");
   const headSwatch = el.querySelector(".head-swatch"), mainColor = el.querySelector(".c-main"), mainHex = el.querySelector(".hex-main");
@@ -178,14 +182,19 @@ function bindInkCard(el, ink, j) {
   el.querySelector(".rm").addEventListener("click", () => { state.inks.splice(j, 1); renderInks(); scheduleRender(); commitHistory(); });
 }
 
-function renderInks() {
+// Se aborta al volver a dibujar las tarjetas: suelta lo que las anteriores dejaron fuera de ellas
+let cardsLife = new AbortController();
+
+export function renderInks() {
+  cardsLife.abort();
+  cardsLife = new AbortController();
   inksEl.innerHTML = "";
   state.inks.forEach((ink, j) => {
     const el = document.createElement("div");
     el.className = "ink";
     el.innerHTML = inkCardHTML(ink);
     inksEl.appendChild(el);
-    bindInkCard(el, ink, j);
+    bindInkCard(el, ink, j, cardsLife.signal);
   });
   addInkBtn.disabled = state.inks.length >= MAX_INKS;
 }

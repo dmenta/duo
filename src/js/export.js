@@ -1,7 +1,9 @@
-"use strict";
-/* Exportación a PNG y ZIP a resolución completa.
-   Expone: save, slug
-   Usa: state, buf, computeIdx, buildLUT, paint, grayLUT, encodePNG, setStatus, attachMenu, JSZip (CDN), window.claude (si existe) */
+/* Exportación a PNG y ZIP a resolución completa. */
+import { setStatus, attachMenu, byId } from "./dom.js";
+import { state, buf } from "./state.js";
+import { computeIdx, buildLUT, grayLUT, paint } from "./process.js";
+import { encodePNG } from "./png.js";
+
 
 let downloads = null;
 if (window.claude && typeof window.claude.use === "function") {
@@ -37,10 +39,12 @@ async function exportPNG(mode) {
   const desc = color ? (hasAlpha ? "RGBA 32 bits" : "RGB 24 bits") : (hasAlpha ? "gris con alfa, 16 bits" : "gris 8 bits");
   return { blob, desc };
 }
-const slug = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "imagen";
+/** Texto -> nombre de archivo seguro: sin acentos, minúsculas y guiones. @param {string} s */
+export const slug = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "imagen";
 
 // En la página publicada usa la capacidad de descargas; fuera de ella, un enlace común.
-async function save(filename, blob, desc) {
+/** @param {string} filename @param {Blob} blob @param {string} [desc]  detalle para el aviso */
+export async function save(filename, blob, desc) {
   const done = `Guardado: ${filename}${desc ? ` (${desc})` : ""}`;
   if (downloads) {
     try { await downloads.save({ filename, data: blob }); setStatus(done); }
@@ -53,10 +57,10 @@ async function save(filename, blob, desc) {
 }
 
 /* ---------- Split button de descargas ---------- */
-const dlMain = document.getElementById("expDuo");
-const dlToggle = document.getElementById("expMenuBtn");
-const dlMenu = document.getElementById("expMenu");
-const dlItems = [...dlMenu.querySelectorAll('[role="menuitem"]')];
+const dlMain = byId("expDuo", HTMLButtonElement);
+const dlToggle = byId("expMenuBtn", HTMLButtonElement);
+const dlMenu = byId("expMenu");
+const dlItems = [...dlMenu.querySelectorAll(/** @type {'button'} */ ('[role="menuitem"]'))];
 const dlAll = [dlMain, dlToggle, ...dlItems];
 
 const EXPORTS = {

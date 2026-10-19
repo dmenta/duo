@@ -1,0 +1,13 @@
+{
+  "name": "duotono",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "python src/build.py",
+    "check": "tsc -p jsconfig.json"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.5",
+    "typescript": "5.8.3"
+  }
+}

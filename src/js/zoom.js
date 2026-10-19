@@ -1,16 +1,18 @@
-"use strict";
 /* Zoom con dos modos: ajustar a la vista o tamaño real (1 píxel de imagen = 1 píxel CSS).
-   Al 100% la imagen se desplaza arrastrando o con la rueda; doble clic alterna los modos.
-   Expone: zoom, zoomViewport, setZoom
-   Usa: buf, scheduleRender, fitCanvas */
+   Al 100% la imagen se desplaza arrastrando o con la rueda; doble clic alterna los modos. */
+import { byId } from "./dom.js";
+import { buf } from "./state.js";
+import { scheduleRender } from "./render.js";
+import { stage, fitCanvas } from "./ui-stage.js";
 
-const zoom = { mode: "fit", x: 0, y: 0 };  // x, y: esquina superior izquierda visible, en píxeles de imagen
-const zoomSeg = document.getElementById("zoomSeg");
-const zoomStage = document.getElementById("stage");
+
+export const zoom = { mode: "fit", x: 0, y: 0 };  // x, y: esquina superior izquierda visible, en píxeles de imagen
+const zoomSeg = byId("zoomSeg");
+const zoomStage = byId("stage");
 const clampTo = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 // Porción visible al 100%: tamaño del canvas y origen dentro de la imagen
-function zoomViewport() {
+export function zoomViewport() {
   const r = zoomStage.getBoundingClientRect();
   const W = Math.max(1, Math.floor(r.width)), H = Math.max(1, Math.floor(r.height));
   const iw = buf.full.w, ih = buf.full.h;
@@ -22,7 +24,7 @@ function zoomViewport() {
 }
 
 // focus (opcional): { ix, iy, sx, sy } = punto de la imagen que debe quedar bajo el punto sx, sy del escenario
-function setZoom(mode, focus) {
+export function setZoom(mode, focus) {
   zoom.mode = mode;
   if (mode === "actual" && buf.full) {
     const r = zoomStage.getBoundingClientRect(), iw = buf.full.w, ih = buf.full.h;
@@ -37,13 +39,13 @@ function setZoom(mode, focus) {
   scheduleRender();
 }
 
-zoomSeg.addEventListener("click", e => { const b = e.target.closest("button"); if (b) setZoom(b.dataset.z); });
+zoomSeg.addEventListener("click", e => { const b = /** @type {Element} */ (e.target).closest("button"); if (b) setZoom(b.dataset.z); });
 
 // Doble clic: alterna; al pasar a 100% conserva bajo el cursor el punto clickeado
 zoomStage.addEventListener("dblclick", e => {
-  if (!buf.full || e.target.closest("button")) return;
+  if (!buf.full || /** @type {Element} */ (e.target).closest("button")) return;
   if (zoom.mode === "actual") { setZoom("fit"); return; }
-  const c = document.getElementById("view").getBoundingClientRect(), s = zoomStage.getBoundingClientRect();
+  const c = byId("view", HTMLCanvasElement).getBoundingClientRect(), s = zoomStage.getBoundingClientRect();
   if (e.clientX < c.left || e.clientX > c.right || e.clientY < c.top || e.clientY > c.bottom) return;
   setZoom("actual", {
     ix: (e.clientX - c.left) / c.width * buf.full.w, iy: (e.clientY - c.top) / c.height * buf.full.h,
@@ -54,7 +56,7 @@ zoomStage.addEventListener("dblclick", e => {
 // Desplazamiento al 100%: arrastrar o rueda
 let panning = null;
 zoomStage.addEventListener("pointerdown", e => {
-  if (zoom.mode !== "actual" || !buf.full || e.button !== 0 || e.target.closest("button")) return;
+  if (zoom.mode !== "actual" || !buf.full || e.button !== 0 || /** @type {Element} */ (e.target).closest("button")) return;
   panning = { px: e.clientX, py: e.clientY, x: zoom.x, y: zoom.y };
   zoomStage.setPointerCapture(e.pointerId);
   zoomStage.classList.add("panning");

@@ -1,17 +1,20 @@
-"use strict";
 /* Diálogos modales propios (prompt y confirm del navegador suelen estar bloqueados
-   en páginas embebidas).
-   Expone: askText({ title, label, value, max, confirm }) -> Promise<string | null>
-           askConfirm({ title, message, confirm, danger }) -> Promise<boolean> */
+   en páginas embebidas). */
+import { byId } from "./dom.js";
 
-const dlg = document.getElementById("dlg");
-const dlgTitle = document.getElementById("dlgTitle");
-const dlgMsg = document.getElementById("dlgMsg");
-const dlgField = document.getElementById("dlgField");
-const dlgLabel = document.getElementById("dlgLabel");
-const dlgInput = document.getElementById("dlgInput");
-const dlgOk = document.getElementById("dlgOk");
+const dlg = byId("dlg", HTMLDialogElement);
+const dlgTitle = byId("dlgTitle");
+const dlgMsg = byId("dlgMsg");
+const dlgField = byId("dlgField");
+const dlgLabel = byId("dlgLabel");
+const dlgInput = byId("dlgInput", HTMLInputElement);
+const dlgOk = byId("dlgOk", HTMLButtonElement);
 
+/**
+ * @param {{ title: string, message?: string, input?: { label: string, value?: string, max?: number } | null,
+ *           confirm?: string, danger?: boolean }} opts
+ * @returns {Promise<any>}
+ */
 function openDialog({ title, message = "", input = null, confirm = "Aceptar", danger = false }) {
   return new Promise(resolve => {
     dlgTitle.textContent = title;
@@ -31,5 +34,15 @@ function openDialog({ title, message = "", input = null, confirm = "Aceptar", da
     if (input) { dlgInput.focus(); dlgInput.select(); } else dlgOk.focus();
   });
 }
-const askText = ({ title, label, value, max, confirm }) => openDialog({ title, confirm, input: { label, value, max } });
-const askConfirm = ({ title, message, confirm, danger }) => openDialog({ title, message, confirm, danger });
+/**
+ * Pide un texto. Devuelve el texto sin espacios en los extremos, o null si se cancela o queda vacío.
+ * @param {{ title: string, label: string, value?: string, max?: number, confirm?: string }} opts
+ * @returns {Promise<string | null>}
+ */
+export const askText = ({ title, label, value, max, confirm }) => openDialog({ title, confirm, input: { label, value, max } });
+/**
+ * Pide confirmación. danger pinta el botón de aceptar como acción destructiva.
+ * @param {{ title: string, message: string, confirm?: string, danger?: boolean }} opts
+ * @returns {Promise<boolean>}
+ */
+export const askConfirm = ({ title, message, confirm, danger }) => openDialog({ title, message, confirm, danger });

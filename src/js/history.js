@@ -1,23 +1,28 @@
-"use strict";
+/** @import { InkData, Point } from "./state.js" */
 /* Receta (configuración de gris y tintas), historial de deshacer/rehacer y guardado local.
    Cada entrada del historial es una copia completa de la receta más cuál receta de la
-   biblioteca estaba activa: no hace falta programar la operación inversa de cada comando.
-   Expone: getRecipe, applyRecipe, normalizeRecipe, validRecipe, commitHistory, setActiveRecipe,
-           undo, redo, initHistory
-   Usa: state, makeInk, CURVE_PRESETS, MAX_INKS, renderInks, syncGrayUI, recomputeGray,
-        syncRecipeUI, IS_MAC */
+   biblioteca estaba activa: no hace falta programar la operación inversa de cada comando. */
+import { IS_MAC, byId } from "./dom.js";
+import { CURVE_PRESETS } from "./curves.js";
+import { MAX_INKS, makeInk, state } from "./state.js";
+import { recomputeGray } from "./loader.js";
+import { renderInks } from "./ui-inks.js";
+import { syncGrayUI } from "./ui-gray.js";
+import { syncRecipeUI } from "./recipes.js";
+
 
 const STORAGE_KEY = "duotono:receta:v1";   // última receta en uso
 const ACTIVE_KEY = "duotono:activa:v1";    // receta de la biblioteca activa
 const HISTORY_MAX = 100;
 
 // Datos de una tinta para la receta, con claves en orden fijo (color2 solo si es degradé)
+/** @param {InkData} ink @returns {InkData} */
 const inkData = ({ name, color, color2, preset, points }) =>
-  color2 ? { name, color, color2, preset, points: points.map(p => p.slice()) }
-         : { name, color, preset, points: points.map(p => p.slice()) };
+  color2 ? { name, color, color2, preset, points: points.map(p => /** @type {Point} */ (p.slice())) }
+         : { name, color, preset, points: points.map(p => /** @type {Point} */ (p.slice())) };
 
 // Receta actual, con claves en orden fijo para poder comparar recetas por su JSON
-function getRecipe() {
+export function getRecipe() {
   const g = state.gray;
   return {
     v: 1,
@@ -27,7 +32,7 @@ function getRecipe() {
 }
 
 // Receta de cualquier origen -> misma forma que getRecipe (nombres y colores normalizados)
-function normalizeRecipe(r) {
+export function normalizeRecipe(r) {
   const g = r.gray;
   return {
     v: 1,
@@ -36,7 +41,7 @@ function normalizeRecipe(r) {
   };
 }
 
-function applyRecipe(r) {
+export function applyRecipe(r) {
   const g = r.gray;
   state.gray = { mode: g.mode, r: g.r, g: g.g, b: g.b };
   state.inks = r.inks.map(makeInk);
@@ -46,7 +51,7 @@ function applyRecipe(r) {
 }
 
 // Comprueba que una receta (guardada, importada…) tenga una forma válida
-function validRecipe(r) {
+export function validRecipe(r) {
   try {
     const isHex = c => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c);
     const g = r && r.gray;
@@ -82,8 +87,8 @@ function loadSaved() {
 
 /* ---------- Historial ---------- */
 const hist = { stack: [], index: -1 };
-const undoBtn = document.getElementById("undoBtn");
-const redoBtn = document.getElementById("redoBtn");
+const undoBtn = byId("undoBtn", HTMLButtonElement);
+const redoBtn = byId("redoBtn", HTMLButtonElement);
 
 const currentEntry = () => ({ recipe: getRecipe(), active: state.active ? { ...state.active } : null });
 const sameEntry = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -94,7 +99,7 @@ function syncHistoryUI() {
 }
 
 // Registrar el estado actual al terminar un gesto. Si nada cambió, no agrega entrada.
-function commitHistory() {
+export function commitHistory() {
   const e = currentEntry();
   if (hist.index >= 0 && sameEntry(hist.stack[hist.index], e)) { syncRecipeUI(); return; }
   hist.stack.splice(hist.index + 1);
@@ -107,7 +112,7 @@ function commitHistory() {
 }
 
 // Cambiar la receta activa sin agregar un paso (por ejemplo, al guardar con otro nombre)
-function setActiveRecipe(ref) {
+export function setActiveRecipe(ref) {
   state.active = ref ? { ...ref } : null;
   if (hist.index >= 0) hist.stack[hist.index] = { ...hist.stack[hist.index], active: state.active };
   persist(currentEntry());
@@ -126,7 +131,7 @@ function undo() { if (hist.index > 0) { hist.index--; restoreCurrent(); } }
 function redo() { if (hist.index < hist.stack.length - 1) { hist.index++; restoreCurrent(); } }
 
 // La primera vez arranca con la receta de fábrica por defecto
-function initHistory(defaultRef) {
+export function initHistory(defaultRef) {
   const saved = loadSaved();
   if (saved) { state.active = saved.active; applyRecipe(saved.recipe); }
   else { state.active = defaultRef; syncGrayUI(); renderInks(); }
@@ -146,7 +151,7 @@ window.addEventListener("keydown", e => {
   if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
   if (document.querySelector("dialog[open]")) return;
   // En campos de texto, el navegador maneja su propio deshacer
-  if (e.target.closest && e.target.closest('input[type="text"], input:not([type]), textarea, [contenteditable]')) return;
+  if (e.target instanceof Element && e.target.closest('input[type="text"], input:not([type]), textarea, [contenteditable]')) return;
   const k = e.key.toLowerCase();
   if (k === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
   else if ((k === "z" && e.shiftKey) || k === "y") { e.preventDefault(); redo(); }

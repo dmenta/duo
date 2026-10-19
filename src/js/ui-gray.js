@@ -1,21 +1,23 @@
-"use strict";
-/* Panel de conversión a gris: método, filtros y mezclador de canales.
-   Expone: syncMixer, syncGrayUI
-   Usa: state, recomputeGray, commitHistory */
+/* Panel de conversión a gris: método, filtros y mezclador de canales. */
+import { byId } from "./dom.js";
+import { state } from "./state.js";
+import { recomputeGray } from "./loader.js";
+import { commitHistory } from "./history.js";
 
-const grayMode = document.getElementById("grayMode");
-const mixer = document.getElementById("mixer");
-const mixIns = { r: document.getElementById("mr"), g: document.getElementById("mg"), b: document.getElementById("mb") };
+
+const grayMode = byId("grayMode", HTMLSelectElement);
+const mixer = byId("mixer");
+const mixIns = { r: byId("mr", HTMLInputElement), g: byId("mg", HTMLInputElement), b: byId("mb", HTMLInputElement) };
 const filterBtns = [...document.querySelectorAll("#filters [data-mix]")];
 const parseMix = b => b.dataset.mix.split(",").map(Number);
 
 function syncMixer() {
   for (const k of ["r", "g", "b"]) {
     mixIns[k].value = state.gray[k];
-    document.getElementById("m" + k + "o").textContent = Math.round(state.gray[k]) + "%";
+    byId("m" + k + "o").textContent = Math.round(state.gray[k]) + "%";
   }
   const t = state.gray.r + state.gray.g + state.gray.b;
-  document.getElementById("mixTotal").textContent = `Total ${Math.round(t)}%. Cerca de 100% conserva el brillo general.`;
+  byId("mixTotal").textContent = `Total ${Math.round(t)}%. Cerca de 100% conserva el brillo general.`;
   filterBtns.forEach(b => {
     const [r, g, bl] = parseMix(b);
     const on = Math.abs(r - state.gray.r) < 0.6 && Math.abs(g - state.gray.g) < 0.6 && Math.abs(bl - state.gray.b) < 0.6;
@@ -24,14 +26,14 @@ function syncMixer() {
 }
 
 // Refleja state.gray en todos los controles (al iniciar, deshacer o restablecer)
-function syncGrayUI() {
+export function syncGrayUI() {
   grayMode.value = state.gray.mode;
   mixer.hidden = state.gray.mode !== "mix";
   syncMixer();
 }
 
 grayMode.addEventListener("change", () => {
-  state.gray.mode = grayMode.value;
+  state.gray.mode = /** @type {"lum" | "mix"} */ (grayMode.value);
   mixer.hidden = grayMode.value !== "mix";
   recomputeGray();
   commitHistory();

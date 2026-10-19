@@ -1,13 +1,25 @@
-"use strict";
-/* Utilidades de DOM.
-   Expone: esc, setStatus(texto, "info" | "error"), IS_MAC, cssColorToHex, attachMenu */
+/* Utilidades de DOM. */
 
-const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+export const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/**
+ * Elemento por id, con el tipo esperado. Falla enseguida si no existe o es de otro tipo,
+ * en vez de dar un error confuso más adelante.
+ * @template {HTMLElement} [T=HTMLElement]
+ * @param {string} id
+ * @param {{ new (): T }} [type]  p. ej. HTMLInputElement
+ * @returns {T}
+ */
+export function byId(id, type) {
+  const el = document.getElementById(id);
+  if (!(el instanceof (type ?? HTMLElement))) throw new Error(`#${id}: no existe o no es ${(type ?? HTMLElement).name}`);
+  return /** @type {T} */ (el);
+}
 
 // Aviso flotante: desaparece solo; los errores quedan más tiempo. Texto vacío lo oculta.
-const toastEl = document.getElementById("toast");
+const toastEl = byId("toast");
 let toastTimer = 0;
-function setStatus(text, kind = "info") {
+export function setStatus(text, kind = "info") {
   clearTimeout(toastTimer);
   if (!text) { toastEl.classList.remove("on"); return; }
   toastEl.textContent = text;
@@ -16,13 +28,13 @@ function setStatus(text, kind = "info") {
   toastTimer = setTimeout(() => toastEl.classList.remove("on"), kind === "error" ? 7000 : 3500);
 }
 
-const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+export const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 
 // Cualquier color CSS -> "#rrggbb", usando el intérprete del navegador:
 // hex (con o sin #, abreviado), rgb(), hsl(), oklch(), nombres... También "255, 0, 0".
 // Los colores fuera de sRGB se ajustan al más cercano. Devuelve null si no es un color válido.
 const colorProbe = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
-function cssColorToHex(input) {
+export function cssColorToHex(input) {
   let s = input.trim();
   if (/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.test(s)) {
     s = s.replace("#", "");
@@ -42,12 +54,18 @@ function cssColorToHex(input) {
 
 // Menú desplegable accesible: abre con clic o flecha abajo, se recorre con flechas,
 // Inicio y Fin, se cierra con Escape, Tab, clic afuera o al elegir una opción.
-function attachMenu(toggle, menu, { onOpen } = {}) {
-  const items = () => [...menu.querySelectorAll('[role^="menuitem"]:not([disabled])')];
+/**
+ * @param {HTMLElement} toggle  botón que abre y cierra el menú
+ * @param {HTMLElement} menu    contenedor de los [role="menuitem"]
+ * @param {{ onOpen?: () => void }} [options]  onOpen corre justo antes de mostrarlo
+ * @returns {{ open: (focusFirst: boolean) => void, close: (returnFocus: boolean) => void }}
+ */
+export function attachMenu(toggle, menu, { onOpen } = {}) {
+  const items = () => /** @type {HTMLElement[]} */ ([...menu.querySelectorAll('[role^="menuitem"]:not([disabled])')]);
   const open = focusFirst => {
     if (onOpen) onOpen();
     menu.hidden = false; toggle.setAttribute("aria-expanded", "true");
-    if (focusFirst) (menu.querySelector('[aria-checked="true"]:not([disabled])') || items()[0])?.focus();
+    if (focusFirst) (/** @type {HTMLElement} */ (menu.querySelector('[aria-checked="true"]:not([disabled])')) || items()[0])?.focus();
   };
   const close = returnFocus => {
     if (menu.hidden) return;
@@ -60,7 +78,7 @@ function attachMenu(toggle, menu, { onOpen } = {}) {
     else if (e.key === "Escape" && !menu.hidden) { e.preventDefault(); close(false); }  // abierto con el mouse
   });
   menu.addEventListener("keydown", e => {
-    const list = items(), n = list.length, i = list.indexOf(document.activeElement);
+    const list = items(), n = list.length, i = list.indexOf(/** @type {HTMLElement} */ (document.activeElement));
     if (e.key === "Escape") { e.preventDefault(); close(true); return; }
     if (e.key === "Tab") { close(false); return; }
     if (!n) return;
@@ -70,7 +88,10 @@ function attachMenu(toggle, menu, { onOpen } = {}) {
     else if (e.key === "End") { e.preventDefault(); list[n - 1].focus(); }
   });
   // Las acciones de cada opción corren primero (en el botón); después se cierra
-  menu.addEventListener("click", e => { if (e.target.closest('[role^="menuitem"]')) close(false); });
-  document.addEventListener("pointerdown", e => { if (!menu.contains(e.target) && !toggle.contains(e.target)) close(false); });
+  menu.addEventListener("click", e => { if (/** @type {Element} */ (e.target).closest('[role^="menuitem"]')) close(false); });
+  document.addEventListener("pointerdown", e => {
+    const t = /** @type {Node} */ (e.target);
+    if (!menu.contains(t) && !toggle.contains(t)) close(false);
+  });
   return { open, close };
 }

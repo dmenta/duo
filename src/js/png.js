@@ -1,8 +1,4 @@
-"use strict";
 /* Codificador PNG con el tipo de color justo (canvas.toBlob siempre da RGBA de 32 bits).
-   Expone: encodePNG(w, h, channels, fillRow) -> Promise<Blob | null>
-     channels: 1 gris · 2 gris+alfa · 3 RGB · 4 RGBA (8 bits por canal)
-     fillRow(y, row): escribe en `row` (Uint8Array de w*channels) la fila y
    Devuelve null si el navegador no tiene CompressionStream. */
 
 const PNG_COLOR_TYPE = { 1: 0, 2: 4, 3: 2, 4: 6 };
@@ -55,7 +51,14 @@ function filterRow(cur, prev, bpp, out) {
   }
 }
 
-async function encodePNG(w, h, channels, fillRow) {
+/**
+ * @param {number} w
+ * @param {number} h
+ * @param {number} channels  1 gris · 2 gris+alfa · 3 RGB · 4 RGBA (8 bits por canal)
+ * @param {(y: number, row: Uint8Array) => void} fillRow  escribe en `row` (w*channels bytes) la fila y
+ * @returns {Promise<Blob | null>}  null si el navegador no tiene CompressionStream
+ */
+export async function encodePNG(w, h, channels, fillRow) {
   if (typeof CompressionStream === "undefined") return null;
   const rowLen = w * channels;
   let cur = new Uint8Array(rowLen), prev = new Uint8Array(rowLen);

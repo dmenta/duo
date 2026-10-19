@@ -1,15 +1,19 @@
-"use strict";
 /* Dibujo de la vista.
    - Ajustar: se pinta la vista previa reducida y el canvas se escala a la vista.
-   - 100%: se pinta solo la porción visible, desde la imagen a resolución completa.
-   Expone: scheduleRender, render
-   Usa: state, buf, buildLUT, paint, paintRegion, zoom, zoomViewport, syncViewSeg, syncRecipeUI */
+   - 100%: se pinta solo la porción visible, desde la imagen a resolución completa. */
+import { byId } from "./dom.js";
+import { state, buf } from "./state.js";
+import { buildLUT, paint, paintRegion } from "./process.js";
+import { syncViewSeg } from "./ui-stage.js";
+import { zoom, zoomViewport } from "./zoom.js";
+import { syncRecipeUI } from "./recipes.js";
 
-const viewCanvas = document.getElementById("view");
+
+const viewCanvas = byId("view", HTMLCanvasElement);
 const vctx = viewCanvas.getContext("2d");
 
 let rafPending = false;
-function scheduleRender() {
+export function scheduleRender() {
   if (rafPending) return;
   rafPending = true;
   requestAnimationFrame(() => { rafPending = false; render(); });

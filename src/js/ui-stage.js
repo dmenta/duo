@@ -1,30 +1,33 @@
-"use strict";
-/* Zona de la imagen: selector de vista, abrir, arrastrar y pegar.
-   Expone: syncViewSeg, setHasImage, fitCanvas
-   Usa: state, buf, zoom, scheduleRender, loadFile, sampleImage, IS_MAC */
+/* Zona de la imagen: selector de vista, abrir, arrastrar y pegar. */
+import { IS_MAC, byId } from "./dom.js";
+import { state, buf } from "./state.js";
+import { scheduleRender } from "./render.js";
+import { loadFile, sampleImage } from "./loader.js";
+import { zoom } from "./zoom.js";
 
-const viewSeg = document.getElementById("viewSeg");
-function syncViewSeg() {
+
+const viewSeg = byId("viewSeg");
+export function syncViewSeg() {
   viewSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.view)));
 }
 viewSeg.addEventListener("click", e => {
-  const b = e.target.closest("button");
-  if (b) { state.view = b.dataset.v; scheduleRender(); }
+  const b = /** @type {Element} */ (e.target).closest("button");
+  if (b) { state.view = /** @type {import("./state.js").ViewMode} */ (b.dataset.v); scheduleRender(); }
 });
 
-const fileIn = document.getElementById("file");
-const stage = document.getElementById("stage");
-document.getElementById("openBtn").addEventListener("click", () => fileIn.click());
+const fileIn = byId("file", HTMLInputElement);
+export const stage = byId("stage");
+byId("openBtn", HTMLButtonElement).addEventListener("click", () => fileIn.click());
 const pasteKey = IS_MAC ? "⌘V" : "Ctrl+V";
-document.getElementById("openBtn").title = `Abrir imagen… También podés arrastrarla a la vista o pegarla con ${pasteKey}`;
-document.getElementById("dzSub").textContent = `También podés pegarla con ${pasteKey} · JPG, PNG o WebP`;
-document.getElementById("dropzone").addEventListener("click", () => fileIn.click());
-document.getElementById("sampleBtn").addEventListener("click", () => sampleImage());
+byId("openBtn", HTMLButtonElement).title = `Abrir imagen… También podés arrastrarla a la vista o pegarla con ${pasteKey}`;
+byId("dzSub").textContent = `También podés pegarla con ${pasteKey} · JPG, PNG o WebP`;
+byId("dropzone", HTMLButtonElement).addEventListener("click", () => fileIn.click());
+byId("sampleBtn", HTMLButtonElement).addEventListener("click", () => sampleImage());
 
 // Con o sin imagen: muestra la zona de carga o el visor, y habilita las descargas.
 // El tamaño del canvas no se toca acá: lo resuelven setZoom (al cargar) y el ResizeObserver.
-const dlButtons = ["expDuo", "expMenuBtn"].map(id => document.getElementById(id));
-function setHasImage(has) {
+const dlButtons = ["expDuo", "expMenuBtn"].map(id => byId(id, HTMLButtonElement));
+export function setHasImage(has) {
   document.body.classList.toggle("no-image", !has);
   dlButtons.forEach(b => b.disabled = !has);
 }
@@ -32,8 +35,8 @@ function setHasImage(has) {
 // Ajustar a la vista: el canvas ocupa el mayor tamaño posible dentro del escenario,
 // conservando la proporción (también agranda las imágenes chicas)
 const FIT_INSET = { top: 60, right: 32, bottom: 24, left: 32 };
-const viewEl = document.getElementById("view");
-function fitCanvas() {
+const viewEl = byId("view", HTMLCanvasElement);
+export function fitCanvas() {
   if (!buf.full) return;
   if (zoom.mode === "actual") { scheduleRender(); return; }  // al 100% el tamaño lo define la porción visible
   const r = stage.getBoundingClientRect();

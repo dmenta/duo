@@ -1,10 +1,13 @@
-"use strict";
 /* Biblioteca de recetas: predeterminadas (solo lectura) y propias (guardadas en el navegador).
-   Exportar e importar en archivos .json.
-   Expone: BUILTIN_RECIPES, DEFAULT_REF, syncRecipeUI
-   Usa: state, defaultRecipe, CURVE_PRESETS, getRecipe, applyRecipe, normalizeRecipe, validRecipe,
-        commitHistory, setActiveRecipe, inkLUT, setStatus, esc, attachMenu, askText, askConfirm,
-        save, slug, IS_MAC */
+   Exportar e importar en archivos .json. */
+import { esc, setStatus, IS_MAC, attachMenu, byId } from "./dom.js";
+import { CURVE_PRESETS } from "./curves.js";
+import { defaultRecipe, state } from "./state.js";
+import { inkLUT } from "./process.js";
+import { slug, save } from "./export.js";
+import { askText, askConfirm } from "./dialogs.js";
+import { getRecipe, normalizeRecipe, applyRecipe, validRecipe, commitHistory, setActiveRecipe } from "./history.js";
+
 
 const LIBRARY_KEY = "duotono:recetas:v1";
 const RECIPE_NAME_MAX = 40;
@@ -19,7 +22,7 @@ const BUILTIN_RECIPES = [
   { id: "negro-rojo", name: "Negro y rojo", recipe: withInks([presetInk("Negro", "#231f20", "luces"), presetInk("Rojo", "#c8102e", "medios")]) },
   { id: "azul-magenta", name: "Azul y magenta", recipe: withInks([presetInk("Azul", "#1f4e9c", "lineal"), presetInk("Magenta", "#c4006e", "campana")]) }
 ].map(b => ({ ...b, recipe: normalizeRecipe(b.recipe) }));
-const DEFAULT_REF = { kind: "builtin", id: "negro-naranja" };
+export const DEFAULT_REF = { kind: "builtin", id: "negro-naranja" };
 
 /* ---------- Biblioteca propia ---------- */
 function loadLibrary() {
@@ -58,21 +61,21 @@ function stripCSS(recipe) {
 }
 
 /* ---------- Interfaz ---------- */
-const recipeBtn = document.getElementById("recipeBtn");
-const recipeName = document.getElementById("recipeName");
-const recipeStrip = document.getElementById("recipeStrip");
-const recipeList = document.getElementById("recipeList");
-const recipeSave = document.getElementById("recipeSave");
-const saveMenuBtn = document.getElementById("saveMenuBtn");
-const saveMenu = document.getElementById("saveMenu");
-const recipeImport = document.getElementById("recipeImport");
+const recipeBtn = byId("recipeBtn", HTMLButtonElement);
+const recipeName = byId("recipeName");
+const recipeStrip = byId("recipeStrip");
+const recipeList = byId("recipeList");
+const recipeSave = byId("recipeSave", HTMLButtonElement);
+const saveMenuBtn = byId("saveMenuBtn", HTMLButtonElement);
+const saveMenu = byId("saveMenu");
+const recipeImport = byId("recipeImport", HTMLInputElement);
 
 function recipeStatus() {
   const active = findRecipe(state.active);
   return { active, dirty: !active || !sameRecipe(getRecipe(), active.recipe), own: !!active && state.active.kind === "user" };
 }
 
-function syncRecipeUI() {
+export function syncRecipeUI() {
   const { active, dirty, own } = recipeStatus();
   recipeName.textContent = active ? active.name : "Receta sin guardar";
   recipeBtn.classList.toggle("dirty", !!active && dirty);
@@ -123,7 +126,7 @@ function applyFromLibrary(ref) {
 function blurField() {
   // Confirma una edición de texto en curso (nombre o color) antes de guardar
   const el = document.activeElement;
-  if (el && el.matches && el.matches('input[type="text"]')) el.blur();
+  if (el instanceof HTMLInputElement && el.type === "text") el.blur();
 }
 
 async function saveRecipe() {
@@ -222,18 +225,18 @@ recipeImport.addEventListener("change", async () => {
 attachMenu(recipeBtn, recipeList, { onOpen: renderList });
 const LIST_OPS = { rename: renameRecipe, delete: deleteRecipe, import: () => recipeImport.click(), exportall: exportAll };
 recipeList.addEventListener("click", e => {
-  const op = e.target.closest("[data-op]");
+  const op = /** @type {HTMLElement} */ (/** @type {Element} */ (e.target).closest("[data-op]"));
   if (op) { LIST_OPS[op.dataset.op](op.dataset.id); return; }
-  const b = e.target.closest(".ritem");
-  if (b) applyFromLibrary({ kind: b.dataset.kind, id: b.dataset.id });
+  const b = /** @type {HTMLElement} */ (/** @type {Element} */ (e.target).closest(".ritem"));
+  if (b) applyFromLibrary({ kind: /** @type {"builtin" | "user"} */ (b.dataset.kind), id: b.dataset.id });
 });
 
 attachMenu(saveMenuBtn, saveMenu);
 const SAVE_OPS = { saveas: saveRecipeAs, export: exportCurrent };
-saveMenu.querySelectorAll("[data-act]").forEach(b => b.addEventListener("click", () => SAVE_OPS[b.dataset.act]()));
+saveMenu.querySelectorAll(/** @type {"button"} */ ("[data-act]")).forEach(b => b.addEventListener("click", () => SAVE_OPS[b.dataset.act]()));
 recipeSave.addEventListener("click", saveRecipe);
 recipeSave.title = `Guardar receta (${IS_MAC ? "⌘S" : "Ctrl+S"})`;
-document.getElementById("saveAsHint").textContent = IS_MAC ? "⇧⌘S" : "Ctrl+Shift+S";
+byId("saveAsHint").textContent = IS_MAC ? "⇧⌘S" : "Ctrl+Shift+S";
 
 window.addEventListener("keydown", e => {
   if (!(e.ctrlKey || e.metaKey) || e.altKey || e.key.toLowerCase() !== "s") return;

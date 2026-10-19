@@ -1,7 +1,12 @@
-"use strict";
-/* Carga de imágenes e imagen de prueba.
-   Expone: setSource, recomputeGray, loadFile, sampleImage
-   Usa: state, buf, PREVIEW_MAX, FULL_MAX, computeIdx, scheduleRender, setStatus, setHasImage, setZoom, enc, YfromL */
+/* Carga de imágenes e imagen de prueba. */
+import { setStatus, byId } from "./dom.js";
+import { enc, YfromL } from "./color.js";
+import { PREVIEW_MAX, FULL_MAX, state, buf } from "./state.js";
+import { computeIdx } from "./process.js";
+import { scheduleRender } from "./render.js";
+import { setHasImage } from "./ui-stage.js";
+import { setZoom } from "./zoom.js";
+
 
 function scaled(src, max) {
   const s = Math.min(1, max / Math.max(src.width, src.height));
@@ -20,23 +25,23 @@ function setSource(src, name) {
   state.name = name;
   recomputeGray();
   const capped = Math.max(src.width, src.height) > FULL_MAX;
-  document.getElementById("fileName").textContent = name;
-  document.getElementById("fileName").title = name;
-  document.getElementById("fileDims").textContent =
+  byId("fileName").textContent = name;
+  byId("fileName").title = name;
+  byId("fileDims").textContent =
     `${buf.full.w} × ${buf.full.h} px${capped ? " · reducida para exportar" : ""}`;
   setHasImage(true);
   setZoom("fit");
 }
 
 // Recalcular niveles de gris (cambió la imagen o el método de conversión)
-function recomputeGray() {
+export function recomputeGray() {
   if (!buf.prev) return;
   buf.prevIdx = computeIdx(buf.prev);
   buf.fullIdx = null;
   scheduleRender();
 }
 
-function loadFile(file) {
+export function loadFile(file) {
   if (!file || !file.type.startsWith("image/")) { setStatus("Ese archivo no es una imagen. Probá con JPG, PNG o WebP.", "error"); return; }
   const url = URL.createObjectURL(file), img = new Image();
   img.onload = () => { setSource(img, file.name.replace(/\.[^.]+$/, "") || "imagen"); URL.revokeObjectURL(url); setStatus(""); };
@@ -44,7 +49,7 @@ function loadFile(file) {
   img.src = url;
 }
 
-function sampleImage() {
+export function sampleImage() {
   const w = 1200, h = 800, c = document.createElement("canvas"); c.width = w; c.height = h;
   const x = c.getContext("2d");
   // mesa
@@ -56,7 +61,7 @@ function sampleImage() {
   x.fillStyle = "#3d5a40"; x.beginPath(); x.moveTo(0, 430); x.bezierCurveTo(250, 330, 420, 470, 640, 390); x.bezierCurveTo(820, 330, 1000, 420, 1200, 360); x.lineTo(1200, 560); x.lineTo(0, 560); x.fill();
   x.fillStyle = "#24342a"; x.beginPath(); x.moveTo(0, 500); x.bezierCurveTo(300, 440, 600, 540, 1200, 470); x.lineTo(1200, 560); x.lineTo(0, 560); x.fill();
   // esferas de colores
-  [["#d8312b", 160], ["#f0c419", 300], ["#2b7bd8", 440], ["#2fa35a", 580], ["#a43fb8", 720]].forEach(([col, cx]) => {
+  /** @type {[string, number][]} */ ([["#d8312b", 160], ["#f0c419", 300], ["#2b7bd8", 440], ["#2fa35a", 580], ["#a43fb8", 720]]).forEach(([col, cx]) => {
     const rg = x.createRadialGradient(cx - 18, 650, 6, cx, 665, 60); rg.addColorStop(0, "#ffffff"); rg.addColorStop(0.25, col); rg.addColorStop(1, "#111"); x.fillStyle = rg; x.beginPath(); x.arc(cx, 665, 55, 0, Math.PI * 2); x.fill();
   });
   // degradé y escala de grises en pasos de 10% L*
