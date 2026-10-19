@@ -47,7 +47,7 @@ export function fitCanvas() {
   viewEl.style.height = Math.max(1, Math.floor(buf.full.h * s)) + "px";
 }
 new ResizeObserver(fitCanvas).observe(stage);
-fileIn.addEventListener("change", () => { loadFile(fileIn.files[0]); fileIn.value = ""; });
+fileIn.addEventListener("change", () => { loadFile(fileIn.files?.[0]); fileIn.value = ""; });
 ["dragenter", "dragover"].forEach(t => stage.addEventListener(t, e => { e.preventDefault(); stage.classList.add("drag"); }));
 // dragleave también se dispara al pasar entre elementos internos: solo cuenta si el puntero salió de #stage
 stage.addEventListener("dragleave", e => {
@@ -57,7 +57,7 @@ stage.addEventListener("dragleave", e => {
 stage.addEventListener("drop", e => {
   e.preventDefault();
   stage.classList.remove("drag");
-  loadFile(e.dataTransfer.files[0]);
+  loadFile(e.dataTransfer?.files[0]);
 });
 window.addEventListener("paste", e => {
   const f = [...(e.clipboardData?.files || [])].find(f => f.type.startsWith("image/"));

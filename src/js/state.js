@@ -105,3 +105,19 @@ export const buf = {
   fullIdx: null,    // idem para full, se calcula al exportar
   resultLUT: null   // Uint8Array(N*3): color sRGB por nivel de gris
 };
+
+/**
+ * La imagen cargada, para el código que solo corre cuando hay una (render, zoom, exportar).
+ * @returns {{ full: Bitmap, prev: Bitmap, prevIdx: Uint16Array }}
+ */
+export function loadedImage() {
+  const { full, prev, prevIdx } = buf;
+  if (!full || !prev || !prevIdx) throw new Error("No hay imagen cargada");
+  return { full, prev, prevIdx };
+}
+
+/** Tabla de colores del resultado; se arma con buildLUT antes de pintar. */
+export function resultLUT() {
+  if (!buf.resultLUT) throw new Error("Falta buildLUT() antes de pintar el resultado");
+  return buf.resultLUT;
+}

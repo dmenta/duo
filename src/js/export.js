@@ -1,6 +1,7 @@
 /* Exportación a PNG y ZIP a resolución completa. */
-import { setStatus, attachMenu, byId } from "./dom.js";
-import { state, buf } from "./state.js";
+import { setStatus, attachMenu, byId, ctx2d, qs } from "./dom.js";
+import { state, buf, loadedImage, resultLUT } from "./state.js";
+/** @import { ViewMode } from "./state.js" */
 import { computeIdx, buildLUT, grayLUT, paint } from "./process.js";
 import { encodePNG } from "./png.js";
 
@@ -10,22 +11,27 @@ if (window.claude && typeof window.claude.use === "function") {
   window.claude.use("downloads").then(d => { downloads = d; }).catch(() => {});
 }
 
+// Niveles de gris de la imagen completa: se calculan recién al exportar
+function fullIdx() {
+  return buf.fullIdx ??= computeIdx(loadedImage().full);
+}
+
+/** @param {ViewMode} mode */
 function fullCanvas(mode) {
-  if (!buf.fullIdx) buf.fullIdx = computeIdx(buf.full);
-  const { w, h } = buf.full;
+  const full = loadedImage().full, { w, h } = full;
   const c = document.createElement("canvas"); c.width = w; c.height = h;
-  const ctx = c.getContext("2d"), out = ctx.createImageData(w, h);
-  paint(buf.full, buf.fullIdx, mode, out); ctx.putImageData(out, 0, 0);
+  const ctx = ctx2d(c), out = ctx.createImageData(w, h);
+  paint(full, fullIdx(), mode, out); ctx.putImageData(out, 0, 0);
   return c;
 }
 const toBlob = c => new Promise(res => c.toBlob(res, "image/png"));
 
 // PNG con el tipo de color justo: gris 8 bits (o gris+alfa) y RGB 24 bits (o RGBA 32).
 // Devuelve { blob, desc }.
+/** @param {"result" | "gray"} mode */
 async function exportPNG(mode) {
-  if (!buf.fullIdx) buf.fullIdx = computeIdx(buf.full);
-  const { w, h, data, hasAlpha } = buf.full, idx = buf.fullIdx, lut = buf.resultLUT;
-  const color = mode === "result";
+  const { w, h, data, hasAlpha } = loadedImage().full, idx = fullIdx();
+  const color = mode === "result", lut = color ? resultLUT() : grayLUT;
   const channels = (color ? 3 : 1) + (hasAlpha ? 1 : 0);
   const blob = await encodePNG(w, h, channels, (y, row) => {
     for (let x = 0, p = y * w, o = 0; x < w; x++, p++) {
@@ -83,7 +89,7 @@ const EXPORTS = {
 
 async function runExport(action) {
   if (!buf.full) return;
-  const lbl = dlMain.querySelector(".lbl"), t = lbl.textContent;
+  const lbl = qs(dlMain, ".lbl"), t = lbl.textContent;
   dlAll.forEach(b => b.disabled = true); lbl.textContent = "Procesando…";
   await new Promise(r => setTimeout(r, 30));  // deja pintar el estado antes del cálculo
   try { buildLUT(); await EXPORTS[action](); }

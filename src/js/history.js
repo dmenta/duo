@@ -1,4 +1,4 @@
-/** @import { InkData, Point } from "./state.js" */
+/** @import { InkData, Point, Recipe, RecipeRef } from "./state.js" */
 /* Receta (configuración de gris y tintas), historial de deshacer/rehacer y guardado local.
    Cada entrada del historial es una copia completa de la receta más cuál receta de la
    biblioteca estaba activa: no hace falta programar la operación inversa de cada comando. */
@@ -22,6 +22,7 @@ const inkData = ({ name, color, color2, preset, points }) =>
          : { name, color, preset, points: points.map(p => /** @type {Point} */ (p.slice())) };
 
 // Receta actual, con claves en orden fijo para poder comparar recetas por su JSON
+/** @returns {Recipe} */
 export function getRecipe() {
   const g = state.gray;
   return {
@@ -32,6 +33,7 @@ export function getRecipe() {
 }
 
 // Receta de cualquier origen -> misma forma que getRecipe (nombres y colores normalizados)
+/** @param {Recipe} r @returns {Recipe} */
 export function normalizeRecipe(r) {
   const g = r.gray;
   return {
@@ -77,7 +79,7 @@ function persist(entry) {
 }
 function loadSaved() {
   try {
-    const recipe = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const recipe = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
     if (!validRecipe(recipe)) return null;
     const raw = localStorage.getItem(ACTIVE_KEY);
     const active = raw === null ? null : JSON.parse(raw);
@@ -86,10 +88,13 @@ function loadSaved() {
 }
 
 /* ---------- Historial ---------- */
+/** @typedef {{ recipe: Recipe, active: RecipeRef | null }} HistoryEntry */
+/** @type {{ stack: HistoryEntry[], index: number }} */
 const hist = { stack: [], index: -1 };
 const undoBtn = byId("undoBtn", HTMLButtonElement);
 const redoBtn = byId("redoBtn", HTMLButtonElement);
 
+/** @returns {HistoryEntry} */
 const currentEntry = () => ({ recipe: getRecipe(), active: state.active ? { ...state.active } : null });
 const sameEntry = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -112,6 +117,7 @@ export function commitHistory() {
 }
 
 // Cambiar la receta activa sin agregar un paso (por ejemplo, al guardar con otro nombre)
+/** @param {RecipeRef | null} ref */
 export function setActiveRecipe(ref) {
   state.active = ref ? { ...ref } : null;
   if (hist.index >= 0) hist.stack[hist.index] = { ...hist.stack[hist.index], active: state.active };

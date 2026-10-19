@@ -1,4 +1,5 @@
 /* Editor interactivo de curvas (canvas). */
+import { ctx2d } from "./dom.js";
 import { clamp01, contrastRatio, mixHex } from "./color.js";
 import { makeCurve } from "./curves.js";
 import { scheduleRender } from "./render.js";
@@ -25,7 +26,7 @@ export function attachCurve(canvas, ink, readout, onEdit, signal) {
     if (!w) return;
     const W = Math.round(w * dpr), H = Math.round(h * dpr);
     if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
-    const x = canvas.getContext("2d"); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, w, h);
+    const x = ctx2d(canvas); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, w, h);
     const cs = getComputedStyle(document.documentElement);
     const line = cs.getPropertyValue("--line").trim(), muted = cs.getPropertyValue("--muted").trim(), text = cs.getPropertyValue("--text").trim();
     const iw = w - PAD * 2, ih = h - PAD * 2 - 8;

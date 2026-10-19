@@ -1,7 +1,7 @@
 /* Zoom con dos modos: ajustar a la vista o tamaño real (1 píxel de imagen = 1 píxel CSS).
    Al 100% la imagen se desplaza arrastrando o con la rueda; doble clic alterna los modos. */
 import { byId } from "./dom.js";
-import { buf } from "./state.js";
+import { buf, loadedImage } from "./state.js";
 import { scheduleRender } from "./render.js";
 import { stage, fitCanvas } from "./ui-stage.js";
 
@@ -15,7 +15,7 @@ const clampTo = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 export function zoomViewport() {
   const r = zoomStage.getBoundingClientRect();
   const W = Math.max(1, Math.floor(r.width)), H = Math.max(1, Math.floor(r.height));
-  const iw = buf.full.w, ih = buf.full.h;
+  const { w: iw, h: ih } = loadedImage().full;
   const cw = Math.min(W, iw), ch = Math.min(H, ih);
   zoom.x = clampTo(zoom.x, 0, iw - cw);
   zoom.y = clampTo(zoom.y, 0, ih - ch);

@@ -9,11 +9,15 @@ import { askText, askConfirm } from "./dialogs.js";
 import { getRecipe, normalizeRecipe, applyRecipe, validRecipe, commitHistory, setActiveRecipe } from "./history.js";
 
 
+/** @import { InkData, PresetKey, Recipe, RecipeRef } from "./state.js" */
+
 const LIBRARY_KEY = "duotono:recetas:v1";
 const RECIPE_NAME_MAX = 40;
 
 /* ---------- Recetas predeterminadas ---------- */
+/** @param {string} name @param {string} color @param {PresetKey} preset @returns {InkData} */
 const presetInk = (name, color, preset) => ({ name, color, preset, points: CURVE_PRESETS[preset].pts });
+/** @param {InkData[]} inks @returns {Recipe} */
 const withInks = inks => ({ v: 1, gray: { mode: "lum", r: 21.26, g: 71.52, b: 7.22 }, inks });
 const BUILTIN_RECIPES = [
   { id: "negro-naranja", name: "Negro y naranja", recipe: defaultRecipe() },
@@ -22,12 +26,13 @@ const BUILTIN_RECIPES = [
   { id: "negro-rojo", name: "Negro y rojo", recipe: withInks([presetInk("Negro", "#231f20", "luces"), presetInk("Rojo", "#c8102e", "medios")]) },
   { id: "azul-magenta", name: "Azul y magenta", recipe: withInks([presetInk("Azul", "#1f4e9c", "lineal"), presetInk("Magenta", "#c4006e", "campana")]) }
 ].map(b => ({ ...b, recipe: normalizeRecipe(b.recipe) }));
+/** @type {RecipeRef} */
 export const DEFAULT_REF = { kind: "builtin", id: "negro-naranja" };
 
 /* ---------- Biblioteca propia ---------- */
 function loadLibrary() {
   try {
-    const d = JSON.parse(localStorage.getItem(LIBRARY_KEY));
+    const d = JSON.parse(localStorage.getItem(LIBRARY_KEY) ?? "null");
     if (!d || d.v !== 1 || !Array.isArray(d.items)) return [];
     return d.items
       .filter(i => i && typeof i.id === "string" && typeof i.name === "string" && validRecipe(i.recipe))
@@ -72,7 +77,7 @@ const recipeImport = byId("recipeImport", HTMLInputElement);
 
 function recipeStatus() {
   const active = findRecipe(state.active);
-  return { active, dirty: !active || !sameRecipe(getRecipe(), active.recipe), own: !!active && state.active.kind === "user" };
+  return { active, dirty: !active || !sameRecipe(getRecipe(), active.recipe), own: !!active && state.active?.kind === "user" };
 }
 
 export function syncRecipeUI() {
@@ -199,7 +204,7 @@ async function exportAll() {
 }
 
 recipeImport.addEventListener("change", async () => {
-  const file = recipeImport.files[0]; recipeImport.value = "";
+  const file = recipeImport.files?.[0]; recipeImport.value = "";
   if (!file) return;
   let data;
   try { data = JSON.parse(await file.text()); }
@@ -216,9 +221,9 @@ recipeImport.addEventListener("change", async () => {
   }
   if (!added) { setStatus("No se encontraron recetas válidas en el archivo.", "error"); return; }
   if (!saveLibrary()) return;
-  if (added === 1) applyFromLibrary({ kind: "user", id: last.id });  // una sola: se aplica
+  if (added === 1 && last) applyFromLibrary({ kind: "user", id: last.id });  // una sola: se aplica
   else syncRecipeUI();
-  setStatus(`Se importó ${added === 1 ? `«${last.name}»` : `${added} recetas`}${skipped ? ` (${skipped} no válida${skipped > 1 ? "s" : ""})` : ""}.`);
+  setStatus(`Se importó ${added === 1 && last ? `«${last.name}»` : `${added} recetas`}${skipped ? ` (${skipped} no válida${skipped > 1 ? "s" : ""})` : ""}.`);
 });
 
 /* ---------- Eventos ---------- */

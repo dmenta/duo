@@ -16,6 +16,32 @@ export function byId(id, type) {
   return /** @type {T} */ (el);
 }
 
+/**
+ * Primer elemento dentro de `root` que coincide con `selector`, con el tipo esperado.
+ * Como byId: falla enseguida si no existe o es de otro tipo.
+ * @template {Element} [T=HTMLElement]
+ * @param {ParentNode} root
+ * @param {string} selector
+ * @param {{ new (): T }} [type]
+ * @returns {T}
+ */
+export function qs(root, selector, type) {
+  const el = root.querySelector(selector), t = type ?? HTMLElement;
+  if (!(el instanceof t)) throw new Error(`${selector}: no existe o no es ${t.name}`);
+  return /** @type {T} */ (el);
+}
+
+/**
+ * Contexto 2D de un canvas (solo es null si el canvas ya tiene otro tipo de contexto).
+ * @param {HTMLCanvasElement} canvas
+ * @param {CanvasRenderingContext2DSettings} [options]
+ */
+export function ctx2d(canvas, options) {
+  const ctx = canvas.getContext("2d", options);
+  if (!ctx) throw new Error("No se pudo obtener el contexto 2D del canvas");
+  return ctx;
+}
+
 // Aviso flotante: desaparece solo; los errores quedan más tiempo. Texto vacío lo oculta.
 const toastEl = byId("toast");
 let toastTimer = 0;
@@ -33,7 +59,7 @@ export const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.use
 // Cualquier color CSS -> "#rrggbb", usando el intérprete del navegador:
 // hex (con o sin #, abreviado), rgb(), hsl(), oklch(), nombres... También "255, 0, 0".
 // Los colores fuera de sRGB se ajustan al más cercano. Devuelve null si no es un color válido.
-const colorProbe = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+const colorProbe = ctx2d(document.createElement("canvas"), { willReadFrequently: true });
 export function cssColorToHex(input) {
   let s = input.trim();
   if (/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.test(s)) {

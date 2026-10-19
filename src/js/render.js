@@ -1,8 +1,8 @@
 /* Dibujo de la vista.
    - Ajustar: se pinta la vista previa reducida y el canvas se escala a la vista.
    - 100%: se pinta solo la porción visible, desde la imagen a resolución completa. */
-import { byId } from "./dom.js";
-import { state, buf } from "./state.js";
+import { byId, ctx2d } from "./dom.js";
+import { state, buf, loadedImage } from "./state.js";
 import { buildLUT, paint, paintRegion } from "./process.js";
 import { syncViewSeg } from "./ui-stage.js";
 import { zoom, zoomViewport } from "./zoom.js";
@@ -10,7 +10,7 @@ import { syncRecipeUI } from "./recipes.js";
 
 
 const viewCanvas = byId("view", HTMLCanvasElement);
-const vctx = viewCanvas.getContext("2d");
+const vctx = ctx2d(viewCanvas);
 
 let rafPending = false;
 export function scheduleRender() {
@@ -24,10 +24,10 @@ function sizeCanvas(w, h) {
 }
 
 function renderFit() {
-  const { prev } = buf;
+  const { prev, prevIdx } = loadedImage();
   sizeCanvas(prev.w, prev.h);
   const out = vctx.createImageData(prev.w, prev.h);
-  paint(prev, buf.prevIdx, state.view, out);
+  paint(prev, prevIdx, state.view, out);
   vctx.putImageData(out, 0, 0);
 }
 
@@ -37,7 +37,7 @@ function renderActual() {
   viewCanvas.style.width = vp.cw + "px";
   viewCanvas.style.height = vp.ch + "px";
   const out = vctx.createImageData(vp.cw, vp.ch);
-  paintRegion(buf.full, vp.x, vp.y, vp.cw, vp.ch, state.view, out);
+  paintRegion(loadedImage().full, vp.x, vp.y, vp.cw, vp.ch, state.view, out);
   vctx.putImageData(out, 0, 0);
 }
 

@@ -2,7 +2,7 @@
 /** @import { Bitmap, InkData, ViewMode } from "./state.js" */
 import { N, LIN, enc, hexToLin, YfromL, LfromY, coverage, gradientLin } from "./color.js";
 import { makeCurve } from "./curves.js";
-import { state, buf } from "./state.js";
+import { state, buf, resultLUT } from "./state.js";
 
 
 function grayWeights() {
@@ -80,7 +80,7 @@ export function paint(img, idx, mode, out) {
     }
     return;
   }
-  const lut = buf.resultLUT, d = img.data;
+  const lut = mode === "result" ? resultLUT() : grayLUT, d = img.data;
   for (let p = 0, i = 0; p < n; p++, i += 4) {
     const k = idx[p];
     if (mode === "result") { o[i] = lut[k * 3]; o[i + 1] = lut[k * 3 + 1]; o[i + 2] = lut[k * 3 + 2]; }
@@ -98,7 +98,7 @@ export function paint(img, idx, mode, out) {
  * @param {ViewMode} mode @param {ImageData} out
  */
 export function paintRegion(img, x0, y0, w, h, mode, out) {
-  const [wr, wg, wb] = grayWeights(), d = img.data, o = out.data, lut = buf.resultLUT, iw = img.w;
+  const [wr, wg, wb] = grayWeights(), d = img.data, o = out.data, lut = mode === "result" ? resultLUT() : grayLUT, iw = img.w;
   for (let y = 0, i = 0; y < h; y++) {
     for (let x = 0, s = ((y0 + y) * iw + x0) * 4; x < w; x++, s += 4, i += 4) {
       if (mode === "original") { o[i] = d[s]; o[i + 1] = d[s + 1]; o[i + 2] = d[s + 2]; }

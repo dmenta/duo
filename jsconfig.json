@@ -3,7 +3,7 @@
     "checkJs": true,
     "noEmit": true,
     "strict": false,
-    "strictNullChecks": false,
+    "strictNullChecks": true,
     "noImplicitAny": false,
     "target": "ES2022",
     "module": "ES2022",

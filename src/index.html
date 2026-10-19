@@ -185,6 +185,58 @@
     </aside>
   </div>
 
+  <!-- Tarjeta de una tinta (ui-inks.js la clona y la completa: colores rápidos y curvas salen de los datos) -->
+  <template id="inkCardTpl">
+    <div class="ink">
+      <div class="ink-head">
+        <label class="swatch head-swatch" title="Elegir color"><input type="color" class="c-main" aria-label="Color de la tinta"></label>
+        <input type="text" class="name" aria-label="Nombre de la tinta">
+        <input type="text" class="hex hex-main" spellcheck="false" autocomplete="off"
+          title="Hex, rgb(), hsl(), oklch() o cualquier color CSS" aria-label="Color de la tinta: hex, rgb(), hsl(), oklch() o cualquier color CSS">
+        <button class="icon-btn rm" title="Quitar tinta" aria-label="Quitar tinta">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+        </button>
+      </div>
+      <div class="seg ink-mode" role="group" aria-label="Tipo de color">
+        <button data-mode="solid" aria-pressed="true">Color fijo</button>
+        <button data-mode="gradient" aria-pressed="false">Degradé</button>
+      </div>
+      <div class="grad-row" hidden>
+        <div class="grad-end" data-end="color">
+          <span class="end-label">Blancos</span>
+          <label class="swatch sm" title="Color en los blancos"><input type="color" class="c-end" aria-label="Color en los blancos"></label>
+          <input type="text" class="hex hex-end" spellcheck="false" autocomplete="off"
+            title="Hex, rgb(), hsl(), oklch() o cualquier color CSS" aria-label="Color en los blancos: hex, rgb(), hsl(), oklch() o cualquier color CSS">
+        </div>
+        <span class="grad-arrow" aria-hidden="true">→</span>
+        <div class="grad-end" data-end="color2">
+          <span class="end-label">Negros</span>
+          <label class="swatch sm" title="Color en los negros"><input type="color" class="c-end" aria-label="Color en los negros"></label>
+          <input type="text" class="hex hex-end" spellcheck="false" autocomplete="off"
+            title="Hex, rgb(), hsl(), oklch() o cualquier color CSS" aria-label="Color en los negros: hex, rgb(), hsl(), oklch() o cualquier color CSS">
+        </div>
+        <span class="grad-strip" aria-hidden="true"></span>
+      </div>
+      <div class="chips"></div>
+      <div class="curve-box">
+        <canvas class="curve" aria-label="Curva de la tinta. Hacé clic para agregar puntos, arrastralos para ajustar y doble clic para quitarlos."></canvas>
+        <span class="readout" aria-hidden="true"></span>
+      </div>
+      <div class="curve-foot">
+        <span>Curva</span>
+        <select class="preset" aria-label="Curva">
+          <option value="custom" disabled>Personalizada</option>
+        </select>
+        <button class="icon-btn flip-x" title="Espejar en X: intercambia luces y sombras" aria-label="Espejar la curva horizontalmente">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5v13" stroke-dasharray="1.6 1.6"/><path d="M5.5 4L1.5 12h4z" fill="currentColor"/><path d="M10.5 4l4 8h-4z"/></svg>
+        </button>
+        <button class="icon-btn flip-y" title="Espejar en Y: invierte la cantidad de tinta" aria-label="Espejar la curva verticalmente">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 8h13" stroke-dasharray="1.6 1.6"/><path d="M4 5.5L12 1.5v4z" fill="currentColor"/><path d="M4 10.5l8 4v-4z"/></svg>
+        </button>
+      </div>
+    </div>
+  </template>
+
   <dialog id="dlg" class="dlg" aria-labelledby="dlgTitle">
     <form method="dialog">
       <h3 id="dlgTitle"></h3>

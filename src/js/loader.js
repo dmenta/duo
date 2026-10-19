@@ -1,5 +1,5 @@
 /* Carga de imágenes e imagen de prueba. */
-import { setStatus, byId } from "./dom.js";
+import { setStatus, byId, ctx2d } from "./dom.js";
 import { enc, YfromL } from "./color.js";
 import { PREVIEW_MAX, FULL_MAX, state, buf } from "./state.js";
 import { computeIdx } from "./process.js";
@@ -12,7 +12,7 @@ function scaled(src, max) {
   const s = Math.min(1, max / Math.max(src.width, src.height));
   const w = Math.max(1, Math.round(src.width * s)), h = Math.max(1, Math.round(src.height * s));
   const c = document.createElement("canvas"); c.width = w; c.height = h;
-  const ctx = c.getContext("2d"); ctx.imageSmoothingQuality = "high"; ctx.drawImage(src, 0, 0, w, h);
+  const ctx = ctx2d(c); ctx.imageSmoothingQuality = "high"; ctx.drawImage(src, 0, 0, w, h);
   const data = ctx.getImageData(0, 0, w, h).data;
   let hasAlpha = false;
   for (let i = 3; i < data.length; i += 4) if (data[i] < 255) { hasAlpha = true; break; }
@@ -41,6 +41,7 @@ export function recomputeGray() {
   scheduleRender();
 }
 
+/** Si no es una imagen (o no hay archivo), avisa y no hace nada. @param {File | null | undefined} file */
 export function loadFile(file) {
   if (!file || !file.type.startsWith("image/")) { setStatus("Ese archivo no es una imagen. Probá con JPG, PNG o WebP.", "error"); return; }
   const url = URL.createObjectURL(file), img = new Image();
@@ -51,7 +52,7 @@ export function loadFile(file) {
 
 export function sampleImage() {
   const w = 1200, h = 800, c = document.createElement("canvas"); c.width = w; c.height = h;
-  const x = c.getContext("2d");
+  const x = ctx2d(c);
   // mesa
   let g = x.createLinearGradient(0, 560, 0, h); g.addColorStop(0, "#5a4a3c"); g.addColorStop(1, "#1c1714"); x.fillStyle = g; x.fillRect(0, 560, w, h - 560);
   // cielo y sol
