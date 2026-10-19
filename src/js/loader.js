@@ -1,4 +1,5 @@
 /* Carga de imágenes e imagen de prueba. */
+/** @import { Bitmap } from "./state.js" */
 import { setStatus, byId, ctx2d } from "./dom.js";
 import { enc, YfromL } from "./color.js";
 import { PREVIEW_MAX, FULL_MAX, state, buf } from "./state.js";
@@ -8,6 +9,7 @@ import { setHasImage } from "./ui-stage.js";
 import { setZoom } from "./zoom.js";
 
 
+/** @param {HTMLImageElement | HTMLCanvasElement} src @param {number} max  lado mayor máximo @returns {Bitmap} */
 function scaled(src, max) {
   const s = Math.min(1, max / Math.max(src.width, src.height));
   const w = Math.max(1, Math.round(src.width * s)), h = Math.max(1, Math.round(src.height * s));
@@ -19,6 +21,7 @@ function scaled(src, max) {
   return { w, h, data, hasAlpha };
 }
 
+/** @param {HTMLImageElement | HTMLCanvasElement} src @param {string} name */
 function setSource(src, name) {
   buf.full = scaled(src, FULL_MAX);
   buf.prev = scaled(src, PREVIEW_MAX);

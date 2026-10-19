@@ -19,6 +19,7 @@ export function scheduleRender() {
   requestAnimationFrame(() => { rafPending = false; render(); });
 }
 
+/** @param {number} w @param {number} h */
 function sizeCanvas(w, h) {
   if (viewCanvas.width !== w || viewCanvas.height !== h) { viewCanvas.width = w; viewCanvas.height = h; }
 }

@@ -8,12 +8,16 @@ import { commitHistory } from "./history.js";
 const grayMode = byId("grayMode", HTMLSelectElement);
 const mixer = byId("mixer");
 const mixIns = { r: byId("mr", HTMLInputElement), g: byId("mg", HTMLInputElement), b: byId("mb", HTMLInputElement) };
-const filterBtns = [...document.querySelectorAll("#filters [data-mix]")];
-const parseMix = b => b.dataset.mix.split(",").map(Number);
+/** @typedef {"r" | "g" | "b"} Channel */
+/** @type {Channel[]} */
+const CHANNELS = ["r", "g", "b"];
+const filterBtns = /** @type {HTMLButtonElement[]} */ ([...document.querySelectorAll("#filters [data-mix]")]);
+/** Pesos r, g, b del filtro de un botón (data-mix="r,g,b") @param {HTMLElement} b */
+const parseMix = b => (b.dataset.mix ?? "").split(",").map(Number);
 
 function syncMixer() {
-  for (const k of ["r", "g", "b"]) {
-    mixIns[k].value = state.gray[k];
+  for (const k of CHANNELS) {
+    mixIns[k].value = String(state.gray[k]);
     byId("m" + k + "o").textContent = Math.round(state.gray[k]) + "%";
   }
   const t = state.gray.r + state.gray.g + state.gray.b;
@@ -38,7 +42,7 @@ grayMode.addEventListener("change", () => {
   recomputeGray();
   commitHistory();
 });
-for (const k of ["r", "g", "b"]) {
+for (const k of CHANNELS) {
   mixIns[k].addEventListener("input", () => { state.gray[k] = +mixIns[k].value; syncMixer(); recomputeGray(); });
   mixIns[k].addEventListener("change", () => commitHistory());  // una entrada por arrastre
 }

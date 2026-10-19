@@ -1,6 +1,7 @@
 /* Codificador PNG con el tipo de color justo (canvas.toBlob siempre da RGBA de 32 bits).
    Devuelve null si el navegador no tiene CompressionStream. */
 
+/** Canales -> tipo de color PNG (gris, gris+alfa, RGB, RGBA) @type {Record<number, number>} */
 const PNG_COLOR_TYPE = { 1: 0, 2: 4, 3: 2, 4: 6 };
 
 const CRC_TABLE = (() => {
@@ -13,6 +14,7 @@ const CRC_TABLE = (() => {
   return t;
 })();
 
+/** @param {string} type  4 letras @param {Uint8Array} data */
 function pngChunk(type, data) {
   const out = new Uint8Array(12 + data.length), dv = new DataView(out.buffer);
   dv.setUint32(0, data.length);
@@ -25,6 +27,7 @@ function pngChunk(type, data) {
 }
 
 // Filtro adaptativo por fila (None, Sub, Up, Paeth): elige el de menor suma absoluta.
+/** @param {Uint8Array} cur @param {Uint8Array} prev @param {number} bpp @param {Uint8Array} out */
 function filterRow(cur, prev, bpp, out) {
   const n = cur.length;
   let sNone = 0, sSub = 0, sUp = 0, sPaeth = 0;

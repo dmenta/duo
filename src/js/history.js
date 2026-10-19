@@ -43,6 +43,7 @@ export function normalizeRecipe(r) {
   };
 }
 
+/** Reemplaza la configuración actual por la receta y redibuja todo. @param {Recipe} r */
 export function applyRecipe(r) {
   const g = r.gray;
   state.gray = { mode: g.mode, r: g.r, g: g.g, b: g.b };
@@ -52,25 +53,32 @@ export function applyRecipe(r) {
   recomputeGray();
 }
 
-// Comprueba que una receta (guardada, importada…) tenga una forma válida
+/**
+ * Comprueba que una receta (guardada, importada…) tenga una forma válida
+ * @param {any} r  datos de origen desconocido
+ * @returns {r is Recipe}
+ */
 export function validRecipe(r) {
   try {
+    /** @param {unknown} c */
     const isHex = c => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c);
     const g = r && r.gray;
     if (!r || r.v !== 1 || !g || !["lum", "mix"].includes(g.mode) || ![g.r, g.g, g.b].every(Number.isFinite)) return false;
     if (!Array.isArray(r.inks) || r.inks.length < 1 || r.inks.length > MAX_INKS) return false;
-    return r.inks.every(i =>
+    return r.inks.every((/** @type {any} */ i) =>
       typeof i.name === "string" && isHex(i.color) && (i.color2 === undefined || isHex(i.color2)) &&
       (i.preset === "custom" || Object.hasOwn(CURVE_PRESETS, i.preset)) &&
       Array.isArray(i.points) && i.points.length >= 2 &&
       i.points[0][0] === 0 && i.points[i.points.length - 1][0] === 1 &&
-      i.points.every((p, k, a) => Array.isArray(p) && p.length === 2 &&
-        p.every(v => Number.isFinite(v) && v >= 0 && v <= 1) && (k === 0 || p[0] > a[k - 1][0])));
+      i.points.every((/** @type {any} */ p, /** @type {number} */ k, /** @type {any[]} */ a) => Array.isArray(p) && p.length === 2 &&
+        p.every((/** @type {any} */ v) => Number.isFinite(v) && v >= 0 && v <= 1) && (k === 0 || p[0] > a[k - 1][0])));
   } catch { return false; }
 }
 
 /* ---------- Guardado local ---------- */
+/** @param {any} a @returns {a is RecipeRef | null} */
 const validRef = a => a === null || (a && ["builtin", "user"].includes(a.kind) && typeof a.id === "string");
+/** @param {HistoryEntry} entry */
 function persist(entry) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entry.recipe));
@@ -96,6 +104,7 @@ const redoBtn = byId("redoBtn", HTMLButtonElement);
 
 /** @returns {HistoryEntry} */
 const currentEntry = () => ({ recipe: getRecipe(), active: state.active ? { ...state.active } : null });
+/** @param {HistoryEntry} a @param {HistoryEntry} b */
 const sameEntry = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 function syncHistoryUI() {
@@ -137,6 +146,7 @@ function undo() { if (hist.index > 0) { hist.index--; restoreCurrent(); } }
 function redo() { if (hist.index < hist.stack.length - 1) { hist.index++; restoreCurrent(); } }
 
 // La primera vez arranca con la receta de fábrica por defecto
+/** @param {RecipeRef} defaultRef */
 export function initHistory(defaultRef) {
   const saved = loadSaved();
   if (saved) { state.active = saved.active; applyRecipe(saved.recipe); }

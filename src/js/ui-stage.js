@@ -27,6 +27,7 @@ byId("sampleBtn", HTMLButtonElement).addEventListener("click", () => sampleImage
 // Con o sin imagen: muestra la zona de carga o el visor, y habilita las descargas.
 // El tamaño del canvas no se toca acá: lo resuelven setZoom (al cargar) y el ResizeObserver.
 const dlButtons = ["expDuo", "expMenuBtn"].map(id => byId(id, HTMLButtonElement));
+/** @param {boolean} has */
 export function setHasImage(has) {
   document.body.classList.toggle("no-image", !has);
   dlButtons.forEach(b => b.disabled = !has);

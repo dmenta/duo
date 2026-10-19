@@ -1,5 +1,6 @@
 /* Curvas de transferencia por tinta. */
 import { clamp01 } from "./color.js";
+/** @import { Point } from "./state.js" */
 
 
 // Interpolación cúbica monótona (Fritsch–Carlson): pasa por los puntos sin rebotes.
@@ -28,10 +29,13 @@ export function makeCurve(pts) {
 }
 
 // Espejar en X: lo que afectaba a las luces pasa a las sombras y viceversa
+/** @param {number} v */
 const round4 = v => Math.round(v * 1e4) / 1e4;  // evita arrastrar errores de coma flotante en la receta
-export const mirrorX = pts => pts.map(([x, y]) => [round4(1 - x), y]).reverse();
+/** @param {Point[]} pts @returns {Point[]} */
+export const mirrorX = pts => pts.map(([x, y]) => /** @type {Point} */ ([round4(1 - x), y])).reverse();
 // Espejar en Y: donde había mucha tinta pasa a haber poca
-export const mirrorY = pts => pts.map(([x, y]) => [x, round4(1 - y)]);
+/** @param {Point[]} pts @returns {Point[]} */
+export const mirrorY = pts => pts.map(([x, y]) => /** @type {Point} */ ([x, round4(1 - y)]));
 
 /** @type {Record<string, { label: string, pts: import("./state.js").Point[] }>} */
 export const CURVE_PRESETS = {

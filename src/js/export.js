@@ -6,6 +6,7 @@ import { computeIdx, buildLUT, grayLUT, paint } from "./process.js";
 import { encodePNG } from "./png.js";
 
 
+/** Capacidad de descargas de claude.ai, si la página corre ahí @type {{ save(o: { filename: string, data: Blob }): Promise<void> } | null} */
 let downloads = null;
 if (window.claude && typeof window.claude.use === "function") {
   window.claude.use("downloads").then(d => { downloads = d; }).catch(() => {});
@@ -24,7 +25,8 @@ function fullCanvas(mode) {
   paint(full, fullIdx(), mode, out); ctx.putImageData(out, 0, 0);
   return c;
 }
-const toBlob = c => new Promise(res => c.toBlob(res, "image/png"));
+/** @param {HTMLCanvasElement} c @returns {Promise<Blob>} */
+const toBlob = c => new Promise(res => c.toBlob(b => res(/** @type {Blob} */ (b)), "image/png"));
 
 // PNG con el tipo de color justo: gris 8 bits (o gris+alfa) y RGB 24 bits (o RGBA 32).
 // Devuelve { blob, desc }.
@@ -53,8 +55,8 @@ export const slug = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").repl
 export async function save(filename, blob, desc) {
   const done = `Guardado: ${filename}${desc ? ` (${desc})` : ""}`;
   if (downloads) {
-    try { await downloads.save({ filename, data: blob }); setStatus(done); }
-    catch (err) { err && err.code === "declined" ? setStatus("Descarga cancelada.") : setStatus("No se pudo guardar el archivo en esta vista.", "error"); }
+    try { await /** @type {NonNullable<typeof downloads>} */ (downloads).save({ filename, data: blob }); setStatus(done); }
+    catch (err) { /** @type {{ code?: string } | null} */ (err)?.code === "declined" ? setStatus("Descarga cancelada.") : setStatus("No se pudo guardar el archivo en esta vista.", "error"); }
     return;
   }
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename;
@@ -87,6 +89,7 @@ const EXPORTS = {
   }
 };
 
+/** @param {keyof typeof EXPORTS} action */
 async function runExport(action) {
   if (!buf.full) return;
   const lbl = qs(dlMain, ".lbl"), t = lbl.textContent;
@@ -98,4 +101,4 @@ async function runExport(action) {
 
 dlMain.addEventListener("click", () => runExport("result"));
 attachMenu(dlToggle, dlMenu);
-dlItems.forEach(item => item.addEventListener("click", () => runExport(item.dataset.action)));
+dlItems.forEach(item => item.addEventListener("click", () => runExport(/** @type {keyof typeof EXPORTS} */ (item.dataset.action))));

@@ -6,9 +6,12 @@ import { scheduleRender } from "./render.js";
 import { stage, fitCanvas } from "./ui-stage.js";
 
 
+/** @typedef {"fit" | "actual"} ZoomMode */
+/** @type {{ mode: ZoomMode, x: number, y: number }} */
 export const zoom = { mode: "fit", x: 0, y: 0 };  // x, y: esquina superior izquierda visible, en píxeles de imagen
 const zoomSeg = byId("zoomSeg");
 const zoomStage = byId("stage");
+/** @param {number} v @param {number} lo @param {number} hi */
 const clampTo = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 // Porción visible al 100%: tamaño del canvas y origen dentro de la imagen
@@ -23,7 +26,11 @@ export function zoomViewport() {
   return { W, H, cw, ch, x: Math.round(zoom.x), y: Math.round(zoom.y) };
 }
 
-// focus (opcional): { ix, iy, sx, sy } = punto de la imagen que debe quedar bajo el punto sx, sy del escenario
+/**
+ * @param {ZoomMode} mode
+ * @param {{ ix: number, iy: number, sx: number, sy: number }} [focus]  punto de la imagen (ix, iy) que debe quedar
+ *   bajo el punto (sx, sy) del escenario
+ */
 export function setZoom(mode, focus) {
   zoom.mode = mode;
   if (mode === "actual" && buf.full) {
@@ -39,7 +46,7 @@ export function setZoom(mode, focus) {
   scheduleRender();
 }
 
-zoomSeg.addEventListener("click", e => { const b = /** @type {Element} */ (e.target).closest("button"); if (b) setZoom(b.dataset.z); });
+zoomSeg.addEventListener("click", e => { const b = /** @type {Element} */ (e.target).closest("button"); if (b) setZoom(/** @type {ZoomMode} */ (b.dataset.z)); });
 
 // Doble clic: alterna; al pasar a 100% conserva bajo el cursor el punto clickeado
 zoomStage.addEventListener("dblclick", e => {
@@ -54,6 +61,7 @@ zoomStage.addEventListener("dblclick", e => {
 });
 
 // Desplazamiento al 100%: arrastrar o rueda
+/** Inicio del arrastre: puntero y posición de la vista @type {{ px: number, py: number, x: number, y: number } | null} */
 let panning = null;
 zoomStage.addEventListener("pointerdown", e => {
   if (zoom.mode !== "actual" || !buf.full || e.button !== 0 || /** @type {Element} */ (e.target).closest("button")) return;

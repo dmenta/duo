@@ -43,6 +43,7 @@ export function ctx2d(canvas, options) {
 // Aviso flotante: desaparece solo; los errores quedan más tiempo. Texto vacío lo oculta.
 const toastEl = byId("toast");
 let toastTimer = 0;
+/** Texto vacío lo oculta. @param {string} text @param {"info" | "error"} [kind] */
 export function setStatus(text, kind = "info") {
   clearTimeout(toastTimer);
   if (!text) { toastEl.classList.remove("on"); return; }
@@ -58,6 +59,7 @@ export const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.use
 // hex (con o sin #, abreviado), rgb(), hsl(), oklch(), nombres... También "255, 0, 0".
 // Los colores fuera de sRGB se ajustan al más cercano. Devuelve null si no es un color válido.
 const colorProbe = ctx2d(document.createElement("canvas"), { willReadFrequently: true });
+/** @param {string} input @returns {string | null} */
 export function cssColorToHex(input) {
   let s = input.trim();
   if (/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.test(s)) {
@@ -86,11 +88,13 @@ export function cssColorToHex(input) {
  */
 export function attachMenu(toggle, menu, { onOpen } = {}) {
   const items = () => /** @type {HTMLElement[]} */ ([...menu.querySelectorAll('[role^="menuitem"]:not([disabled])')]);
+  /** @param {boolean} focusFirst */
   const open = focusFirst => {
     if (onOpen) onOpen();
     menu.hidden = false; toggle.setAttribute("aria-expanded", "true");
     if (focusFirst) (/** @type {HTMLElement} */ (menu.querySelector('[aria-checked="true"]:not([disabled])')) || items()[0])?.focus();
   };
+  /** @param {boolean} returnFocus */
   const close = returnFocus => {
     if (menu.hidden) return;
     menu.hidden = true; toggle.setAttribute("aria-expanded", "false");
