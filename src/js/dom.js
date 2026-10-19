@@ -1,7 +1,5 @@
 /* Utilidades de DOM. */
 
-export const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-
 /**
  * Elemento por id, con el tipo esperado. Falla enseguida si no existe o es de otro tipo,
  * en vez de dar un error confuso más adelante.

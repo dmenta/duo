@@ -141,7 +141,18 @@
             </div>
           </div>
         </div>
-        <div class="menu recipe-list" id="recipeList" role="menu" aria-label="Recetas" hidden></div>
+        <div class="menu recipe-list" id="recipeList" role="menu" aria-label="Recetas" hidden>
+          <!-- Las filas salen de #recipeRowTpl (recipes.js) -->
+          <div class="rgroup">Mis recetas</div>
+          <div id="recipesMine"></div>
+          <p class="rempty" id="recipesEmpty">Todavía no guardaste recetas. Usá Guardar o importá un archivo.</p>
+          <div class="rgroup">Predeterminadas</div>
+          <div id="recipesBuiltin"></div>
+          <div class="rfoot">
+            <button role="menuitem" tabindex="-1" data-op="import"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10"/></svg>Importar…</button>
+            <button role="menuitem" tabindex="-1" data-op="exportall" id="recipesExportAll"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10.5v-8M4.5 6L8 2.5 11.5 6M3 13.5h10"/></svg>Exportar mis recetas</button>
+          </div>
+        </div>
         <input type="file" id="recipeImport" accept=".json,application/json" class="sr" />
       </div>
       <section class="block">
@@ -184,6 +195,23 @@
       </section>
     </aside>
   </div>
+
+  <!-- Fila de la lista de recetas. Las predeterminadas no llevan .ricons (no se renombran ni eliminan) -->
+  <template id="recipeRowTpl">
+    <div class="rrow">
+      <button role="menuitemradio" aria-checked="false" tabindex="-1" class="ritem">
+        <span class="rname"></span><span class="rstrip"></span>
+      </button>
+      <span class="ricons">
+        <button role="menuitem" tabindex="-1" class="ricon" data-op="rename" title="Renombrar">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 2.5l3 3L6 13H3v-3z"/></svg>
+        </button>
+        <button role="menuitem" tabindex="-1" class="ricon danger" data-op="delete" title="Eliminar">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4.5h11M6 4.5V3h4v1.5M4 4.5l.7 9h6.6l.7-9"/></svg>
+        </button>
+      </span>
+    </div>
+  </template>
 
   <!-- Tarjeta de una tinta (ui-inks.js la clona y la completa: colores rápidos y curvas salen de los datos) -->
   <template id="inkCardTpl">

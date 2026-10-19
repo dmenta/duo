@@ -1,6 +1,6 @@
 /* Biblioteca de recetas: predeterminadas (solo lectura) y propias (guardadas en el navegador).
    Exportar e importar en archivos .json. */
-import { esc, setStatus, IS_MAC, attachMenu, byId } from "./dom.js";
+import { setStatus, IS_MAC, attachMenu, byId, qs } from "./dom.js";
 import { CURVE_PRESETS } from "./curves.js";
 import { defaultRecipe, state } from "./state.js";
 import { inkLUT } from "./process.js";
@@ -90,33 +90,38 @@ export function syncRecipeUI() {
   recipeSave.disabled = own && !dirty;
 }
 
-const ICON_RENAME = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 2.5l3 3L6 13H3v-3z"/></svg>';
-const ICON_DELETE = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4.5h11M6 4.5V3h4v1.5M4 4.5l.7 9h6.6l.7-9"/></svg>';
-const ICON_IMPORT = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10"/></svg>';
-const ICON_EXPORT = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10.5v-8M4.5 6L8 2.5 11.5 6M3 13.5h10"/></svg>';
+const rowTpl = byId("recipeRowTpl", HTMLTemplateElement);
+const mineEl = byId("recipesMine"), builtinEl = byId("recipesBuiltin");
+const emptyEl = byId("recipesEmpty"), exportAllBtn = byId("recipesExportAll", HTMLButtonElement);
+
+/**
+ * Fila de una receta. Las propias llevan además los botones de renombrar y eliminar.
+ * @param {{ id: string, name: string, recipe: Recipe }} r
+ * @param {RecipeRef["kind"]} kind
+ */
+function recipeRow(r, kind) {
+  const row = qs(/** @type {DocumentFragment} */ (rowTpl.content.cloneNode(true)), ".rrow");
+  const cur = state.active, on = !!cur && cur.kind === kind && cur.id === r.id;
+  const main = qs(row, ".ritem", HTMLButtonElement);
+  main.setAttribute("aria-checked", String(on));
+  main.dataset.kind = kind; main.dataset.id = r.id;
+  qs(row, ".rname").textContent = r.name;
+  qs(row, ".rstrip").style.background = stripCSS(r.recipe);
+  const icons = qs(row, ".ricons");
+  if (kind === "builtin") icons.remove();
+  else for (const b of icons.querySelectorAll("button")) {
+    b.dataset.id = r.id;
+    b.setAttribute("aria-label", `${b.title} ${r.name}`);
+  }
+  return row;
+}
 
 // Lista: propias y predeterminadas; las propias se renombran o eliminan desde acá
 function renderList() {
-  const cur = state.active;
-  const item = (r, kind) => {
-    const on = !!cur && cur.kind === kind && cur.id === r.id;
-    const main = `<button role="menuitemradio" aria-checked="${on}" tabindex="-1" class="ritem" data-kind="${kind}" data-id="${esc(r.id)}">
-      <span class="rname">${esc(r.name)}</span><span class="rstrip" style="background:${stripCSS(r.recipe)}"></span></button>`;
-    if (kind === "builtin") return `<div class="rrow">${main}</div>`;
-    return `<div class="rrow">${main}<span class="ricons">
-      <button role="menuitem" tabindex="-1" class="ricon" data-op="rename" data-id="${esc(r.id)}" title="Renombrar" aria-label="Renombrar ${esc(r.name)}">${ICON_RENAME}</button>
-      <button role="menuitem" tabindex="-1" class="ricon danger" data-op="delete" data-id="${esc(r.id)}" title="Eliminar" aria-label="Eliminar ${esc(r.name)}">${ICON_DELETE}</button></span></div>`;
-  };
-  recipeList.innerHTML =
-    `<div class="rgroup">Mis recetas</div>` +
-    (library.length
-      ? [...library].sort(byName).map(r => item(r, "user")).join("")
-      : `<p class="rempty">Todavía no guardaste recetas. Usá Guardar o importá un archivo.</p>`) +
-    `<div class="rgroup">Predeterminadas</div>${BUILTIN_RECIPES.map(r => item(r, "builtin")).join("")}` +
-    `<div class="rfoot">
-       <button role="menuitem" tabindex="-1" data-op="import">${ICON_IMPORT}Importar…</button>
-       <button role="menuitem" tabindex="-1" data-op="exportall" ${library.length ? "" : "disabled"}>${ICON_EXPORT}Exportar mis recetas</button>
-     </div>`;
+  mineEl.replaceChildren(...[...library].sort(byName).map(r => recipeRow(r, "user")));
+  builtinEl.replaceChildren(...BUILTIN_RECIPES.map(r => recipeRow(r, "builtin")));
+  emptyEl.hidden = library.length > 0;
+  exportAllBtn.disabled = !library.length;
 }
 
 // Aplicar una receta de la biblioteca: es un paso del historial, se puede deshacer
