@@ -1,14 +1,12 @@
 /* Curvas de transferencia por tinta. */
-import { clamp01 } from "./color.js";
-/** @import { Point } from "./state.js" */
-
+import { clamp01 } from "./color.ts";
+import type { Point } from "./state.ts";
 
 // Interpolación cúbica monótona (Fritsch–Carlson): pasa por los puntos sin rebotes.
 /**
- * @param {import("./state.js").Point[]} pts
- * @returns {(x: number) => number}  cantidad de tinta (0..1) para un gris x (0..1)
+ * @returns cantidad de tinta (0..1) para un gris x (0..1)
  */
-export function makeCurve(pts) {
+export function makeCurve(pts: Point[]): (x: number) => number {
   const n = pts.length, xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
   if (n === 2) return x => clamp01(ys[0] + (ys[1] - ys[0]) * (x - xs[0]) / (xs[1] - xs[0]));
   const d = [], m = new Array(n);
@@ -29,16 +27,13 @@ export function makeCurve(pts) {
 }
 
 // Espejar en X: lo que afectaba a las luces pasa a las sombras y viceversa
-/** @param {number} v */
-const round4 = v => Math.round(v * 1e4) / 1e4;  // evita arrastrar errores de coma flotante en la receta
-/** @param {Point[]} pts @returns {Point[]} */
-export const mirrorX = pts => pts.map(([x, y]) => /** @type {Point} */ ([round4(1 - x), y])).reverse();
-// Espejar en Y: donde había mucha tinta pasa a haber poca
-/** @param {Point[]} pts @returns {Point[]} */
-export const mirrorY = pts => pts.map(([x, y]) => /** @type {Point} */ ([x, round4(1 - y)]));
+const round4 = (v: number) => Math.round(v * 1e4) / 1e4;  // evita arrastrar errores de coma flotante en la receta
 
-/** @type {Record<string, { label: string, pts: import("./state.js").Point[] }>} */
-export const CURVE_PRESETS = {
+export const mirrorX = (pts: Point[]): Point[] => pts.map(([x, y]) => ([round4(1 - x), y] as Point)).reverse();
+// Espejar en Y: donde había mucha tinta pasa a haber poca
+export const mirrorY = (pts: Point[]): Point[] => pts.map(([x, y]) => ([x, round4(1 - y)] as Point));
+
+export const CURVE_PRESETS: Record<string, { label: string; pts: Point[] }> = {
   lineal: { label: "Lineal", pts: [[0, 0], [1, 1]] },
   luces: { label: "Limpia en luces", pts: [[0, 0], [0.35, 0.12], [0.7, 0.55], [1, 1]] },
   medios: { label: "Medios tonos", pts: [[0, 0], [0.3, 0.38], [0.65, 0.7], [1, 0.8]] },

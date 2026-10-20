@@ -1,29 +1,25 @@
 /* Editor interactivo de curvas (canvas). */
-/** @import { Point } from "./state.js" */
-import { ctx2d } from "./dom.js";
-import { clamp01, contrastRatio, mixHex } from "./color.js";
-import { makeCurve } from "./curves.js";
-import { scheduleRender } from "./render.js";
-import { commitHistory } from "./history.js";
-
+import type { Ink, Point } from "./state.ts";
+import { ctx2d } from "./dom.ts";
+import { clamp01, contrastRatio, mixHex } from "./color.ts";
+import { makeCurve } from "./curves.ts";
+import { scheduleRender } from "./render.ts";
+import { commitHistory } from "./history.ts";
 
 /**
  * Conecta el editor de curva al canvas de una tarjeta de tinta. Edita ink.points en el lugar.
- * @param {HTMLCanvasElement} canvas
- * @param {import("./state.js").Ink} ink
- * @param {HTMLElement} readout  etiqueta que muestra el punto bajo el cursor
- * @param {() => void} onEdit    se llama en cada cambio de la curva
- * @param {AbortSignal} signal   al abortarse suelta lo que vive fuera del canvas (tema, tamaño)
- * @returns {() => void}  redibuja la curva
+ * @param readout etiqueta que muestra el punto bajo el cursor
+ * @param onEdit se llama en cada cambio de la curva
+ * @param signal al abortarse suelta lo que vive fuera del canvas (tema, tamaño)
+ * @returns redibuja la curva
  */
-export function attachCurve(canvas, ink, readout, onEdit, signal) {
+export function attachCurve(canvas: HTMLCanvasElement, ink: Ink, readout: HTMLElement, onEdit: () => void, signal: AbortSignal): () => void {
   const PAD = 12;
   let drag = -1;
   /**
    * Escala del último dibujo (null si todavía no se dibujó): unidades de curva -> píxeles CSS
-   * @type {{ X: (v: number) => number, Yp: (v: number) => number, iw: number, ih: number } | null}
    */
-  let map = null;
+  let map: { X: (v: number) => number; Yp: (v: number) => number; iw: number; ih: number } | null = null;
 
   function draw() {
     const r = canvas.getBoundingClientRect(), w = r.width, h = r.height, dpr = window.devicePixelRatio || 1;
@@ -34,7 +30,7 @@ export function attachCurve(canvas, ink, readout, onEdit, signal) {
     const cs = getComputedStyle(document.documentElement);
     const line = cs.getPropertyValue("--line").trim(), muted = cs.getPropertyValue("--muted").trim(), text = cs.getPropertyValue("--text").trim();
     const iw = w - PAD * 2, ih = h - PAD * 2 - 8;
-    const X = (/** @type {number} */ v) => PAD + v * iw, Yp = (/** @type {number} */ v) => PAD + (1 - v) * ih;
+    const X = (v: number) => PAD + v * iw, Yp = (v: number) => PAD + (1 - v) * ih;
     // grilla
     x.strokeStyle = line; x.lineWidth = 1;
     for (let i = 1; i < 4; i++) { x.beginPath(); x.moveTo(X(i / 4), PAD); x.lineTo(X(i / 4), PAD + ih); x.moveTo(PAD, Yp(i / 4)); x.lineTo(PAD + iw, Yp(i / 4)); x.stroke(); }
@@ -52,8 +48,7 @@ export function attachCurve(canvas, ink, readout, onEdit, signal) {
       : contrastRatio(ink.color, surface);
     const lowContrast = minContrast < 2.2;
     // En degradé, el trazo recorre los colores de blancos (izquierda) a negros (derecha)
-    /** @type {string | CanvasGradient} */
-    let stroke = ink.color;
+    let stroke: string | CanvasGradient = ink.color;
     if (ink.color2) { const g = x.createLinearGradient(X(0), 0, X(1), 0); g.addColorStop(0, ink.color); g.addColorStop(1, ink.color2); stroke = g; }
     const f = makeCurve(ink.points);
     x.lineWidth = lowContrast ? 5 : 4; x.strokeStyle = text; x.globalAlpha = lowContrast ? .75 : .18; x.beginPath();
@@ -67,22 +62,21 @@ export function attachCurve(canvas, ink, readout, onEdit, signal) {
     map = { X, Yp, iw, ih };
   }
 
-  /** @param {PointerEvent} e @returns {Point} */
-  function toUnit(e) {
-    const r = canvas.getBoundingClientRect(), m = /** @type {NonNullable<typeof map>} */ (map);
+  function toUnit(e: PointerEvent): Point {
+    const r = canvas.getBoundingClientRect(), m = map as NonNullable<typeof map>;
     return [clamp01((e.clientX - r.left - PAD) / m.iw), clamp01(1 - (e.clientY - r.top - PAD) / m.ih)];
   }
-  /** Índice del punto bajo el cursor, o -1. @param {MouseEvent} e */
-  function nearest(e) {
-    const r = canvas.getBoundingClientRect(), m = /** @type {NonNullable<typeof map>} */ (map); let best = -1, bd = 14 * 14;
+  /** Índice del punto bajo el cursor, o -1. */
+  function nearest(e: MouseEvent) {
+    const r = canvas.getBoundingClientRect(), m = map as NonNullable<typeof map>; let best = -1, bd = 14 * 14;
     ink.points.forEach((p, i) => {
       const dx = m.X(p[0]) - (e.clientX - r.left), dy = m.Yp(p[1]) - (e.clientY - r.top), d = dx * dx + dy * dy;
       if (d < bd) { bd = d; best = i; }
     });
     return best;
   }
-  /** @param {number} a @param {number} b */
-  const show = (a, b) => { readout.textContent = `Gris ${Math.round(a * 100)}% → tinta ${Math.round(b * 100)}%`; readout.classList.add("on"); };
+
+  const show = (a: number, b: number) => { readout.textContent = `Gris ${Math.round(a * 100)}% → tinta ${Math.round(b * 100)}%`; readout.classList.add("on"); };
   const edited = () => { onEdit(); scheduleRender(); };
 
   canvas.addEventListener("pointerdown", e => {

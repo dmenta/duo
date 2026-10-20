@@ -1,16 +1,15 @@
 /* Carga de imágenes e imagen de prueba. */
-/** @import { Bitmap } from "./state.js" */
-import { setStatus, byId, ctx2d } from "./dom.js";
-import { enc, YfromL } from "./color.js";
-import { PREVIEW_MAX, FULL_MAX, state, buf } from "./state.js";
-import { computeIdx } from "./process.js";
-import { scheduleRender } from "./render.js";
-import { setHasImage } from "./ui-stage.js";
-import { setZoom } from "./zoom.js";
+import type { Bitmap } from "./state.ts";
+import { setStatus, byId, ctx2d } from "./dom.ts";
+import { enc, YfromL } from "./color.ts";
+import { PREVIEW_MAX, FULL_MAX, state, buf } from "./state.ts";
+import { computeIdx } from "./process.ts";
+import { scheduleRender } from "./render.ts";
+import { setHasImage } from "./ui-stage.ts";
+import { setZoom } from "./zoom.ts";
 
-
-/** @param {HTMLImageElement | HTMLCanvasElement} src @param {number} max  lado mayor máximo @returns {Bitmap} */
-function scaled(src, max) {
+/** @param max lado mayor máximo */
+function scaled(src: HTMLImageElement | HTMLCanvasElement, max: number): Bitmap {
   const s = Math.min(1, max / Math.max(src.width, src.height));
   const w = Math.max(1, Math.round(src.width * s)), h = Math.max(1, Math.round(src.height * s));
   const c = document.createElement("canvas"); c.width = w; c.height = h;
@@ -21,8 +20,7 @@ function scaled(src, max) {
   return { w, h, data, hasAlpha };
 }
 
-/** @param {HTMLImageElement | HTMLCanvasElement} src @param {string} name */
-function setSource(src, name) {
+function setSource(src: HTMLImageElement | HTMLCanvasElement, name: string) {
   buf.full = scaled(src, FULL_MAX);
   buf.prev = scaled(src, PREVIEW_MAX);
   state.name = name;
@@ -44,8 +42,8 @@ export function recomputeGray() {
   scheduleRender();
 }
 
-/** Si no es una imagen (o no hay archivo), avisa y no hace nada. @param {File | null | undefined} file */
-export function loadFile(file) {
+/** Si no es una imagen (o no hay archivo), avisa y no hace nada. */
+export function loadFile(file: File | null | undefined) {
   if (!file || !file.type.startsWith("image/")) { setStatus("Ese archivo no es una imagen. Probá con JPG, PNG o WebP.", "error"); return; }
   const url = URL.createObjectURL(file), img = new Image();
   img.onload = () => { setSource(img, file.name.replace(/\.[^.]+$/, "") || "imagen"); URL.revokeObjectURL(url); setStatus(""); };
@@ -65,7 +63,7 @@ export function sampleImage() {
   x.fillStyle = "#3d5a40"; x.beginPath(); x.moveTo(0, 430); x.bezierCurveTo(250, 330, 420, 470, 640, 390); x.bezierCurveTo(820, 330, 1000, 420, 1200, 360); x.lineTo(1200, 560); x.lineTo(0, 560); x.fill();
   x.fillStyle = "#24342a"; x.beginPath(); x.moveTo(0, 500); x.bezierCurveTo(300, 440, 600, 540, 1200, 470); x.lineTo(1200, 560); x.lineTo(0, 560); x.fill();
   // esferas de colores
-  /** @type {[string, number][]} */ ([["#d8312b", 160], ["#f0c419", 300], ["#2b7bd8", 440], ["#2fa35a", 580], ["#a43fb8", 720]]).forEach(([col, cx]) => {
+  ([["#d8312b", 160], ["#f0c419", 300], ["#2b7bd8", 440], ["#2fa35a", 580], ["#a43fb8", 720]] as [string, number][]).forEach(([col, cx]) => {
     const rg = x.createRadialGradient(cx - 18, 650, 6, cx, 665, 60); rg.addColorStop(0, "#ffffff"); rg.addColorStop(0.25, col); rg.addColorStop(1, "#111"); x.fillStyle = rg; x.beginPath(); x.arc(cx, 665, 55, 0, Math.PI * 2); x.fill();
   });
   // degradé y escala de grises en pasos de 10% L*

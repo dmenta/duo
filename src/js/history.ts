@@ -1,29 +1,26 @@
-/** @import { InkData, Point, Recipe, RecipeRef } from "./state.js" */
+import type { InkData, Point, Recipe, RecipeRef } from "./state.ts";
 /* Receta (configuración de gris y tintas), historial de deshacer/rehacer y guardado local.
    Cada entrada del historial es una copia completa de la receta más cuál receta de la
    biblioteca estaba activa: no hace falta programar la operación inversa de cada comando. */
-import { IS_MAC, byId } from "./dom.js";
-import { CURVE_PRESETS } from "./curves.js";
-import { MAX_INKS, makeInk, state } from "./state.js";
-import { recomputeGray } from "./loader.js";
-import { renderInks } from "./ui-inks.js";
-import { syncGrayUI } from "./ui-gray.js";
-import { syncRecipeUI } from "./recipes.js";
-
+import { IS_MAC, byId } from "./dom.ts";
+import { CURVE_PRESETS } from "./curves.ts";
+import { MAX_INKS, makeInk, state } from "./state.ts";
+import { recomputeGray } from "./loader.ts";
+import { renderInks } from "./ui-inks.ts";
+import { syncGrayUI } from "./ui-gray.ts";
+import { syncRecipeUI } from "./recipes.ts";
 
 const STORAGE_KEY = "duotono:receta:v1";   // última receta en uso
 const ACTIVE_KEY = "duotono:activa:v1";    // receta de la biblioteca activa
 const HISTORY_MAX = 100;
 
 // Datos de una tinta para la receta, con claves en orden fijo (color2 solo si es degradé)
-/** @param {InkData} ink @returns {InkData} */
-const inkData = ({ name, color, color2, preset, points }) =>
-  color2 ? { name, color, color2, preset, points: points.map(p => /** @type {Point} */ (p.slice())) }
-         : { name, color, preset, points: points.map(p => /** @type {Point} */ (p.slice())) };
+const inkData = ({ name, color, color2, preset, points }: InkData): InkData =>
+  color2 ? { name, color, color2, preset, points: points.map(p => (p.slice() as Point)) }
+         : { name, color, preset, points: points.map(p => (p.slice() as Point)) };
 
 // Receta actual, con claves en orden fijo para poder comparar recetas por su JSON
-/** @returns {Recipe} */
-export function getRecipe() {
+export function getRecipe(): Recipe {
   const g = state.gray;
   return {
     v: 1,
@@ -33,8 +30,7 @@ export function getRecipe() {
 }
 
 // Receta de cualquier origen -> misma forma que getRecipe (nombres y colores normalizados)
-/** @param {Recipe} r @returns {Recipe} */
-export function normalizeRecipe(r) {
+export function normalizeRecipe(r: Recipe): Recipe {
   const g = r.gray;
   return {
     v: 1,
@@ -43,8 +39,8 @@ export function normalizeRecipe(r) {
   };
 }
 
-/** Reemplaza la configuración actual por la receta y redibuja todo. @param {Recipe} r */
-export function applyRecipe(r) {
+/** Reemplaza la configuración actual por la receta y redibuja todo. */
+export function applyRecipe(r: Recipe) {
   const g = r.gray;
   state.gray = { mode: g.mode, r: g.r, g: g.g, b: g.b };
   state.inks = r.inks.map(makeInk);
@@ -55,31 +51,30 @@ export function applyRecipe(r) {
 
 /**
  * Comprueba que una receta (guardada, importada…) tenga una forma válida
- * @param {any} r  datos de origen desconocido
- * @returns {r is Recipe}
+ * @param r datos de origen desconocido
  */
-export function validRecipe(r) {
+export function validRecipe(r: any): r is Recipe {
   try {
-    /** @param {unknown} c */
-    const isHex = c => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c);
+
+    const isHex = (c: unknown) => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c);
     const g = r && r.gray;
     if (!r || r.v !== 1 || !g || !["lum", "mix"].includes(g.mode) || ![g.r, g.g, g.b].every(Number.isFinite)) return false;
     if (!Array.isArray(r.inks) || r.inks.length < 1 || r.inks.length > MAX_INKS) return false;
-    return r.inks.every((/** @type {any} */ i) =>
+    return r.inks.every((i: any) =>
       typeof i.name === "string" && isHex(i.color) && (i.color2 === undefined || isHex(i.color2)) &&
       (i.preset === "custom" || Object.hasOwn(CURVE_PRESETS, i.preset)) &&
       Array.isArray(i.points) && i.points.length >= 2 &&
       i.points[0][0] === 0 && i.points[i.points.length - 1][0] === 1 &&
-      i.points.every((/** @type {any} */ p, /** @type {number} */ k, /** @type {any[]} */ a) => Array.isArray(p) && p.length === 2 &&
-        p.every((/** @type {any} */ v) => Number.isFinite(v) && v >= 0 && v <= 1) && (k === 0 || p[0] > a[k - 1][0])));
+      i.points.every((p: any, k: number, a: any[]) => Array.isArray(p) && p.length === 2 &&
+        p.every((v: any) => Number.isFinite(v) && v >= 0 && v <= 1) && (k === 0 || p[0] > a[k - 1][0])));
   } catch { return false; }
 }
 
 /* ---------- Guardado local ---------- */
-/** @param {any} a @returns {a is RecipeRef | null} */
-const validRef = a => a === null || (a && ["builtin", "user"].includes(a.kind) && typeof a.id === "string");
-/** @param {HistoryEntry} entry */
-function persist(entry) {
+
+const validRef = (a: any): a is RecipeRef | null => a === null || (a && ["builtin", "user"].includes(a.kind) && typeof a.id === "string");
+
+function persist(entry: HistoryEntry) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entry.recipe));
     localStorage.setItem(ACTIVE_KEY, JSON.stringify(entry.active));
@@ -96,16 +91,15 @@ function loadSaved() {
 }
 
 /* ---------- Historial ---------- */
-/** @typedef {{ recipe: Recipe, active: RecipeRef | null }} HistoryEntry */
-/** @type {{ stack: HistoryEntry[], index: number }} */
-const hist = { stack: [], index: -1 };
+type HistoryEntry = { recipe: Recipe, active: RecipeRef | null };
+
+const hist: { stack: HistoryEntry[]; index: number } = { stack: [], index: -1 };
 const undoBtn = byId("undoBtn", HTMLButtonElement);
 const redoBtn = byId("redoBtn", HTMLButtonElement);
 
-/** @returns {HistoryEntry} */
-const currentEntry = () => ({ recipe: getRecipe(), active: state.active ? { ...state.active } : null });
-/** @param {HistoryEntry} a @param {HistoryEntry} b */
-const sameEntry = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const currentEntry = (): HistoryEntry => ({ recipe: getRecipe(), active: state.active ? { ...state.active } : null });
+
+const sameEntry = (a: HistoryEntry, b: HistoryEntry) => JSON.stringify(a) === JSON.stringify(b);
 
 function syncHistoryUI() {
   undoBtn.disabled = hist.index <= 0;
@@ -126,8 +120,7 @@ export function commitHistory() {
 }
 
 // Cambiar la receta activa sin agregar un paso (por ejemplo, al guardar con otro nombre)
-/** @param {RecipeRef | null} ref */
-export function setActiveRecipe(ref) {
+export function setActiveRecipe(ref: RecipeRef | null) {
   state.active = ref ? { ...ref } : null;
   if (hist.index >= 0) hist.stack[hist.index] = { ...hist.stack[hist.index], active: state.active };
   persist(currentEntry());
@@ -146,8 +139,7 @@ function undo() { if (hist.index > 0) { hist.index--; restoreCurrent(); } }
 function redo() { if (hist.index < hist.stack.length - 1) { hist.index++; restoreCurrent(); } }
 
 // La primera vez arranca con la receta de fábrica por defecto
-/** @param {RecipeRef} defaultRef */
-export function initHistory(defaultRef) {
+export function initHistory(defaultRef: RecipeRef) {
   const saved = loadSaved();
   if (saved) { state.active = saved.active; applyRecipe(saved.recipe); }
   else { state.active = defaultRef; syncGrayUI(); renderInks(); }

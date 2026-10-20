@@ -1,22 +1,22 @@
 /* Zona de la imagen: selector de vista, abrir, arrastrar y pegar. */
-import { IS_MAC, byId } from "./dom.js";
-import { state, buf } from "./state.js";
-import { scheduleRender } from "./render.js";
-import { loadFile, sampleImage } from "./loader.js";
-import { zoom } from "./zoom.js";
-
+import { IS_MAC, byId } from "./dom.ts";
+import { state, buf } from "./state.ts";
+import { scheduleRender } from "./render.ts";
+import { loadFile, sampleImage } from "./loader.ts";
+import { zoom } from "./zoom.ts";
+import type { ViewMode } from "./state.ts";
 
 const viewSeg = byId("viewSeg");
 export function syncViewSeg() {
   viewSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.view)));
 }
 viewSeg.addEventListener("click", e => {
-  const b = /** @type {Element} */ (e.target).closest("button");
-  if (b) { state.view = /** @type {import("./state.js").ViewMode} */ (b.dataset.v); scheduleRender(); }
+  const b = (e.target as Element).closest("button");
+  if (b) { state.view = b.dataset.v as ViewMode; scheduleRender(); }
 });
 
 const fileIn = byId("file", HTMLInputElement);
-export const stage = byId("stage");
+const stage = byId("stage");
 byId("openBtn", HTMLButtonElement).addEventListener("click", () => fileIn.click());
 const pasteKey = IS_MAC ? "⌘V" : "Ctrl+V";
 byId("openBtn", HTMLButtonElement).title = `Abrir imagen… También podés arrastrarla a la vista o pegarla con ${pasteKey}`;
@@ -27,8 +27,8 @@ byId("sampleBtn", HTMLButtonElement).addEventListener("click", () => sampleImage
 // Con o sin imagen: muestra la zona de carga o el visor, y habilita las descargas.
 // El tamaño del canvas no se toca acá: lo resuelven setZoom (al cargar) y el ResizeObserver.
 const dlButtons = ["expDuo", "expMenuBtn"].map(id => byId(id, HTMLButtonElement));
-/** @param {boolean} has */
-export function setHasImage(has) {
+
+export function setHasImage(has: boolean) {
   document.body.classList.toggle("no-image", !has);
   dlButtons.forEach(b => b.disabled = !has);
 }

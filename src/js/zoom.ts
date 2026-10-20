@@ -1,18 +1,17 @@
 /* Zoom con dos modos: ajustar a la vista o tamaño real (1 píxel de imagen = 1 píxel CSS).
    Al 100% la imagen se desplaza arrastrando o con la rueda; doble clic alterna los modos. */
-import { byId } from "./dom.js";
-import { buf, loadedImage } from "./state.js";
-import { scheduleRender } from "./render.js";
-import { stage, fitCanvas } from "./ui-stage.js";
+import { byId } from "./dom.ts";
+import { buf, loadedImage } from "./state.ts";
+import { scheduleRender } from "./render.ts";
+import { fitCanvas } from "./ui-stage.ts";
 
+type ZoomMode = "fit" | "actual";
 
-/** @typedef {"fit" | "actual"} ZoomMode */
-/** @type {{ mode: ZoomMode, x: number, y: number }} */
-export const zoom = { mode: "fit", x: 0, y: 0 };  // x, y: esquina superior izquierda visible, en píxeles de imagen
+export const zoom: { mode: ZoomMode; x: number; y: number } = { mode: "fit", x: 0, y: 0 };  // x, y: esquina superior izquierda visible, en píxeles de imagen
 const zoomSeg = byId("zoomSeg");
 const zoomStage = byId("stage");
-/** @param {number} v @param {number} lo @param {number} hi */
-const clampTo = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+const clampTo = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 // Porción visible al 100%: tamaño del canvas y origen dentro de la imagen
 export function zoomViewport() {
@@ -27,11 +26,10 @@ export function zoomViewport() {
 }
 
 /**
- * @param {ZoomMode} mode
- * @param {{ ix: number, iy: number, sx: number, sy: number }} [focus]  punto de la imagen (ix, iy) que debe quedar
+ * @param focus punto de la imagen (ix, iy) que debe quedar
  *   bajo el punto (sx, sy) del escenario
  */
-export function setZoom(mode, focus) {
+export function setZoom(mode: ZoomMode, focus?: { ix: number; iy: number; sx: number; sy: number }) {
   zoom.mode = mode;
   if (mode === "actual" && buf.full) {
     const r = zoomStage.getBoundingClientRect(), iw = buf.full.w, ih = buf.full.h;
@@ -46,11 +44,11 @@ export function setZoom(mode, focus) {
   scheduleRender();
 }
 
-zoomSeg.addEventListener("click", e => { const b = /** @type {Element} */ (e.target).closest("button"); if (b) setZoom(/** @type {ZoomMode} */ (b.dataset.z)); });
+zoomSeg.addEventListener("click", e => { const b = (e.target as Element).closest("button"); if (b) setZoom(b.dataset.z as ZoomMode); });
 
 // Doble clic: alterna; al pasar a 100% conserva bajo el cursor el punto clickeado
 zoomStage.addEventListener("dblclick", e => {
-  if (!buf.full || /** @type {Element} */ (e.target).closest("button")) return;
+  if (!buf.full || (e.target as Element).closest("button")) return;
   if (zoom.mode === "actual") { setZoom("fit"); return; }
   const c = byId("view", HTMLCanvasElement).getBoundingClientRect(), s = zoomStage.getBoundingClientRect();
   if (e.clientX < c.left || e.clientX > c.right || e.clientY < c.top || e.clientY > c.bottom) return;
@@ -61,10 +59,10 @@ zoomStage.addEventListener("dblclick", e => {
 });
 
 // Desplazamiento al 100%: arrastrar o rueda
-/** Inicio del arrastre: puntero y posición de la vista @type {{ px: number, py: number, x: number, y: number } | null} */
-let panning = null;
+/** Inicio del arrastre: puntero y posición de la vista */
+let panning: { px: number; py: number; x: number; y: number } | null = null;
 zoomStage.addEventListener("pointerdown", e => {
-  if (zoom.mode !== "actual" || !buf.full || e.button !== 0 || /** @type {Element} */ (e.target).closest("button")) return;
+  if (zoom.mode !== "actual" || !buf.full || e.button !== 0 || (e.target as Element).closest("button")) return;
   panning = { px: e.clientX, py: e.clientY, x: zoom.x, y: zoom.y };
   zoomStage.setPointerCapture(e.pointerId);
   zoomStage.classList.add("panning");

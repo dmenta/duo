@@ -1,26 +1,26 @@
 /* Biblioteca de recetas: predeterminadas (solo lectura) y propias (guardadas en el navegador).
    Exportar e importar en archivos .json. */
-import { setStatus, IS_MAC, attachMenu, byId, qs } from "./dom.js";
-import { CURVE_PRESETS } from "./curves.js";
-import { defaultRecipe, state } from "./state.js";
-import { inkLUT } from "./process.js";
-import { slug, save } from "./export.js";
-import { askText, askConfirm } from "./dialogs.js";
-import { getRecipe, normalizeRecipe, applyRecipe, validRecipe, commitHistory, setActiveRecipe } from "./history.js";
+import { setStatus, IS_MAC, attachMenu, byId, qs } from "./dom.ts";
+import { CURVE_PRESETS } from "./curves.ts";
+import { defaultRecipe, state } from "./state.ts";
+import { inkLUT } from "./process.ts";
+import { slug, save } from "./export.ts";
+import { askText, askConfirm } from "./dialogs.ts";
+import { getRecipe, normalizeRecipe, applyRecipe, validRecipe, commitHistory, setActiveRecipe } from "./history.ts";
 
-
-/** @import { InkData, PresetKey, Recipe, RecipeRef } from "./state.js" */
-/** @typedef {{ id: string, name: string, recipe: Recipe, updated: number }} LibraryItem  receta propia */
-/** @typedef {{ id: string, name: string, recipe: Recipe }} NamedRecipe */
+import type { InkData, PresetKey, Recipe, RecipeRef } from "./state.ts";
+/** receta propia */
+type LibraryItem = { id: string, name: string, recipe: Recipe, updated: number };
+type NamedRecipe = { id: string, name: string, recipe: Recipe };
 
 const LIBRARY_KEY = "duotono:recetas:v1";
 const RECIPE_NAME_MAX = 40;
 
 /* ---------- Recetas predeterminadas ---------- */
-/** @param {string} name @param {string} color @param {PresetKey} preset @returns {InkData} */
-const presetInk = (name, color, preset) => ({ name, color, preset, points: CURVE_PRESETS[preset].pts });
-/** @param {InkData[]} inks @returns {Recipe} */
-const withInks = inks => ({ v: 1, gray: { mode: "lum", r: 21.26, g: 71.52, b: 7.22 }, inks });
+
+const presetInk = (name: string, color: string, preset: PresetKey): InkData => ({ name, color, preset, points: CURVE_PRESETS[preset].pts });
+
+const withInks = (inks: InkData[]): Recipe => ({ v: 1, gray: { mode: "lum", r: 21.26, g: 71.52, b: 7.22 }, inks });
 const BUILTIN_RECIPES = [
   { id: "negro-naranja", name: "Negro y naranja", recipe: defaultRecipe() },
   { id: "sepia", name: "Sepia clásico", recipe: withInks([presetInk("Negro", "#231f20", "sombras"), presetInk("Sepia", "#704214", "medios")]) },
@@ -28,18 +28,18 @@ const BUILTIN_RECIPES = [
   { id: "negro-rojo", name: "Negro y rojo", recipe: withInks([presetInk("Negro", "#231f20", "luces"), presetInk("Rojo", "#c8102e", "medios")]) },
   { id: "azul-magenta", name: "Azul y magenta", recipe: withInks([presetInk("Azul", "#1f4e9c", "lineal"), presetInk("Magenta", "#c4006e", "campana")]) }
 ].map(b => ({ ...b, recipe: normalizeRecipe(b.recipe) }));
-/** @type {RecipeRef} */
-export const DEFAULT_REF = { kind: "builtin", id: "negro-naranja" };
+
+export const DEFAULT_REF: RecipeRef = { kind: "builtin", id: "negro-naranja" };
 
 /* ---------- Biblioteca propia ---------- */
-/** @returns {LibraryItem[]} */
-function loadLibrary() {
+
+function loadLibrary(): LibraryItem[] {
   try {
     const d = JSON.parse(localStorage.getItem(LIBRARY_KEY) ?? "null");
     if (!d || d.v !== 1 || !Array.isArray(d.items)) return [];
     return d.items
-      .filter((/** @type {any} */ i) => i && typeof i.id === "string" && typeof i.name === "string" && validRecipe(i.recipe))
-      .map((/** @type {any} */ i) => ({ id: i.id, name: i.name.slice(0, RECIPE_NAME_MAX), recipe: normalizeRecipe(i.recipe), updated: i.updated || 0 }));
+      .filter((i: any) => i && typeof i.id === "string" && typeof i.name === "string" && validRecipe(i.recipe))
+      .map((i: any) => ({ id: i.id, name: i.name.slice(0, RECIPE_NAME_MAX), recipe: normalizeRecipe(i.recipe), updated: i.updated || 0 }));
   } catch { return []; }
 }
 let library = loadLibrary();
@@ -48,17 +48,17 @@ function saveLibrary() {
   catch { setStatus("No se pudo guardar en el navegador. Exportá la receta a un archivo.", "error"); return false; }
 }
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-/** @param {RecipeRef | null} ref @returns {NamedRecipe | null} */
-const findRecipe = ref => !ref ? null
-  : (ref.kind === "builtin" ? BUILTIN_RECIPES : library).find((/** @type {NamedRecipe} */ r) => r.id === ref.id) || null;
-/** Receta propia con ese nombre (sin distinguir mayúsculas). @param {string} name @param {string} [exceptId] */
-const findByName = (name, exceptId) => library.find(r => r.id !== exceptId && r.name.toLowerCase() === name.toLowerCase());
-/** @param {Recipe} a @param {Recipe} b */
-const sameRecipe = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-/** @param {{ name: string }} a @param {{ name: string }} b */
-const byName = (a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" });
-/** base, o base (2), base (3)… si ya existe @param {string} base */
-function uniqueName(base) {
+
+const findRecipe = (ref: RecipeRef | null): NamedRecipe | null => !ref ? null
+  : (ref.kind === "builtin" ? BUILTIN_RECIPES : library).find((r: NamedRecipe) => r.id === ref.id) || null;
+/** Receta propia con ese nombre (sin distinguir mayúsculas). */
+const findByName = (name: string, exceptId?: string) => library.find(r => r.id !== exceptId && r.name.toLowerCase() === name.toLowerCase());
+
+const sameRecipe = (a: Recipe, b: Recipe) => JSON.stringify(a) === JSON.stringify(b);
+
+const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, "es", { sensitivity: "base" });
+/** base, o base (2), base (3)… si ya existe */
+function uniqueName(base: string) {
   if (!findByName(base)) return base;
   for (let n = 2; ; n++) {
     const suffix = ` (${n})`, name = base.slice(0, RECIPE_NAME_MAX - suffix.length) + suffix;
@@ -67,8 +67,7 @@ function uniqueName(base) {
 }
 
 // Tira de muestra: degradé de blanco a negro pasando por las tintas
-/** @param {Recipe} recipe */
-function stripCSS(recipe) {
+function stripCSS(recipe: Recipe) {
   const n = 24, lut = inkLUT(recipe.inks, n), stops = [];
   for (let k = 0; k < n; k++) stops.push(`rgb(${lut[k * 3]},${lut[k * 3 + 1]},${lut[k * 3 + 2]}) ${(k / (n - 1) * 100).toFixed(1)}%`);
   return `linear-gradient(90deg,${stops.join(",")})`;
@@ -105,11 +104,9 @@ const emptyEl = byId("recipesEmpty"), exportAllBtn = byId("recipesExportAll", HT
 
 /**
  * Fila de una receta. Las propias llevan además los botones de renombrar y eliminar.
- * @param {{ id: string, name: string, recipe: Recipe }} r
- * @param {RecipeRef["kind"]} kind
  */
-function recipeRow(r, kind) {
-  const row = qs(/** @type {DocumentFragment} */ (rowTpl.content.cloneNode(true)), ".rrow");
+function recipeRow(r: { id: string; name: string; recipe: Recipe }, kind: RecipeRef["kind"]) {
+  const row = qs((rowTpl.content.cloneNode(true) as DocumentFragment), ".rrow");
   const cur = state.active, on = !!cur && cur.kind === kind && cur.id === r.id;
   const main = qs(row, ".ritem", HTMLButtonElement);
   main.setAttribute("aria-checked", String(on));
@@ -134,8 +131,7 @@ function renderList() {
 }
 
 // Aplicar una receta de la biblioteca: es un paso del historial, se puede deshacer
-/** @param {RecipeRef} ref */
-function applyFromLibrary(ref) {
+function applyFromLibrary(ref: RecipeRef) {
   const r = findRecipe(ref); if (!r) return;
   state.active = { ...ref };
   applyRecipe(r.recipe);
@@ -154,7 +150,7 @@ async function saveRecipe() {
   const { active, dirty, own } = recipeStatus();
   if (!own || !active) return saveRecipeAs();
   if (!dirty) { setStatus("No hay cambios sin guardar."); return; }
-  const item = /** @type {LibraryItem} */ (active);  // propia: viene de la biblioteca
+  const item = active as LibraryItem;  // propia: viene de la biblioteca
   item.recipe = getRecipe(); item.updated = Date.now();
   if (saveLibrary()) setStatus(`Receta «${item.name}» guardada.`);
   syncRecipeUI();
@@ -178,8 +174,7 @@ async function saveRecipeAs() {
   if (saveLibrary()) { setActiveRecipe({ kind: "user", id: item.id }); setStatus(`Receta «${item.name}» guardada.`); }
 }
 
-/** @param {string} id */
-async function renameRecipe(id) {
+async function renameRecipe(id: string) {
   const item = library.find(r => r.id === id); if (!item) return;
   const name = await askText({ title: "Renombrar receta", label: "Nombre", value: item.name, max: RECIPE_NAME_MAX, confirm: "Renombrar" });
   if (!name || name === item.name) return;
@@ -189,8 +184,7 @@ async function renameRecipe(id) {
   syncRecipeUI();
 }
 
-/** @param {string} id */
-async function deleteRecipe(id) {
+async function deleteRecipe(id: string) {
   const item = library.find(r => r.id === id); if (!item) return;
   const isActive = !!state.active && state.active.kind === "user" && state.active.id === id;
   const ok = await askConfirm({
@@ -205,8 +199,8 @@ async function deleteRecipe(id) {
 }
 
 /* ---------- Exportar e importar ---------- */
-/** @param {{ name: string, recipe: Recipe }[]} items */
-const exportFile = items => new Blob([JSON.stringify({
+
+const exportFile = (items: { name: string; recipe: Recipe }[]) => new Blob([JSON.stringify({
   format: "duotono-recipes", v: 1,
   recipes: items.map(i => ({ name: i.name, ...i.recipe }))
 }, null, 2)], { type: "application/json" });
@@ -247,19 +241,19 @@ recipeImport.addEventListener("change", async () => {
 
 /* ---------- Eventos ---------- */
 attachMenu(recipeBtn, recipeList, { onOpen: renderList });
-/** Acciones de la lista según data-op; las de una receta reciben su id @type {Record<string, (id: string) => void>} */
-const LIST_OPS = { rename: renameRecipe, delete: deleteRecipe, import: () => recipeImport.click(), exportall: exportAll };
+/** Acciones de la lista según data-op; las de una receta reciben su id */
+const LIST_OPS: Record<string, (id: string) => void> = { rename: renameRecipe, delete: deleteRecipe, import: () => recipeImport.click(), exportall: exportAll };
 recipeList.addEventListener("click", e => {
-  const op = /** @type {HTMLElement} */ (/** @type {Element} */ (e.target).closest("[data-op]"));
+  const op = (e.target as Element).closest("[data-op]") as HTMLElement;
   if (op) { LIST_OPS[op.dataset.op ?? ""]?.(op.dataset.id ?? ""); return; }
-  const b = /** @type {HTMLElement} */ (/** @type {Element} */ (e.target).closest(".ritem"));
-  if (b) applyFromLibrary({ kind: /** @type {RecipeRef["kind"]} */ (b.dataset.kind), id: b.dataset.id ?? "" });
+  const b = (e.target as Element).closest(".ritem") as HTMLElement;
+  if (b) applyFromLibrary({ kind: (b.dataset.kind as RecipeRef["kind"]), id: b.dataset.id ?? "" });
 });
 
 attachMenu(saveMenuBtn, saveMenu);
-/** @type {Record<string, () => void>} */
-const SAVE_OPS = { saveas: saveRecipeAs, export: exportCurrent };
-saveMenu.querySelectorAll(/** @type {"button"} */ ("[data-act]")).forEach(b => b.addEventListener("click", () => SAVE_OPS[b.dataset.act ?? ""]?.()));
+
+const SAVE_OPS: Record<string, () => void> = { saveas: saveRecipeAs, export: exportCurrent };
+saveMenu.querySelectorAll<HTMLButtonElement>("[data-act]").forEach(b => b.addEventListener("click", () => SAVE_OPS[b.dataset.act ?? ""]?.()));
 recipeSave.addEventListener("click", saveRecipe);
 recipeSave.title = `Guardar receta (${IS_MAC ? "⌘S" : "Ctrl+S"})`;
 byId("saveAsHint").textContent = IS_MAC ? "⇧⌘S" : "Ctrl+Shift+S";

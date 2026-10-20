@@ -1,8 +1,8 @@
 /* Codificador PNG con el tipo de color justo (canvas.toBlob siempre da RGBA de 32 bits).
    Devuelve null si el navegador no tiene CompressionStream. */
 
-/** Canales -> tipo de color PNG (gris, gris+alfa, RGB, RGBA) @type {Record<number, number>} */
-const PNG_COLOR_TYPE = { 1: 0, 2: 4, 3: 2, 4: 6 };
+/** Canales -> tipo de color PNG (gris, gris+alfa, RGB, RGBA) */
+const PNG_COLOR_TYPE: Record<number, number> = { 1: 0, 2: 4, 3: 2, 4: 6 };
 
 const CRC_TABLE = (() => {
   const t = new Uint32Array(256);
@@ -14,8 +14,8 @@ const CRC_TABLE = (() => {
   return t;
 })();
 
-/** @param {string} type  4 letras @param {Uint8Array} data */
-function pngChunk(type, data) {
+/** @param type 4 letras */
+function pngChunk(type: string, data: Uint8Array) {
   const out = new Uint8Array(12 + data.length), dv = new DataView(out.buffer);
   dv.setUint32(0, data.length);
   for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
@@ -27,8 +27,7 @@ function pngChunk(type, data) {
 }
 
 // Filtro adaptativo por fila (None, Sub, Up, Paeth): elige el de menor suma absoluta.
-/** @param {Uint8Array} cur @param {Uint8Array} prev @param {number} bpp @param {Uint8Array} out */
-function filterRow(cur, prev, bpp, out) {
+function filterRow(cur: Uint8Array, prev: Uint8Array, bpp: number, out: Uint8Array) {
   const n = cur.length;
   let sNone = 0, sSub = 0, sUp = 0, sPaeth = 0;
   for (let i = 0; i < n; i++) {
@@ -55,13 +54,11 @@ function filterRow(cur, prev, bpp, out) {
 }
 
 /**
- * @param {number} w
- * @param {number} h
- * @param {number} channels  1 gris · 2 gris+alfa · 3 RGB · 4 RGBA (8 bits por canal)
- * @param {(y: number, row: Uint8Array) => void} fillRow  escribe en `row` (w*channels bytes) la fila y
- * @returns {Promise<Blob | null>}  null si el navegador no tiene CompressionStream
+ * @param channels 1 gris · 2 gris+alfa · 3 RGB · 4 RGBA (8 bits por canal)
+ * @param fillRow escribe en `row` (w*channels bytes) la fila y
+ * @returns null si el navegador no tiene CompressionStream
  */
-export async function encodePNG(w, h, channels, fillRow) {
+export async function encodePNG(w: number, h: number, channels: number, fillRow: (y: number, row: Uint8Array) => void): Promise<Blob | null> {
   if (typeof CompressionStream === "undefined") return null;
   const rowLen = w * channels;
   let cur = new Uint8Array(rowLen), prev = new Uint8Array(rowLen);

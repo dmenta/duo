@@ -1,17 +1,17 @@
 /* Panel de tintas: tarjetas, color, nombre, curva.
    Incluye el modo de cada tinta: color fijo o degradé (color en blancos -> color2 en negros). */
-import { setStatus, cssColorToHex, byId, qs } from "./dom.js";
-import { mirrorX, mirrorY, CURVE_PRESETS } from "./curves.js";
-import { MAX_INKS, NAME_MAX, SWATCHES, swatchName, newInk, state } from "./state.js";
-import { scheduleRender } from "./render.js";
-import { attachCurve } from "./curve-editor.js";
-import { commitHistory } from "./history.js";
+import { setStatus, cssColorToHex, byId, qs } from "./dom.ts";
+import { mirrorX, mirrorY, CURVE_PRESETS } from "./curves.ts";
+import { MAX_INKS, NAME_MAX, SWATCHES, swatchName, newInk, state } from "./state.ts";
+import { scheduleRender } from "./render.ts";
+import { attachCurve } from "./curve-editor.ts";
+import { commitHistory } from "./history.ts";
 
+import type { Ink, Point } from "./state.ts";
+/** extremo de una tinta: color en los blancos o en los negros */
+type End = "color" | "color2";
 
-/** @import { Ink, Point } from "./state.js" */
-/** @typedef {"color" | "color2"} End  extremo de una tinta: color en los blancos o en los negros */
-/** @type {End[]} */
-const END_KEYS = ["color", "color2"];
+const END_KEYS: End[] = ["color", "color2"];
 
 const inksEl = byId("inks");
 const addInkBtn = byId("addInk", HTMLButtonElement);
@@ -20,7 +20,7 @@ const cardTpl = byId("inkCardTpl", HTMLTemplateElement);
 
 /** Tarjeta nueva desde el <template>, con los colores rápidos y las curvas predefinidas. */
 function createInkCard() {
-  const el = qs(/** @type {DocumentFragment} */ (cardTpl.content.cloneNode(true)), ".ink", HTMLDivElement);
+  const el = qs((cardTpl.content.cloneNode(true) as DocumentFragment), ".ink", HTMLDivElement);
   const chips = qs(el, ".chips");
   for (const [n, c] of SWATCHES) {
     const b = document.createElement("button");
@@ -37,12 +37,9 @@ function createInkCard() {
 
 /**
  * Conecta una tarjeta a su tinta: todo cambio se escribe en `ink` y se refleja en la tarjeta.
- * @param {HTMLElement} el
- * @param {Ink} ink
- * @param {number} j  posición en state.inks
- * @param {AbortSignal} signal
+ * @param j posición en state.inks
  */
-function bindInkCard(el, ink, j, signal) {
+function bindInkCard(el: HTMLElement, ink: Ink, j: number, signal: AbortSignal) {
   const presetSel = qs(el, ".preset", HTMLSelectElement);
   presetSel.value = ink.preset;
 
@@ -53,15 +50,15 @@ function bindInkCard(el, ink, j, signal) {
   const nameIn = qs(el, ".name", HTMLInputElement);
   const headSwatch = qs(el, ".head-swatch"), mainColor = qs(el, ".c-main", HTMLInputElement), mainHex = qs(el, ".hex-main", HTMLInputElement);
   const modeSeg = qs(el, ".ink-mode"), gradRow = qs(el, ".grad-row"), strip = qs(el, ".grad-strip");
-  const chips = /** @type {HTMLButtonElement[]} */ ([...el.querySelectorAll(".chip")]);
-  /** @param {End} end */
-  const endRefs = end => {
+  const chips = [...el.querySelectorAll(".chip")] as HTMLButtonElement[];
+
+  const endRefs = (end: End) => {
     const box = qs(el, `.grad-end[data-end="${end}"]`);
     return { box, color: qs(box, ".c-end", HTMLInputElement), hex: qs(box, ".hex-end", HTMLInputElement) };
   };
   const ends = { color: endRefs("color"), color2: endRefs("color2") };
-  /** Extremo al que se aplican los colores rápidos (en color fijo, siempre el único color) @type {End} */
-  let activeEnd = ink.color2 ? "color2" : "color";
+  /** Extremo al que se aplican los colores rápidos (en color fijo, siempre el único color) */
+  let activeEnd: End = ink.color2 ? "color2" : "color";
 
   // El nombre se edita salvo en un color fijo predefinido, que lleva su nombre
   const syncName = () => {
@@ -87,7 +84,7 @@ function bindInkCard(el, ink, j, signal) {
       for (const k of END_KEYS) {
         const c = ink[k] ?? ink.color;
         ends[k].color.value = c; ends[k].hex.value = c;
-        /** @type {HTMLElement} */ (ends[k].color.parentElement).style.background = c;  // cada extremo muestra su propio color
+        (ends[k].color.parentElement as HTMLElement).style.background = c;  // cada extremo muestra su propio color
         ends[k].box.classList.toggle("active", activeEnd === k);
       }
       strip.style.background = `linear-gradient(90deg, ${ink.color}, ${ink.color2})`;
@@ -96,8 +93,8 @@ function bindInkCard(el, ink, j, signal) {
     syncName(); syncChips();
   };
 
-  /** Cambiar un extremo. En color fijo valen las reglas de nombre de siempre. @param {End} end @param {string} c */
-  const setEndColor = (end, c) => {
+  /** Cambiar un extremo. En color fijo valen las reglas de nombre de siempre. */
+  const setEndColor = (end: End, c: string) => {
     if (end === "color" && !ink.color2) {
       const preset = swatchName(c), wasPreset = swatchName(ink.color) !== undefined;
       if (preset) ink.name = preset;                 // predefinido: su nombre
@@ -107,8 +104,7 @@ function bindInkCard(el, ink, j, signal) {
     syncColors(); redraw(); scheduleRender();
   };
 
-  /** @param {string | undefined} mode */
-  const setMode = mode => {
+  const setMode = (mode: string | undefined) => {
     if ((mode === "gradient") === !!ink.color2) return;
     if (mode === "gradient") { ink.color2 = ink.color; activeEnd = "color2"; }  // arranca sin cambio visible
     else {
@@ -117,11 +113,10 @@ function bindInkCard(el, ink, j, signal) {
     }
     syncColors(); redraw(); scheduleRender(); commitHistory();
   };
-  modeSeg.addEventListener("click", e => { const b = /** @type {Element} */ (e.target).closest("button"); if (b) setMode(b.dataset.mode); });
+  modeSeg.addEventListener("click", e => { const b = (e.target as Element).closest("button"); if (b) setMode(b.dataset.mode); });
 
   // Campo de color: acepta cualquier color CSS
-  /** @param {HTMLInputElement} input @param {End} end */
-  const bindHex = (input, end) => {
+  const bindHex = (input: HTMLInputElement, end: End) => {
     input.addEventListener("change", () => {
       const c = cssColorToHex(input.value);
       if (c) setEndColor(end, c);
@@ -133,8 +128,8 @@ function bindInkCard(el, ink, j, signal) {
     });
     input.addEventListener("keydown", e => { if (e.key === "Enter") input.blur(); });
   };
-  /** @param {HTMLInputElement} input @param {End} end */
-  const bindPicker = (input, end) => {
+
+  const bindPicker = (input: HTMLInputElement, end: End) => {
     input.addEventListener("input", () => setEndColor(end, input.value));
     input.addEventListener("change", () => commitHistory());  // al cerrar el selector
   };
@@ -152,12 +147,11 @@ function bindInkCard(el, ink, j, signal) {
     commitHistory();  // al terminar de editar
   });
   nameIn.addEventListener("keydown", e => { if (e.key === "Enter") nameIn.blur(); });
-  chips.forEach(b => b.addEventListener("click", () => { setEndColor(activeEnd, /** @type {string} */ (b.dataset.c)); commitHistory(); }));
+  chips.forEach(b => b.addEventListener("click", () => { setEndColor(activeEnd, (b.dataset.c as string)); commitHistory(); }));
   syncColors();
 
   // Espejar: solo acciones; el resultado queda en los puntos de la curva
-  /** @param {Point[]} pts */
-  const setPoints = pts => {
+  const setPoints = (pts: Point[]) => {
     ink.points = pts; ink.preset = "custom"; presetSel.value = "custom";
     redraw(); scheduleRender(); commitHistory();
   };
@@ -166,7 +160,7 @@ function bindInkCard(el, ink, j, signal) {
 
   presetSel.addEventListener("change", () => {
     const p = CURVE_PRESETS[presetSel.value]; if (!p) return;
-    ink.preset = presetSel.value; ink.points = p.pts.map(q => /** @type {Point} */ (q.slice()));
+    ink.preset = presetSel.value; ink.points = p.pts.map(q => (q.slice() as Point));
     redraw(); scheduleRender();
     commitHistory();
   });

@@ -1,9 +1,8 @@
 /* Procesamiento: imagen -> niveles de gris -> tintas -> píxeles. */
-/** @import { Bitmap, InkData, ViewMode } from "./state.js" */
-import { N, LIN, enc, hexToLin, YfromL, LfromY, coverage, gradientLin } from "./color.js";
-import { makeCurve } from "./curves.js";
-import { state, buf, resultLUT } from "./state.js";
-
+import type { Bitmap, InkData, ViewMode } from "./state.ts";
+import { N, LIN, enc, hexToLin, YfromL, LfromY, coverage, gradientLin } from "./color.ts";
+import { makeCurve } from "./curves.ts";
+import { state, buf, resultLUT } from "./state.ts";
 
 function grayWeights() {
   return state.gray.mode === "lum"
@@ -22,8 +21,7 @@ const IDX_FROM_Y = (() => {
 
 // Cada píxel -> índice de tono (0 = blanco, N-1 = negro) según L*.
 // La transparencia no se mezcla acá: se conserva aparte en img.data para exportar.
-/** @param {Bitmap} img @returns {Uint16Array} */
-export function computeIdx(img) {
+export function computeIdx(img: Bitmap): Uint16Array {
   const [wr, wg, wb] = grayWeights(), d = img.data, n = img.w * img.h, out = new Uint16Array(n);
   for (let p = 0, i = 0; p < n; p++, i += 4) {
     let Y = wr * LIN[d[i]] + wg * LIN[d[i + 1]] + wb * LIN[d[i + 2]];
@@ -36,8 +34,8 @@ export function computeIdx(img) {
 // Tabla tono -> color sRGB de `size` niveles para un conjunto de tintas,
 // simulando sobreimpresión multiplicativa en RGB lineal.
 // Una tinta en degradé (color2) cambia de color con el nivel: color en el blanco, color2 en el negro.
-/** @param {InkData[]} inks @param {number} size @returns {Uint8Array} size*3 bytes RGB */
-export function inkLUT(inks, size) {
+/** @returns size*3 bytes RGB */
+export function inkLUT(inks: InkData[], size: number): Uint8Array {
   const solid = inks.map(i => hexToLin(i.color));
   const grads = inks.map(i => i.color2 ? gradientLin(i.color, i.color2, size) : null);
   const covs = inks.map(ink => {
@@ -67,8 +65,7 @@ export const grayLUT = (() => {
 })();
 
 // Escribe en `out` (ImageData) la vista pedida, con la transparencia compuesta sobre blanco
-/** @param {Bitmap} img @param {Uint16Array} idx @param {ViewMode} mode @param {ImageData} out */
-export function paint(img, idx, mode, out) {
+export function paint(img: Bitmap, idx: Uint16Array, mode: ViewMode, out: ImageData) {
   const o = out.data, n = img.w * img.h;
   if (mode === "original") {
     const d = img.data;
@@ -94,10 +91,8 @@ export function paint(img, idx, mode, out) {
 /**
  * Pinta la región (x0, y0, w, h) de la imagen en `out` (w×h) calculando el gris al vuelo:
  * se usa al 100%, donde solo se procesa lo visible y siempre con la conversión a gris vigente.
- * @param {Bitmap} img @param {number} x0 @param {number} y0 @param {number} w @param {number} h
- * @param {ViewMode} mode @param {ImageData} out
  */
-export function paintRegion(img, x0, y0, w, h, mode, out) {
+export function paintRegion(img: Bitmap, x0: number, y0: number, w: number, h: number, mode: ViewMode, out: ImageData) {
   const [wr, wg, wb] = grayWeights(), d = img.data, o = out.data, lut = mode === "result" ? resultLUT() : grayLUT, iw = img.w;
   for (let y = 0, i = 0; y < h; y++) {
     for (let x = 0, s = ((y0 + y) * iw + x0) * 4; x < w; x++, s += 4, i += 4) {

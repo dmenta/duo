@@ -1,19 +1,18 @@
 /* Panel de conversión a gris: método, filtros y mezclador de canales. */
-import { byId } from "./dom.js";
-import { state } from "./state.js";
-import { recomputeGray } from "./loader.js";
-import { commitHistory } from "./history.js";
-
+import { byId } from "./dom.ts";
+import { state } from "./state.ts";
+import { recomputeGray } from "./loader.ts";
+import { commitHistory } from "./history.ts";
 
 const grayMode = byId("grayMode", HTMLSelectElement);
 const mixer = byId("mixer");
 const mixIns = { r: byId("mr", HTMLInputElement), g: byId("mg", HTMLInputElement), b: byId("mb", HTMLInputElement) };
-/** @typedef {"r" | "g" | "b"} Channel */
-/** @type {Channel[]} */
-const CHANNELS = ["r", "g", "b"];
-const filterBtns = /** @type {HTMLButtonElement[]} */ ([...document.querySelectorAll("#filters [data-mix]")]);
-/** Pesos r, g, b del filtro de un botón (data-mix="r,g,b") @param {HTMLElement} b */
-const parseMix = b => (b.dataset.mix ?? "").split(",").map(Number);
+type Channel = "r" | "g" | "b";
+
+const CHANNELS: Channel[] = ["r", "g", "b"];
+const filterBtns = [...document.querySelectorAll("#filters [data-mix]")] as HTMLButtonElement[];
+/** Pesos r, g, b del filtro de un botón (data-mix="r,g,b") */
+const parseMix = (b: HTMLElement) => (b.dataset.mix ?? "").split(",").map(Number);
 
 function syncMixer() {
   for (const k of CHANNELS) {
@@ -37,7 +36,7 @@ export function syncGrayUI() {
 }
 
 grayMode.addEventListener("change", () => {
-  state.gray.mode = /** @type {"lum" | "mix"} */ (grayMode.value);
+  state.gray.mode = grayMode.value as "lum" | "mix";
   mixer.hidden = grayMode.value !== "mix";
   recomputeGray();
   commitHistory();

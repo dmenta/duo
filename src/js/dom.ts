@@ -3,38 +3,28 @@
 /**
  * Elemento por id, con el tipo esperado. Falla enseguida si no existe o es de otro tipo,
  * en vez de dar un error confuso más adelante.
- * @template {HTMLElement} [T=HTMLElement]
- * @param {string} id
- * @param {{ new (): T }} [type]  p. ej. HTMLInputElement
- * @returns {T}
+ * @param type p. ej. HTMLInputElement
  */
-export function byId(id, type) {
+export function byId<T extends HTMLElement = HTMLElement>(id: string, type?: new () => T): T {
   const el = document.getElementById(id);
   if (!(el instanceof (type ?? HTMLElement))) throw new Error(`#${id}: no existe o no es ${(type ?? HTMLElement).name}`);
-  return /** @type {T} */ (el);
+  return el as T;
 }
 
 /**
  * Primer elemento dentro de `root` que coincide con `selector`, con el tipo esperado.
  * Como byId: falla enseguida si no existe o es de otro tipo.
- * @template {Element} [T=HTMLElement]
- * @param {ParentNode} root
- * @param {string} selector
- * @param {{ new (): T }} [type]
- * @returns {T}
  */
-export function qs(root, selector, type) {
+export function qs<T extends Element = HTMLElement>(root: ParentNode, selector: string, type?: new () => T): T {
   const el = root.querySelector(selector), t = type ?? HTMLElement;
   if (!(el instanceof t)) throw new Error(`${selector}: no existe o no es ${t.name}`);
-  return /** @type {T} */ (el);
+  return el as T;
 }
 
 /**
  * Contexto 2D de un canvas (solo es null si el canvas ya tiene otro tipo de contexto).
- * @param {HTMLCanvasElement} canvas
- * @param {CanvasRenderingContext2DSettings} [options]
  */
-export function ctx2d(canvas, options) {
+export function ctx2d(canvas: HTMLCanvasElement, options?: CanvasRenderingContext2DSettings) {
   const ctx = canvas.getContext("2d", options);
   if (!ctx) throw new Error("No se pudo obtener el contexto 2D del canvas");
   return ctx;
@@ -43,8 +33,8 @@ export function ctx2d(canvas, options) {
 // Aviso flotante: desaparece solo; los errores quedan más tiempo. Texto vacío lo oculta.
 const toastEl = byId("toast");
 let toastTimer = 0;
-/** Texto vacío lo oculta. @param {string} text @param {"info" | "error"} [kind] */
-export function setStatus(text, kind = "info") {
+/** Texto vacío lo oculta. */
+export function setStatus(text: string, kind: "info" | "error" = "info") {
   clearTimeout(toastTimer);
   if (!text) { toastEl.classList.remove("on"); return; }
   toastEl.textContent = text;
@@ -59,8 +49,8 @@ export const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.use
 // hex (con o sin #, abreviado), rgb(), hsl(), oklch(), nombres... También "255, 0, 0".
 // Los colores fuera de sRGB se ajustan al más cercano. Devuelve null si no es un color válido.
 const colorProbe = ctx2d(document.createElement("canvas"), { willReadFrequently: true });
-/** @param {string} input @returns {string | null} */
-export function cssColorToHex(input) {
+
+export function cssColorToHex(input: string): string | null {
   let s = input.trim();
   if (/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.test(s)) {
     s = s.replace("#", "");
@@ -81,21 +71,20 @@ export function cssColorToHex(input) {
 // Menú desplegable accesible: abre con clic o flecha abajo, se recorre con flechas,
 // Inicio y Fin, se cierra con Escape, Tab, clic afuera o al elegir una opción.
 /**
- * @param {HTMLElement} toggle  botón que abre y cierra el menú
- * @param {HTMLElement} menu    contenedor de los [role="menuitem"]
- * @param {{ onOpen?: () => void }} [options]  onOpen corre justo antes de mostrarlo
- * @returns {{ open: (focusFirst: boolean) => void, close: (returnFocus: boolean) => void }}
+ * @param toggle botón que abre y cierra el menú
+ * @param menu contenedor de los [role="menuitem"]
+ * @param options onOpen corre justo antes de mostrarlo
  */
-export function attachMenu(toggle, menu, { onOpen } = {}) {
-  const items = () => /** @type {HTMLElement[]} */ ([...menu.querySelectorAll('[role^="menuitem"]:not([disabled])')]);
-  /** @param {boolean} focusFirst */
-  const open = focusFirst => {
+export function attachMenu(toggle: HTMLElement, menu: HTMLElement, { onOpen }: { onOpen?: () => void } = {}): { open: (focusFirst: boolean) => void; close: (returnFocus: boolean) => void } {
+  const items = () => ([...menu.querySelectorAll('[role^="menuitem"]:not([disabled])')] as HTMLElement[]);
+
+  const open = (focusFirst: boolean) => {
     if (onOpen) onOpen();
     menu.hidden = false; toggle.setAttribute("aria-expanded", "true");
-    if (focusFirst) (/** @type {HTMLElement} */ (menu.querySelector('[aria-checked="true"]:not([disabled])')) || items()[0])?.focus();
+    if (focusFirst) ((menu.querySelector('[aria-checked="true"]:not([disabled])') as HTMLElement) || items()[0])?.focus();
   };
-  /** @param {boolean} returnFocus */
-  const close = returnFocus => {
+
+  const close = (returnFocus: boolean) => {
     if (menu.hidden) return;
     menu.hidden = true; toggle.setAttribute("aria-expanded", "false");
     if (returnFocus) toggle.focus();
@@ -106,7 +95,7 @@ export function attachMenu(toggle, menu, { onOpen } = {}) {
     else if (e.key === "Escape" && !menu.hidden) { e.preventDefault(); close(false); }  // abierto con el mouse
   });
   menu.addEventListener("keydown", e => {
-    const list = items(), n = list.length, i = list.indexOf(/** @type {HTMLElement} */ (document.activeElement));
+    const list = items(), n = list.length, i = list.indexOf(document.activeElement as HTMLElement);
     if (e.key === "Escape") { e.preventDefault(); close(true); return; }
     if (e.key === "Tab") { close(false); return; }
     if (!n) return;
@@ -116,9 +105,9 @@ export function attachMenu(toggle, menu, { onOpen } = {}) {
     else if (e.key === "End") { e.preventDefault(); list[n - 1].focus(); }
   });
   // Las acciones de cada opción corren primero (en el botón); después se cierra
-  menu.addEventListener("click", e => { if (/** @type {Element} */ (e.target).closest('[role^="menuitem"]')) close(false); });
+  menu.addEventListener("click", e => { if ((e.target as Element).closest('[role^="menuitem"]')) close(false); });
   document.addEventListener("pointerdown", e => {
-    const t = /** @type {Node} */ (e.target);
+    const t = e.target as Node;
     if (!menu.contains(t) && !toggle.contains(t)) close(false);
   });
   return { open, close };
