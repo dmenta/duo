@@ -81,7 +81,10 @@ const EXPORTS = {
     await save(`${slug(state.name)}-gris.png`, blob, desc);
   },
   zip: async () => {
-    if (typeof JSZip === "undefined") { setStatus("No se pudo cargar el compresor. Descargá cada imagen por separado.", "error"); return; }
+    // El compresor se descarga recién la primera vez que se usa
+    let JSZip;
+    try { ({ default: JSZip } = await import("jszip")); }
+    catch { setStatus("No se pudo cargar el compresor. Descargá cada imagen por separado.", "error"); return; }
     const zip = new JSZip(), base = slug(state.name);
     zip.file(`${base}-duotono.png`, (await exportPNG("result")).blob);
     zip.file(`${base}-gris.png`, (await exportPNG("gray")).blob);

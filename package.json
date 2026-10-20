@@ -3,11 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "python src/build.py",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "check": "tsc -p jsconfig.json"
   },
   "devDependencies": {
-    "esbuild": "0.28.2",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vite": "8.3.4"
+  },
+  "dependencies": {
+    "jszip": "3.10.1"
   }
 }
