@@ -4,7 +4,7 @@ import { N, LIN, enc, hexToLin, YfromL, LfromY, coverage, gradientLin } from "./
 import { makeCurve } from "./curves.ts";
 import { state, buf, resultLUT } from "./state.ts";
 
-export function grayWeights() {
+function grayWeights() {
   return state.gray.mode === "lum"
     ? [0.2126, 0.7152, 0.0722]
     : [state.gray.r / 100, state.gray.g / 100, state.gray.b / 100];

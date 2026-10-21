@@ -123,19 +123,12 @@ function recipeRow(r: { id: string; name: string; recipe: Recipe }, kind: Recipe
 // Las predeterminadas no cambian: sus filas se arman una sola vez
 builtinEl.replaceChildren(...BUILTIN_RECIPES.map(r => recipeRow(r, "builtin")));
 
-// Las propias cambian al guardar, renombrar, eliminar, importar o desde otra pestaña.
-// En vez de avisar en cada caso, se compara la biblioteca con la de las filas actuales.
-let shownLibrary = "";
-
-// Lista al abrirse: rehace las filas propias solo si cambió la biblioteca y marca la activa
+// Lista al abrirse: rehace las filas propias (cambian al guardar, renombrar, eliminar,
+// importar o desde otra pestaña) y marca la receta activa
 function renderList() {
-  const now = JSON.stringify(library);
-  if (now !== shownLibrary) {
-    mineEl.replaceChildren(...[...library].sort(byName).map(r => recipeRow(r, "user")));
-    emptyEl.hidden = library.length > 0;
-    exportAllBtn.disabled = !library.length;
-    shownLibrary = now;
-  }
+  mineEl.replaceChildren(...[...library].sort(byName).map(r => recipeRow(r, "user")));
+  emptyEl.hidden = library.length > 0;
+  exportAllBtn.disabled = !library.length;
   const cur = state.active;
   for (const b of recipeList.querySelectorAll<HTMLElement>(".ritem"))
     b.setAttribute("aria-checked", String(!!cur && cur.kind === b.dataset.kind && cur.id === b.dataset.id));
