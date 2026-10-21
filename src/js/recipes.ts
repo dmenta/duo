@@ -8,13 +8,12 @@ import { inkLUT } from "./process.ts";
 import { slug, save } from "./export.ts";
 import { askText, askConfirm } from "./dialogs.ts";
 import { getRecipe, normalizeRecipe, applyRecipe, validRecipe, commitHistory, setActiveRecipe } from "./history.ts";
+import { loadLibraryItems, saveLibraryItems, onLibraryChange } from "./storage.ts";
 
 import type { Recipe, RecipeRef } from "./state.ts";
 /** receta propia */
 type LibraryItem = { id: string, name: string, recipe: Recipe, updated: number };
 type NamedRecipe = { id: string, name: string, recipe: Recipe };
-
-const LIBRARY_KEY = "duotono:recetas:v1";
 
 /* ---------- Recetas predeterminadas ---------- */
 
@@ -23,19 +22,15 @@ const BUILTIN_RECIPES = BUILTIN_DEFS.map(b => ({ ...b, recipe: normalizeRecipe(b
 
 /* ---------- Biblioteca propia ---------- */
 
-function loadLibrary(): LibraryItem[] {
-  try {
-    const d = JSON.parse(localStorage.getItem(LIBRARY_KEY) ?? "null");
-    if (!d || d.v !== 1 || !Array.isArray(d.items)) return [];
-    return d.items
-      .filter((i: any) => i && typeof i.id === "string" && typeof i.name === "string" && validRecipe(i.recipe))
-      .map((i: any) => ({ id: i.id, name: i.name.slice(0, RECIPE_NAME_MAX), recipe: normalizeRecipe(i.recipe), updated: i.updated || 0 }));
-  } catch { return []; }
-}
+// Las recetas guardadas se validan y normalizan al leerlas: las inválidas se descartan
+const loadLibrary = (): LibraryItem[] => loadLibraryItems()
+  .filter((i: any) => i && typeof i.id === "string" && typeof i.name === "string" && validRecipe(i.recipe))
+  .map((i: any) => ({ id: i.id, name: i.name.slice(0, RECIPE_NAME_MAX), recipe: normalizeRecipe(i.recipe), updated: i.updated || 0 }));
 let library = loadLibrary();
 function saveLibrary() {
-  try { localStorage.setItem(LIBRARY_KEY, JSON.stringify({ v: 1, items: library })); return true; }
-  catch { setStatus("No se pudo guardar en el navegador. Exportá la receta a un archivo.", "error"); return false; }
+  if (saveLibraryItems(library)) return true;
+  setStatus("No se pudo guardar en el navegador. Exportá la receta a un archivo.", "error");
+  return false;
 }
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
@@ -260,4 +255,4 @@ window.addEventListener("keydown", e => {
 });
 
 // Si otra pestaña cambia la biblioteca, mantenerla al día
-window.addEventListener("storage", e => { if (e.key === LIBRARY_KEY) { library = loadLibrary(); syncRecipeUI(); } });
+onLibraryChange(() => { library = loadLibrary(); syncRecipeUI(); });
