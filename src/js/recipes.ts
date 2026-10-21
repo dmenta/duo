@@ -7,7 +7,6 @@ import { doc } from "./session.ts";
 import { inkLUT } from "./process.ts";
 import { slug, save } from "./export.ts";
 import { askText, askConfirm } from "./dialogs.ts";
-import { commitHistory, setActiveRecipe } from "./history.ts";
 import { normalizeRecipe, validRecipe } from "./recipe.ts";
 import { loadLibraryItems, saveLibraryItems, onLibraryChange } from "./storage.ts";
 
@@ -124,7 +123,6 @@ function renderList() {
 function applyFromLibrary(ref: RecipeRef) {
   const r = findRecipe(ref); if (!r) return;
   doc.loadRecipe(r.recipe, ref);
-  commitHistory();
 }
 
 /* ---------- Acciones ---------- */
@@ -160,7 +158,7 @@ async function saveRecipeAs() {
     item = { id: newId(), name, recipe: doc.getRecipe(), updated: Date.now() };
     library.push(item);
   }
-  if (saveLibrary()) { setActiveRecipe({ kind: "user", id: item.id }); setStatus(`Receta «${item.name}» guardada.`); }
+  if (saveLibrary()) { doc.setActive({ kind: "user", id: item.id }); setStatus(`Receta «${item.name}» guardada.`); }
 }
 
 async function renameRecipe(id: string) {
@@ -184,7 +182,7 @@ async function deleteRecipe(id: string) {
   if (!ok) return;
   library = library.filter(r => r.id !== id);
   if (saveLibrary()) setStatus(`Receta «${item.name}» eliminada.`);
-  if (isActive) setActiveRecipe(null); else syncRecipeUI();
+  if (isActive) doc.setActive(null); else syncRecipeUI();
 }
 
 /* ---------- Exportar e importar ---------- */

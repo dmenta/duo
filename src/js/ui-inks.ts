@@ -6,9 +6,8 @@ import { CURVE_PRESETS, MAX_INKS, NAME_MAX, SWATCHES } from "./config.ts";
 import { doc } from "./session.ts";
 import { swatchName, newInk } from "./recipe.ts";
 import { attachCurve } from "./curve-editor.ts";
-import { commitHistory } from "./history.ts";
 
-import type { InkChanges, Point, PresetKey, ReadonlyInk } from "./types.ts";
+import type { ChangeOptions, InkChanges, Point, PresetKey, ReadonlyInk } from "./types.ts";
 /** extremo de una tinta: color en los blancos o en los negros */
 type End = "color" | "color2";
 
@@ -44,13 +43,13 @@ const createInkCard = () => qs(cardTpl.content.cloneNode(true) as DocumentFragme
  * que la actualiza en el lugar: `ink` siempre muestra el estado vigente.
  */
 function bindInkCard(el: HTMLElement, ink: ReadonlyInk, signal: AbortSignal) {
-  const set = (changes: InkChanges) => doc.updateInk(ink.id, changes);
+  const set = (changes: InkChanges, options?: ChangeOptions) => doc.updateInk(ink.id, changes, options);
   const presetSel = qs(el, ".preset", HTMLSelectElement);
   presetSel.value = ink.preset;
 
   // Editar la curva a mano la vuelve personalizada
   const redraw = attachCurve(qs(el, ".curve", HTMLCanvasElement), ink, qs(el, ".readout"),
-    points => set({ points, preset: "custom" }), signal);
+    (points, options) => set({ points, preset: "custom" }, options), signal);
 
   const nameIn = qs(el, ".name", HTMLInputElement);
   const headSwatch = qs(el, ".head-swatch"), mainColor = qs(el, ".c-main", HTMLInputElement), mainHex = qs(el, ".hex-main", HTMLInputElement);
@@ -99,14 +98,14 @@ function bindInkCard(el: HTMLElement, ink: ReadonlyInk, signal: AbortSignal) {
   };
 
   /** Cambiar un extremo. En color fijo valen las reglas de nombre de siempre. */
-  const setEndColor = (end: End, c: string) => {
+  const setEndColor = (end: End, c: string, options?: ChangeOptions) => {
     const changes: InkChanges = { [end]: c };
     if (end === "color" && !ink.color2) {
       const preset = swatchName(c), wasPreset = swatchName(ink.color) !== undefined;
       if (preset) changes.name = preset;                 // predefinido: su nombre
       else if (wasPreset) changes.name = "Personalizado"; // de predefinido a propio
     }
-    set(changes);
+    set(changes, options);
   };
 
   const setMode = (mode: string | undefined) => {
@@ -118,7 +117,6 @@ function bindInkCard(el: HTMLElement, ink: ReadonlyInk, signal: AbortSignal) {
       const preset = swatchName(ink.color);
       set(preset ? { color2: undefined, name: preset } : { color2: undefined });
     }
-    commitHistory();
   };
   modeSeg.addEventListener("click", e => { const b = (e.target as Element).closest("button"); if (b) setMode(b.dataset.mode); });
 
@@ -131,14 +129,14 @@ function bindInkCard(el: HTMLElement, ink: ReadonlyInk, signal: AbortSignal) {
         if (input.value.trim()) setStatus(`No reconozco «${input.value.trim()}» como color. Probá con #e3742f, rgb(227, 116, 47) u oklch(…).`, "error");
         input.value = ink[end] ?? ink.color;
       }
-      commitHistory();
     });
     input.addEventListener("keydown", e => { if (e.key === "Enter") input.blur(); });
   };
 
   const bindPicker = (input: HTMLInputElement, end: End) => {
-    input.addEventListener("input", () => setEndColor(end, input.value));
-    input.addEventListener("change", () => commitHistory());  // al cerrar el selector
+    // Mientras se elige, el cambio está en curso; al cerrar el selector, termina
+    input.addEventListener("input", () => setEndColor(end, input.value, { live: true }));
+    input.addEventListener("change", () => setEndColor(end, input.value));
   };
   bindPicker(mainColor, "color"); bindHex(mainHex, "color");
   for (const k of END_KEYS) {
@@ -148,19 +146,16 @@ function bindInkCard(el: HTMLElement, ink: ReadonlyInk, signal: AbortSignal) {
     ends[k].box.addEventListener("focusin", () => { if (activeEnd !== k) { activeEnd = k; syncColors(); } });
   }
 
-  nameIn.addEventListener("input", () => set({ name: nameIn.value }));
-  nameIn.addEventListener("change", () => {
-    if (!nameIn.value.trim()) set({ name: "Personalizado" });
-    commitHistory();  // al terminar de editar
-  });
+  // Mientras se escribe, el cambio está en curso; al terminar de editar, termina
+  nameIn.addEventListener("input", () => set({ name: nameIn.value }, { live: true }));
+  nameIn.addEventListener("change", () => set({ name: nameIn.value.trim() ? nameIn.value : "Personalizado" }));
   nameIn.addEventListener("keydown", e => { if (e.key === "Enter") nameIn.blur(); });
-  chips.forEach(b => b.addEventListener("click", () => { setEndColor(activeEnd, (b.dataset.c as string)); commitHistory(); }));
+  chips.forEach(b => b.addEventListener("click", () => setEndColor(activeEnd, b.dataset.c as string)));
   syncColors();
 
   // Espejar: solo acciones; el resultado queda en los puntos de la curva
   const setPoints = (points: Point[]) => {
     set({ points, preset: "custom" });
-    commitHistory();
   };
   qs(el, ".flip-x").addEventListener("click", () => setPoints(mirrorX(ink.points)));
   qs(el, ".flip-y").addEventListener("click", () => setPoints(mirrorY(ink.points)));
@@ -168,12 +163,11 @@ function bindInkCard(el: HTMLElement, ink: ReadonlyInk, signal: AbortSignal) {
   presetSel.addEventListener("change", () => {
     const p = CURVE_PRESETS[presetSel.value]; if (!p) return;
     set({ preset: presetSel.value as PresetKey, points: p.pts });
-    commitHistory();
   });
 
   const rm = qs(el, ".rm", HTMLButtonElement);
   rm.disabled = doc.inks.length < 2;
-  rm.addEventListener("click", () => { doc.removeInk(ink.id); commitHistory(); });
+  rm.addEventListener("click", () => doc.removeInk(ink.id));
 
   // La tarjeta refleja los cambios de su tinta, vengan de donde vengan
   const unsubscribe = doc.subscribe(c => {
@@ -204,7 +198,6 @@ addInkBtn.addEventListener("click", () => {
   const used = new Set(doc.inks.map(i => i.color));
   const sw = SWATCHES.find(s => !used.has(s[1])) || SWATCHES[0];
   doc.addInk(newInk(sw[0], sw[1], "campana"));  // la nueva queda primera
-  commitHistory();
 });
 
 // La lista se rearma cuando cambian las tintas (agregar, quitar) o la receta entera

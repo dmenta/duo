@@ -24,7 +24,7 @@ function syncHistoryUI() {
 }
 
 // Registrar el estado actual al terminar un gesto. Si nada cambió, no agrega entrada.
-export function commitHistory() {
+function commitHistory() {
   const e = currentEntry();
   if (hist.index >= 0 && sameEntry(hist.stack[hist.index], e)) return;
   hist.stack.splice(hist.index + 1);
@@ -35,9 +35,9 @@ export function commitHistory() {
   syncHistoryUI();
 }
 
-// Cambiar la receta activa sin agregar un paso (por ejemplo, al guardar con otro nombre)
-export function setActiveRecipe(ref: RecipeRef | null) {
-  doc.setActive(ref);
+// Cambió la receta activa sin cambiar la receta (por ejemplo, al guardar con otro nombre):
+// se corrige el paso actual en lugar de agregar uno
+function updateActive() {
   if (hist.index >= 0) hist.stack[hist.index] = { ...hist.stack[hist.index], active: doc.active };
   saveResumePoint();
 }
@@ -45,17 +45,25 @@ export function setActiveRecipe(ref: RecipeRef | null) {
 function restoreCurrent() {
   const e = hist.stack[hist.index];
   doc.loadRecipe(e.recipe, e.active, { commit: false });
-  saveResumePoint();
   syncHistoryUI();
 }
 function undo() { if (hist.index > 0) { hist.index--; restoreCurrent(); } }
 function redo() { if (hist.index < hist.stack.length - 1) { hist.index++; restoreCurrent(); } }
 
-// Arranca el historial con el estado actual como único paso
+/**
+ * Arranca el historial con el estado actual como único paso. Desde acá, cada cambio terminado
+ * del documento es un paso; los gestos en curso (live) esperan a terminar.
+ */
 export function initHistory() {
   hist.stack = [currentEntry()];
   hist.index = 0;
   syncHistoryUI();
+  doc.subscribe(c => {
+    if (c.what === "image" || ("live" in c && c.live)) return;
+    if (c.what === "active") updateActive();
+    else if (c.what === "recipe" && !c.commit) saveResumePoint();  // deshacer o rehacer
+    else commitHistory();
+  });
 }
 
 /* ---------- Controles ---------- */

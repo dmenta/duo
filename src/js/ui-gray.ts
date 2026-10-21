@@ -1,7 +1,6 @@
 /* Panel de conversión a gris: método, filtros y mezclador de canales. */
 import { byId } from "./dom.ts";
 import { doc } from "./session.ts";
-import { commitHistory } from "./history.ts";
 
 const grayMode = byId("grayMode", HTMLSelectElement);
 const mixer = byId("mixer");
@@ -36,16 +35,15 @@ function syncGrayUI() {
 
 grayMode.addEventListener("change", () => {
   doc.setGrayMode(grayMode.value as "lum" | "mix");
-  commitHistory();
 });
 for (const k of CHANNELS) {
-  mixIns[k].addEventListener("input", () => { doc.setGrayWeights({ [k]: +mixIns[k].value }); });
-  mixIns[k].addEventListener("change", () => commitHistory());  // una entrada por arrastre
+  // Mientras se arrastra, el cambio está en curso; al soltar, termina (un paso de historial)
+  mixIns[k].addEventListener("input", () => doc.setGrayWeights({ [k]: +mixIns[k].value }, { live: true }));
+  mixIns[k].addEventListener("change", () => doc.setGrayWeights({ [k]: +mixIns[k].value }));
 }
 filterBtns.forEach(b => b.addEventListener("click", () => {
   const [r, g, bl] = parseMix(b);
   doc.setGrayWeights({ r, g, b: bl });
-  commitHistory();
 }));
 
 // Los controles reflejan la conversión a gris del documento
