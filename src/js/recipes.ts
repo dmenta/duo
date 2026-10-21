@@ -106,10 +106,8 @@ const emptyEl = byId("recipesEmpty"), exportAllBtn = byId("recipesExportAll", HT
  * Fila de una receta. Las propias llevan además los botones de renombrar y eliminar.
  */
 function recipeRow(r: { id: string; name: string; recipe: Recipe }, kind: RecipeRef["kind"]) {
-  const row = qs((rowTpl.content.cloneNode(true) as DocumentFragment), ".rrow");
-  const cur = state.active, on = !!cur && cur.kind === kind && cur.id === r.id;
+  const row = qs(rowTpl.content.cloneNode(true) as DocumentFragment, ".rrow");
   const main = qs(row, ".ritem", HTMLButtonElement);
-  main.setAttribute("aria-checked", String(on));
   main.dataset.kind = kind; main.dataset.id = r.id;
   qs(row, ".rname").textContent = r.name;
   qs(row, ".rstrip").style.background = stripCSS(r.recipe);
@@ -122,12 +120,25 @@ function recipeRow(r: { id: string; name: string; recipe: Recipe }, kind: Recipe
   return row;
 }
 
-// Lista: propias y predeterminadas; las propias se renombran o eliminan desde acá
+// Las predeterminadas no cambian: sus filas se arman una sola vez
+builtinEl.replaceChildren(...BUILTIN_RECIPES.map(r => recipeRow(r, "builtin")));
+
+// Las propias cambian al guardar, renombrar, eliminar, importar o desde otra pestaña.
+// En vez de avisar en cada caso, se compara la biblioteca con la de las filas actuales.
+let shownLibrary = "";
+
+// Lista al abrirse: rehace las filas propias solo si cambió la biblioteca y marca la activa
 function renderList() {
-  mineEl.replaceChildren(...[...library].sort(byName).map(r => recipeRow(r, "user")));
-  builtinEl.replaceChildren(...BUILTIN_RECIPES.map(r => recipeRow(r, "builtin")));
-  emptyEl.hidden = library.length > 0;
-  exportAllBtn.disabled = !library.length;
+  const now = JSON.stringify(library);
+  if (now !== shownLibrary) {
+    mineEl.replaceChildren(...[...library].sort(byName).map(r => recipeRow(r, "user")));
+    emptyEl.hidden = library.length > 0;
+    exportAllBtn.disabled = !library.length;
+    shownLibrary = now;
+  }
+  const cur = state.active;
+  for (const b of recipeList.querySelectorAll<HTMLElement>(".ritem"))
+    b.setAttribute("aria-checked", String(!!cur && cur.kind === b.dataset.kind && cur.id === b.dataset.id));
 }
 
 // Aplicar una receta de la biblioteca: es un paso del historial, se puede deshacer

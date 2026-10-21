@@ -18,22 +18,25 @@ const addInkBtn = byId("addInk", HTMLButtonElement);
 
 const cardTpl = byId("inkCardTpl", HTMLTemplateElement);
 
-/** Tarjeta nueva desde el <template>, con los colores rápidos y las curvas predefinidas. */
-function createInkCard() {
-  const el = qs((cardTpl.content.cloneNode(true) as DocumentFragment), ".ink", HTMLDivElement);
-  const chips = qs(el, ".chips");
+// Los colores rápidos y las curvas predefinidas son fijos: se agregan una sola vez al
+// template y cada tarjeta nueva los trae al clonarlo.
+{
+  const tpl = cardTpl.content;
+  const chips = qs(tpl, ".chips");
   for (const [n, c] of SWATCHES) {
     const b = document.createElement("button");
     b.className = "chip"; b.style.background = c; b.dataset.c = c;
     b.title = n; b.setAttribute("aria-label", n); b.setAttribute("aria-pressed", "false");
     chips.append(b);
   }
-  const presetSel = qs(el, ".preset", HTMLSelectElement);
+  const presetSel = qs(tpl, ".preset", HTMLSelectElement);
   const custom = presetSel.firstElementChild;  // "Personalizada" va al final
   for (const [k, v] of Object.entries(CURVE_PRESETS)) presetSel.insertBefore(new Option(v.label, k), custom);
-  qs(el, ".name", HTMLInputElement).maxLength = NAME_MAX;
-  return el;
+  qs(tpl, ".name", HTMLInputElement).maxLength = NAME_MAX;
 }
+
+/** Tarjeta nueva desde el <template>. */
+const createInkCard = () => qs(cardTpl.content.cloneNode(true) as DocumentFragment, ".ink", HTMLDivElement);
 
 /**
  * Conecta una tarjeta a su tinta: todo cambio se escribe en `ink` y se refleja en la tarjeta.
