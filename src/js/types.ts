@@ -86,3 +86,9 @@ export type DocChange =
 
 /** Qué cambió en la vista */
 export type ViewChange = { what: "mode" } | { what: "zoom" } | { what: "position" };
+
+/** Receta propia guardada en la biblioteca */
+export interface LibraryItem { id: string; name: string; recipe: Recipe; updated: number }
+
+/** Cambió la biblioteca de recetas propias */
+export type LibraryChange = { what: "items" };

@@ -4,20 +4,8 @@
 import { defaultRecipe } from "./config.ts";
 import { inkData, makeInk, validRecipe } from "./recipe.ts";
 import { loadResume, saveResume } from "./storage.ts";
+import { Emitter } from "./emitter.ts";
 import type { Bitmap, ChangeOptions, DocChange, GraySettings, Ink, InkChanges, ReadonlyInk, Recipe, RecipeRef, ViewChange, ViewMode, ZoomMode } from "./types.ts";
-
-/** Avisa a los suscriptos cada vez que el estado cambia */
-class Emitter<T> {
-  #listeners = new Set<(change: T) => void>();
-
-  /** @returns función para cancelar la suscripción */
-  subscribe(listener: (change: T) => void) {
-    this.#listeners.add(listener);
-    return () => { this.#listeners.delete(listener); };
-  }
-
-  protected emit(change: T) { for (const listener of this.#listeners) listener(change); }
-}
 
 class Doc extends Emitter<DocChange> {
   #image: { full: Bitmap; prev: Bitmap; } | null = null;

@@ -8,11 +8,9 @@ import { inkLUT } from "./process.ts";
 import { slug, save } from "./export.ts";
 import { askText, askConfirm } from "./dialogs.ts";
 import { normalizeRecipe, validRecipe } from "./recipe.ts";
-import { loadLibraryItems, saveLibraryItems, onLibraryChange } from "./storage.ts";
+import { library } from "./library.ts";
 
 import type { Recipe, RecipeRef } from "./types.ts";
-/** receta propia */
-type LibraryItem = { id: string, name: string, recipe: Recipe, updated: number; };
 type NamedRecipe = { id: string, name: string, recipe: Recipe; };
 
 /* ---------- Recetas predeterminadas ---------- */
@@ -22,32 +20,25 @@ const BUILTIN_RECIPES = BUILTIN_DEFS.map(b => ({ ...b, recipe: normalizeRecipe(b
 
 /* ---------- Biblioteca propia ---------- */
 
-// Las recetas guardadas se validan y normalizan al leerlas: las inválidas se descartan
-const loadLibrary = (): LibraryItem[] => loadLibraryItems()
-  .filter((i: any) => i && typeof i.id === "string" && typeof i.name === "string" && validRecipe(i.recipe))
-  .map((i: any) => ({ id: i.id, name: i.name.slice(0, RECIPE_NAME_MAX), recipe: normalizeRecipe(i.recipe), updated: i.updated || 0 }));
-let library = loadLibrary();
-function saveLibrary() {
-  if (saveLibraryItems(library)) return true;
-  setStatus("No se pudo guardar en el navegador. Exportá la receta a un archivo.", "error");
-  return false;
+/** Avisa si el navegador no permitió guardar la biblioteca; devuelve si se guardó */
+function saved(ok: boolean) {
+  if (!ok) setStatus("No se pudo guardar en el navegador. Exportá la receta a un archivo.", "error");
+  return ok;
 }
-const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 const findRecipe = (ref: RecipeRef | null): NamedRecipe | null => !ref ? null
-  : (ref.kind === "builtin" ? BUILTIN_RECIPES : library).find((r: NamedRecipe) => r.id === ref.id) || null;
-/** Receta propia con ese nombre (sin distinguir mayúsculas). */
-const findByName = (name: string, exceptId?: string) => library.find(r => r.id !== exceptId && r.name.toLowerCase() === name.toLowerCase());
+  : (ref.kind === "builtin" ? BUILTIN_RECIPES : library.items).find((r: NamedRecipe) => r.id === ref.id) || null;
 
 const sameRecipe = (a: Recipe, b: Recipe) => JSON.stringify(a) === JSON.stringify(b);
 
 const byName = (a: { name: string; }, b: { name: string; }) => a.name.localeCompare(b.name, "es", { sensitivity: "base" });
 /** base, o base (2), base (3)… si ya existe */
-function uniqueName(base: string) {
-  if (!findByName(base)) return base;
+function uniqueName(base: string, taken: Set<string>) {
+  const free = (name: string) => !library.findByName(name) && !taken.has(name.toLowerCase());
+  if (free(base)) return base;
   for (let n = 2; ; n++) {
     const suffix = ` (${n})`, name = base.slice(0, RECIPE_NAME_MAX - suffix.length) + suffix;
-    if (!findByName(name)) return name;
+    if (free(name)) return name;
   }
 }
 
@@ -111,9 +102,9 @@ builtinEl.replaceChildren(...BUILTIN_RECIPES.map(r => recipeRow(r, "builtin")));
 // Lista al abrirse: rehace las filas propias (cambian al guardar, renombrar, eliminar,
 // importar o desde otra pestaña) y marca la receta activa
 function renderList() {
-  mineEl.replaceChildren(...[...library].sort(byName).map(r => recipeRow(r, "user")));
-  emptyEl.hidden = library.length > 0;
-  exportAllBtn.disabled = !library.length;
+  mineEl.replaceChildren(...[...library.items].sort(byName).map(r => recipeRow(r, "user")));
+  emptyEl.hidden = library.items.length > 0;
+  exportAllBtn.disabled = !library.items.length;
   const cur = doc.active;
   for (const b of recipeList.querySelectorAll<HTMLElement>(".ritem"))
     b.setAttribute("aria-checked", String(!!cur && cur.kind === b.dataset.kind && cur.id === b.dataset.id));
@@ -137,10 +128,7 @@ async function saveRecipe() {
   const { active, dirty, own } = recipeStatus();
   if (!own || !active) return saveRecipeAs();
   if (!dirty) { setStatus("No hay cambios sin guardar."); return; }
-  const item = active as LibraryItem;  // propia: viene de la biblioteca
-  item.recipe = doc.getRecipe(); item.updated = Date.now();
-  if (saveLibrary()) setStatus(`Receta «${item.name}» guardada.`);
-  syncRecipeUI();
+  if (saved(library.update(active.id, doc.getRecipe()))) setStatus(`Receta «${active.name}» guardada.`);
 }
 
 async function saveRecipeAs() {
@@ -149,30 +137,29 @@ async function saveRecipeAs() {
   const suggested = active ? `${active.name} (copia)`.slice(0, RECIPE_NAME_MAX) : "Mi receta";
   const name = await askText({ title: "Guardar receta", label: "Nombre", value: suggested, max: RECIPE_NAME_MAX, confirm: "Guardar" });
   if (!name) return;
-  let item = findByName(name);
-  if (item) {
-    const ok = await askConfirm({ title: "Ya existe una receta con ese nombre", message: `¿Reemplazar «${item.name}» con la configuración actual?`, confirm: "Reemplazar" });
-    if (!ok) return;
-    item.recipe = doc.getRecipe(); item.updated = Date.now();
+  const existing = library.findByName(name);
+  let id: string, ok: boolean;
+  if (existing) {
+    const replace = await askConfirm({ title: "Ya existe una receta con ese nombre", message: `¿Reemplazar «${existing.name}» con la configuración actual?`, confirm: "Reemplazar" });
+    if (!replace) return;
+    id = existing.id; ok = library.update(id, doc.getRecipe());
   } else {
-    item = { id: newId(), name, recipe: doc.getRecipe(), updated: Date.now() };
-    library.push(item);
+    const added = library.add(name, doc.getRecipe());
+    id = added.item.id; ok = added.saved;
   }
-  if (saveLibrary()) { doc.setActive({ kind: "user", id: item.id }); setStatus(`Receta «${item.name}» guardada.`); }
+  if (saved(ok)) { doc.setActive({ kind: "user", id }); setStatus(`Receta «${library.find(id)?.name}» guardada.`); }
 }
 
 async function renameRecipe(id: string) {
-  const item = library.find(r => r.id === id); if (!item) return;
+  const item = library.find(id); if (!item) return;
   const name = await askText({ title: "Renombrar receta", label: "Nombre", value: item.name, max: RECIPE_NAME_MAX, confirm: "Renombrar" });
   if (!name || name === item.name) return;
-  if (findByName(name, item.id)) { setStatus(`Ya existe una receta llamada «${name}».`, "error"); return; }
-  item.name = name;
-  if (saveLibrary()) setStatus(`Receta renombrada a «${name}».`);
-  syncRecipeUI();
+  if (library.findByName(name, item.id)) { setStatus(`Ya existe una receta llamada «${name}».`, "error"); return; }
+  if (saved(library.rename(id, name))) setStatus(`Receta renombrada a «${name}».`);
 }
 
 async function deleteRecipe(id: string) {
-  const item = library.find(r => r.id === id); if (!item) return;
+  const item = library.find(id); if (!item) return;
   const isActive = !!doc.active && doc.active.kind === "user" && doc.active.id === id;
   const ok = await askConfirm({
     title: "Eliminar receta",
@@ -180,9 +167,8 @@ async function deleteRecipe(id: string) {
     confirm: "Eliminar", danger: true
   });
   if (!ok) return;
-  library = library.filter(r => r.id !== id);
-  if (saveLibrary()) setStatus(`Receta «${item.name}» eliminada.`);
-  if (isActive) doc.setActive(null); else syncRecipeUI();
+  if (saved(library.remove(id))) setStatus(`Receta «${item.name}» eliminada.`);
+  if (isActive) doc.setActive(null);
 }
 
 /* ---------- Exportar e importar ---------- */
@@ -199,8 +185,8 @@ async function exportCurrent() {
   await save(`receta-${slug(name)}.json`, exportFile([{ name, recipe: doc.getRecipe() }]));
 }
 async function exportAll() {
-  if (!library.length) return;
-  await save("recetas-duotono.json", exportFile([...library].sort(byName)));
+  if (!library.items.length) return;
+  await save("recetas-duotono.json", exportFile([...library.items].sort(byName)));
 }
 
 recipeImport.addEventListener("change", async () => {
@@ -211,19 +197,21 @@ recipeImport.addEventListener("change", async () => {
   catch { setStatus("El archivo no es un JSON válido.", "error"); return; }
   // Acepta el formato exportado, una lista de recetas o una receta suelta
   const list = Array.isArray(data) ? data : Array.isArray(data && data.recipes) ? data.recipes : [data];
-  let added = 0, skipped = 0, last = null;
+  const entries: { name: string; recipe: Recipe }[] = [], taken = new Set<string>();
+  let skipped = 0;
   for (const r of list) {
     const rec = r && { v: 1, gray: r.gray, inks: r.inks };
     if (!rec || !validRecipe(rec)) { skipped++; continue; }
     const base = (typeof r.name === "string" && r.name.trim() ? r.name.trim() : "Receta importada").slice(0, RECIPE_NAME_MAX);
-    last = { id: newId(), name: uniqueName(base), recipe: normalizeRecipe(rec), updated: Date.now() };
-    library.push(last); added++;
+    const name = uniqueName(base, taken);
+    taken.add(name.toLowerCase());
+    entries.push({ name, recipe: normalizeRecipe(rec) });
   }
-  if (!added) { setStatus("No se encontraron recetas válidas en el archivo.", "error"); return; }
-  if (!saveLibrary()) return;
-  if (added === 1 && last) applyFromLibrary({ kind: "user", id: last.id });  // una sola: se aplica
-  else syncRecipeUI();
-  setStatus(`Se importó ${added === 1 && last ? `«${last.name}»` : `${added} recetas`}${skipped ? ` (${skipped} no válida${skipped > 1 ? "s" : ""})` : ""}.`);
+  if (!entries.length) { setStatus("No se encontraron recetas válidas en el archivo.", "error"); return; }
+  const { items, saved: ok } = library.addMany(entries);
+  if (!saved(ok)) return;
+  if (items.length === 1) applyFromLibrary({ kind: "user", id: items[0].id });  // una sola: se aplica
+  setStatus(`Se importó ${items.length === 1 ? `«${items[0].name}»` : `${items.length} recetas`}${skipped ? ` (${skipped} no válida${skipped > 1 ? "s" : ""})` : ""}.`);
 });
 
 /* ---------- Eventos ---------- */
@@ -253,7 +241,7 @@ window.addEventListener("keydown", e => {
 });
 
 // Si otra pestaña cambia la biblioteca, mantenerla al día
-onLibraryChange(() => { library = loadLibrary(); syncRecipeUI(); });
-
 // El estado de la receta (nombre, marca de cambios, tira de colores) refleja el documento
+// y la biblioteca (la receta activa puede cambiar de nombre o dejar de existir)
 doc.subscribe(syncRecipeUI);
+library.subscribe(syncRecipeUI);
