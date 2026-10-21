@@ -4,7 +4,7 @@
 import { byId } from "./dom.ts";
 import { IS_MAC } from "./env.ts";
 import { HISTORY_MAX } from "./config.ts";
-import { state } from "./state.ts";
+import { doc } from "./session.ts";
 import { inkData, makeInk, validRecipe } from "./recipe.ts";
 import type { Recipe, RecipeRef } from "./types.ts";
 import { scheduleRender } from "./render.ts";
@@ -15,19 +15,19 @@ import { loadResume, saveResume } from "./storage.ts";
 
 // Receta actual, con claves en orden fijo para poder comparar recetas por su JSON
 export function getRecipe(): Recipe {
-  const g = state.gray;
+  const g = doc.gray;
   return {
     v: 1,
     gray: { mode: g.mode, r: g.r, g: g.g, b: g.b },
-    inks: state.inks.map(inkData)
+    inks: doc.inks.map(inkData)
   };
 }
 
 /** Reemplaza la configuración actual por la receta y redibuja todo. */
 export function applyRecipe(r: Recipe) {
   const g = r.gray;
-  state.gray = { mode: g.mode, r: g.r, g: g.g, b: g.b };
-  state.inks = r.inks.map(makeInk);
+  doc.gray = { mode: g.mode, r: g.r, g: g.g, b: g.b };
+  doc.inks = r.inks.map(makeInk);
   syncGrayUI();
   renderInks();
   scheduleRender();  // el gris se recalcula solo si cambió la conversión
@@ -53,7 +53,7 @@ const hist: { stack: HistoryEntry[]; index: number } = { stack: [], index: -1 };
 const undoBtn = byId("undoBtn", HTMLButtonElement);
 const redoBtn = byId("redoBtn", HTMLButtonElement);
 
-const currentEntry = (): HistoryEntry => ({ recipe: getRecipe(), active: state.active ? { ...state.active } : null });
+const currentEntry = (): HistoryEntry => ({ recipe: getRecipe(), active: doc.active ? { ...doc.active } : null });
 
 const sameEntry = (a: HistoryEntry, b: HistoryEntry) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -77,15 +77,15 @@ export function commitHistory() {
 
 // Cambiar la receta activa sin agregar un paso (por ejemplo, al guardar con otro nombre)
 export function setActiveRecipe(ref: RecipeRef | null) {
-  state.active = ref ? { ...ref } : null;
-  if (hist.index >= 0) hist.stack[hist.index] = { ...hist.stack[hist.index], active: state.active };
+  doc.active = ref ? { ...ref } : null;
+  if (hist.index >= 0) hist.stack[hist.index] = { ...hist.stack[hist.index], active: doc.active };
   persist(currentEntry());
   syncRecipeUI();
 }
 
 function restoreCurrent() {
   const e = hist.stack[hist.index];
-  state.active = e.active ? { ...e.active } : null;
+  doc.active = e.active ? { ...e.active } : null;
   applyRecipe(e.recipe);
   persist(e);
   syncHistoryUI();
@@ -97,8 +97,8 @@ function redo() { if (hist.index < hist.stack.length - 1) { hist.index++; restor
 // La primera vez arranca con la receta de fábrica por defecto
 export function initHistory(defaultRef: RecipeRef) {
   const saved = loadSaved();
-  if (saved) { state.active = saved.active; applyRecipe(saved.recipe); }
-  else { state.active = defaultRef; syncGrayUI(); renderInks(); }
+  if (saved) { doc.active = saved.active; applyRecipe(saved.recipe); }
+  else { doc.active = defaultRef; syncGrayUI(); renderInks(); }
   hist.stack = [currentEntry()];
   hist.index = 0;
   syncHistoryUI();

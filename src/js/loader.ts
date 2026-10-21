@@ -3,7 +3,7 @@ import type { Bitmap } from "./types.ts";
 import { setStatus, byId, ctx2d } from "./dom.ts";
 import { enc, YfromL } from "./color.ts";
 import { PREVIEW_MAX, FULL_MAX } from "./config.ts";
-import { state, buf } from "./state.ts";
+import { doc } from "./session.ts";
 import { scheduleRender } from "./render.ts";
 import { setHasImage } from "./ui-stage.ts";
 import { setZoom } from "./zoom.ts";
@@ -21,15 +21,14 @@ function scaled(src: HTMLImageElement | HTMLCanvasElement, max: number): Bitmap 
 }
 
 function setSource(src: HTMLImageElement | HTMLCanvasElement, name: string) {
-  buf.full = scaled(src, FULL_MAX);
-  buf.prev = scaled(src, PREVIEW_MAX);
-  state.name = name;
+  doc.image = { full: scaled(src, FULL_MAX), prev: scaled(src, PREVIEW_MAX) };
+  doc.name = name;
   scheduleRender();
   const capped = Math.max(src.width, src.height) > FULL_MAX;
   byId("fileName").textContent = name;
   byId("fileName").title = name;
   byId("fileDims").textContent =
-    `${buf.full.w} × ${buf.full.h} px${capped ? " · reducida para exportar" : ""}`;
+    `${doc.image.full.w} × ${doc.image.full.h} px${capped ? " · reducida para exportar" : ""}`;
   setHasImage(true);
   setZoom("fit");
 }

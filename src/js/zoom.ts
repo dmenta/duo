@@ -1,12 +1,11 @@
 /* Zoom con dos modos: ajustar a la vista o tamaño real (1 píxel de imagen = 1 píxel CSS).
    Al 100% la imagen se desplaza arrastrando o con la rueda; doble clic alterna los modos. */
 import { byId } from "./dom.ts";
-import { buf, loadedImage } from "./state.ts";
+import { doc, view, loadedImage } from "./session.ts";
 import type { ZoomMode } from "./types.ts";
 import { scheduleRender } from "./render.ts";
 import { fitCanvas } from "./ui-stage.ts";
 
-export const zoom: { mode: ZoomMode; x: number; y: number } = { mode: "fit", x: 0, y: 0 };  // x, y: esquina superior izquierda visible, en píxeles de imagen
 const zoomSeg = byId("zoomSeg");
 const zoomStage = byId("stage");
 
@@ -18,10 +17,10 @@ export function zoomViewport() {
   const W = Math.max(1, Math.floor(r.width)), H = Math.max(1, Math.floor(r.height));
   const { w: iw, h: ih } = loadedImage().full;
   const cw = Math.min(W, iw), ch = Math.min(H, ih);
-  zoom.x = clampTo(zoom.x, 0, iw - cw);
-  zoom.y = clampTo(zoom.y, 0, ih - ch);
+  view.x = clampTo(view.x, 0, iw - cw);
+  view.y = clampTo(view.y, 0, ih - ch);
   zoomStage.classList.toggle("can-pan", cw < iw || ch < ih);
-  return { W, H, cw, ch, x: Math.round(zoom.x), y: Math.round(zoom.y) };
+  return { W, H, cw, ch, x: Math.round(view.x), y: Math.round(view.y) };
 }
 
 /**
@@ -29,13 +28,13 @@ export function zoomViewport() {
  *   bajo el punto (sx, sy) del escenario
  */
 export function setZoom(mode: ZoomMode, focus?: { ix: number; iy: number; sx: number; sy: number }) {
-  zoom.mode = mode;
-  if (mode === "actual" && buf.full) {
-    const r = zoomStage.getBoundingClientRect(), iw = buf.full.w, ih = buf.full.h;
+  view.zoom = mode;
+  if (mode === "actual" && doc.image) {
+    const r = zoomStage.getBoundingClientRect(), iw = doc.image.full.w, ih = doc.image.full.h;
     const cw = Math.min(Math.floor(r.width), iw), ch = Math.min(Math.floor(r.height), ih);
     const left = (r.width - cw) / 2, top = (r.height - ch) / 2;
-    if (focus) { zoom.x = focus.ix - (focus.sx - left); zoom.y = focus.iy - (focus.sy - top); }
-    else { zoom.x = (iw - cw) / 2; zoom.y = (ih - ch) / 2; }
+    if (focus) { view.x = focus.ix - (focus.sx - left); view.y = focus.iy - (focus.sy - top); }
+    else { view.x = (iw - cw) / 2; view.y = (ih - ch) / 2; }
   }
   document.body.classList.toggle("zoom-actual", mode === "actual");
   zoomSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.z === mode)));
@@ -47,12 +46,12 @@ zoomSeg.addEventListener("click", e => { const b = (e.target as Element).closest
 
 // Doble clic: alterna; al pasar a 100% conserva bajo el cursor el punto clickeado
 zoomStage.addEventListener("dblclick", e => {
-  if (!buf.full || (e.target as Element).closest("button")) return;
-  if (zoom.mode === "actual") { setZoom("fit"); return; }
+  if (!doc.image || (e.target as Element).closest("button")) return;
+  if (view.zoom === "actual") { setZoom("fit"); return; }
   const c = byId("view", HTMLCanvasElement).getBoundingClientRect(), s = zoomStage.getBoundingClientRect();
   if (e.clientX < c.left || e.clientX > c.right || e.clientY < c.top || e.clientY > c.bottom) return;
   setZoom("actual", {
-    ix: (e.clientX - c.left) / c.width * buf.full.w, iy: (e.clientY - c.top) / c.height * buf.full.h,
+    ix: (e.clientX - c.left) / c.width * doc.image.full.w, iy: (e.clientY - c.top) / c.height * doc.image.full.h,
     sx: e.clientX - s.left, sy: e.clientY - s.top
   });
 });
@@ -61,31 +60,31 @@ zoomStage.addEventListener("dblclick", e => {
 /** Inicio del arrastre: puntero y posición de la vista */
 let panning: { px: number; py: number; x: number; y: number } | null = null;
 zoomStage.addEventListener("pointerdown", e => {
-  if (zoom.mode !== "actual" || !buf.full || e.button !== 0 || (e.target as Element).closest("button")) return;
-  panning = { px: e.clientX, py: e.clientY, x: zoom.x, y: zoom.y };
+  if (view.zoom !== "actual" || !doc.image || e.button !== 0 || (e.target as Element).closest("button")) return;
+  panning = { px: e.clientX, py: e.clientY, x: view.x, y: view.y };
   zoomStage.setPointerCapture(e.pointerId);
   zoomStage.classList.add("panning");
 });
 zoomStage.addEventListener("pointermove", e => {
   if (!panning) return;
-  zoom.x = panning.x - (e.clientX - panning.px);
-  zoom.y = panning.y - (e.clientY - panning.py);
+  view.x = panning.x - (e.clientX - panning.px);
+  view.y = panning.y - (e.clientY - panning.py);
   scheduleRender();
 });
 const endPan = () => { panning = null; zoomStage.classList.remove("panning"); };
 zoomStage.addEventListener("pointerup", endPan);
 zoomStage.addEventListener("pointercancel", endPan);
 zoomStage.addEventListener("wheel", e => {
-  if (zoom.mode !== "actual" || !buf.full) return;
+  if (view.zoom !== "actual" || !doc.image) return;
   e.preventDefault();
-  zoom.x += e.shiftKey ? e.deltaY : e.deltaX;
-  zoom.y += e.shiftKey ? 0 : e.deltaY;
+  view.x += e.shiftKey ? e.deltaY : e.deltaX;
+  view.y += e.shiftKey ? 0 : e.deltaY;
   scheduleRender();
 }, { passive: false });
 
 // Atajos: Ctrl+0 ajustar, Ctrl+1 tamaño real
 window.addEventListener("keydown", e => {
-  if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || !buf.full) return;
+  if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || !doc.image) return;
   if (document.querySelector("dialog[open]")) return;
   if (e.key === "0") { e.preventDefault(); setZoom("fit"); }
   else if (e.key === "1") { e.preventDefault(); setZoom("actual"); }

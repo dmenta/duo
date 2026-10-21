@@ -3,7 +3,7 @@
 import { setStatus, cssColorToHex, byId, qs } from "./dom.ts";
 import { mirrorX, mirrorY } from "./curves.ts";
 import { CURVE_PRESETS, MAX_INKS, NAME_MAX, SWATCHES } from "./config.ts";
-import { state } from "./state.ts";
+import { doc } from "./session.ts";
 import { swatchName, newInk } from "./recipe.ts";
 import { scheduleRender } from "./render.ts";
 import { attachCurve } from "./curve-editor.ts";
@@ -42,7 +42,7 @@ const createInkCard = () => qs(cardTpl.content.cloneNode(true) as DocumentFragme
 
 /**
  * Conecta una tarjeta a su tinta: todo cambio se escribe en `ink` y se refleja en la tarjeta.
- * @param j posición en state.inks
+ * @param j posición en doc.inks
  */
 function bindInkCard(el: HTMLElement, ink: Ink, j: number, signal: AbortSignal) {
   const presetSel = qs(el, ".preset", HTMLSelectElement);
@@ -171,8 +171,8 @@ function bindInkCard(el: HTMLElement, ink: Ink, j: number, signal: AbortSignal) 
   });
 
   const rm = qs(el, ".rm", HTMLButtonElement);
-  rm.disabled = state.inks.length < 2;
-  rm.addEventListener("click", () => { state.inks.splice(j, 1); renderInks(); scheduleRender(); commitHistory(); });
+  rm.disabled = doc.inks.length < 2;
+  rm.addEventListener("click", () => { doc.inks.splice(j, 1); renderInks(); scheduleRender(); commitHistory(); });
 }
 
 // Se aborta al volver a dibujar las tarjetas: suelta lo que las anteriores dejaron fuera de ellas
@@ -182,19 +182,19 @@ export function renderInks() {
   cardsLife.abort();
   cardsLife = new AbortController();
   inksEl.innerHTML = "";
-  state.inks.forEach((ink, j) => {
+  doc.inks.forEach((ink, j) => {
     const el = createInkCard();
     inksEl.append(el);
     bindInkCard(el, ink, j, cardsLife.signal);
   });
-  addInkBtn.disabled = state.inks.length >= MAX_INKS;
+  addInkBtn.disabled = doc.inks.length >= MAX_INKS;
 }
 
 addInkBtn.addEventListener("click", () => {
-  if (state.inks.length >= MAX_INKS) return;
-  const used = new Set(state.inks.map(i => i.color));
+  if (doc.inks.length >= MAX_INKS) return;
+  const used = new Set(doc.inks.map(i => i.color));
   const sw = SWATCHES.find(s => !used.has(s[1])) || SWATCHES[0];
-  state.inks.unshift(newInk(sw[0], sw[1], "campana"));  // la nueva queda primera
+  doc.inks.unshift(newInk(sw[0], sw[1], "campana"));  // la nueva queda primera
   renderInks(); scheduleRender();
   commitHistory();
 });

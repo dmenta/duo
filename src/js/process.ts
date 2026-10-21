@@ -2,12 +2,12 @@
 import type { Bitmap, InkData, ViewMode } from "./types.ts";
 import { N, LIN, enc, hexToLin, YfromL, LfromY, coverage, gradientLin } from "./color.ts";
 import { makeCurve } from "./curves.ts";
-import { state } from "./state.ts";
+import { doc } from "./session.ts";
 
 function grayWeights() {
-  return state.gray.mode === "lum"
+  return doc.gray.mode === "lum"
     ? [0.2126, 0.7152, 0.0722]
-    : [state.gray.r / 100, state.gray.g / 100, state.gray.b / 100];
+    : [doc.gray.r / 100, doc.gray.g / 100, doc.gray.b / 100];
 }
 
 // Luminancia lineal Y (0..1) -> índice de tono, precalculado: evita la raíz cúbica de L* por píxel.
@@ -71,7 +71,7 @@ export function inkLUT(inks: InkData[], size: number): Uint8Array {
   return lut;
 }
 /** Tabla de colores de la receta en curso; se arma cuando se necesita (cuesta décimas de ms). */
-export const resultLUT = () => inkLUT(state.inks, N);
+export const resultLUT = () => inkLUT(doc.inks, N);
 
 // Tabla tono -> gris sRGB
 export const grayLUT = (() => {

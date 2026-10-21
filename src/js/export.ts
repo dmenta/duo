@@ -1,6 +1,6 @@
 /* Exportación a PNG y ZIP a resolución completa. */
 import { setStatus, attachMenu, byId, ctx2d, qs } from "./dom.ts";
-import { state, buf, loadedImage } from "./state.ts";
+import { doc, loadedImage } from "./session.ts";
 import type { ViewMode } from "./types.ts";
 import { grayLevels, resultLUT, grayLUT, paint } from "./process.ts";
 import { encodePNG } from "./png.ts";
@@ -63,18 +63,18 @@ const dlAll = [dlMain, dlToggle, ...dlItems];
 const EXPORTS = {
   result: async () => {
     const { blob, desc } = await exportPNG("result");
-    await save(`${slug(state.name)}-duotono.png`, blob, desc);
+    await save(`${slug(doc.name)}-duotono.png`, blob, desc);
   },
   gray: async () => {
     const { blob, desc } = await exportPNG("gray");
-    await save(`${slug(state.name)}-gris.png`, blob, desc);
+    await save(`${slug(doc.name)}-gris.png`, blob, desc);
   },
   zip: async () => {
     // El compresor se descarga recién la primera vez que se usa
     let JSZip;
     try { ({ default: JSZip } = await import("jszip")); }
     catch { setStatus("No se pudo cargar el compresor. Descargá cada imagen por separado.", "error"); return; }
-    const zip = new JSZip(), base = slug(state.name);
+    const zip = new JSZip(), base = slug(doc.name);
     zip.file(`${base}-duotono.png`, (await exportPNG("result")).blob);
     zip.file(`${base}-gris.png`, (await exportPNG("gray")).blob);
     await save(`${base}-duotono.zip`, await zip.generateAsync({ type: "blob" }));
@@ -82,7 +82,7 @@ const EXPORTS = {
 };
 
 async function runExport(action: keyof typeof EXPORTS) {
-  if (!buf.full) return;
+  if (!doc.image) return;
   const lbl = qs(dlMain, ".lbl"), t = lbl.textContent;
   dlAll.forEach(b => b.disabled = true); lbl.textContent = "Procesando…";
   await new Promise(r => setTimeout(r, 30));  // deja pintar el estado antes del cálculo

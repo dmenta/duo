@@ -2,7 +2,7 @@
 import "./dom.ts";
 import "./color.ts";
 import "./curves.ts";
-import "./state.ts";
+import "./session.ts";
 import "./process.ts";
 import "./render.ts";
 import "./loader.ts";

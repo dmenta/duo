@@ -2,19 +2,18 @@
 import { byId } from "./dom.ts";
 import { IS_MAC } from "./env.ts";
 import { FIT_INSET } from "./config.ts";
-import { state, buf } from "./state.ts";
+import { doc, view } from "./session.ts";
 import { scheduleRender } from "./render.ts";
 import { loadFile, sampleImage } from "./loader.ts";
-import { zoom } from "./zoom.ts";
 import type { ViewMode } from "./types.ts";
 
 const viewSeg = byId("viewSeg");
 export function syncViewSeg() {
-  viewSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.view)));
+  viewSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === view.mode)));
 }
 viewSeg.addEventListener("click", e => {
   const b = (e.target as Element).closest("button");
-  if (b) { state.view = b.dataset.v as ViewMode; scheduleRender(); }
+  if (b) { view.mode = b.dataset.v as ViewMode; scheduleRender(); }
 });
 
 const fileIn = byId("file", HTMLInputElement);
@@ -39,14 +38,14 @@ export function setHasImage(has: boolean) {
 // conservando la proporción (también agranda las imágenes chicas)
 const viewEl = byId("view", HTMLCanvasElement);
 export function fitCanvas() {
-  if (!buf.full) return;
-  if (zoom.mode === "actual") { scheduleRender(); return; }  // al 100% el tamaño lo define la porción visible
+  if (!doc.image) return;
+  if (view.zoom === "actual") { scheduleRender(); return; }  // al 100% el tamaño lo define la porción visible
   const r = stage.getBoundingClientRect();
   const aw = r.width - FIT_INSET.left - FIT_INSET.right, ah = r.height - FIT_INSET.top - FIT_INSET.bottom;
   if (aw <= 0 || ah <= 0) return;
-  const s = Math.min(aw / buf.full.w, ah / buf.full.h);
-  viewEl.style.width = Math.max(1, Math.floor(buf.full.w * s)) + "px";
-  viewEl.style.height = Math.max(1, Math.floor(buf.full.h * s)) + "px";
+  const s = Math.min(aw / doc.image.full.w, ah / doc.image.full.h);
+  viewEl.style.width = Math.max(1, Math.floor(doc.image.full.w * s)) + "px";
+  viewEl.style.height = Math.max(1, Math.floor(doc.image.full.h * s)) + "px";
 }
 new ResizeObserver(fitCanvas).observe(stage);
 fileIn.addEventListener("change", () => { loadFile(fileIn.files?.[0]); fileIn.value = ""; });

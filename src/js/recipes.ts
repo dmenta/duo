@@ -3,7 +3,7 @@
 import { setStatus, attachMenu, byId, qs } from "./dom.ts";
 import { IS_MAC } from "./env.ts";
 import { BUILTIN_RECIPES as BUILTIN_DEFS, RECIPE_NAME_MAX } from "./config.ts";
-import { state } from "./state.ts";
+import { doc } from "./session.ts";
 import { inkLUT } from "./process.ts";
 import { slug, save } from "./export.ts";
 import { askText, askConfirm } from "./dialogs.ts";
@@ -70,8 +70,8 @@ const saveMenu = byId("saveMenu");
 const recipeImport = byId("recipeImport", HTMLInputElement);
 
 function recipeStatus() {
-  const active = findRecipe(state.active);
-  return { active, dirty: !active || !sameRecipe(getRecipe(), active.recipe), own: !!active && state.active?.kind === "user" };
+  const active = findRecipe(doc.active);
+  return { active, dirty: !active || !sameRecipe(getRecipe(), active.recipe), own: !!active && doc.active?.kind === "user" };
 }
 
 export function syncRecipeUI() {
@@ -115,7 +115,7 @@ function renderList() {
   mineEl.replaceChildren(...[...library].sort(byName).map(r => recipeRow(r, "user")));
   emptyEl.hidden = library.length > 0;
   exportAllBtn.disabled = !library.length;
-  const cur = state.active;
+  const cur = doc.active;
   for (const b of recipeList.querySelectorAll<HTMLElement>(".ritem"))
     b.setAttribute("aria-checked", String(!!cur && cur.kind === b.dataset.kind && cur.id === b.dataset.id));
 }
@@ -123,7 +123,7 @@ function renderList() {
 // Aplicar una receta de la biblioteca: es un paso del historial, se puede deshacer
 function applyFromLibrary(ref: RecipeRef) {
   const r = findRecipe(ref); if (!r) return;
-  state.active = { ...ref };
+  doc.active = { ...ref };
   applyRecipe(r.recipe);
   commitHistory();
 }
@@ -176,7 +176,7 @@ async function renameRecipe(id: string) {
 
 async function deleteRecipe(id: string) {
   const item = library.find(r => r.id === id); if (!item) return;
-  const isActive = !!state.active && state.active.kind === "user" && state.active.id === id;
+  const isActive = !!doc.active && doc.active.kind === "user" && doc.active.id === id;
   const ok = await askConfirm({
     title: "Eliminar receta",
     message: `¿Eliminar «${item.name}»? Esta acción no se puede deshacer.${isActive ? " La configuración actual queda aplicada." : ""}`,
