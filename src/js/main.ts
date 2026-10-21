@@ -18,12 +18,11 @@ import "./history.ts";
 import "./recipes.ts";
 import { setHasImage } from "./ui-stage.ts";
 import { initHistory } from "./history.ts";
-import { applyRecipe } from "./recipes.ts";
 import { doc, loadResumePoint } from "./session.ts";
 import { DEFAULT_REF } from "./config.ts";
 
 // Arranca desde el punto de retorno, si hay; si no, con la receta de fábrica
 const saved = loadResumePoint();
-applyRecipe(saved?.recipe ?? doc.getRecipe(), saved ? saved.active : DEFAULT_REF, { commit: false });
+doc.loadRecipe(saved?.recipe ?? doc.getRecipe(), saved ? saved.active : DEFAULT_REF, { commit: false });
 initHistory();
 setHasImage(false);  // arranca sin imagen: se ve la zona de carga

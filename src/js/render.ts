@@ -5,9 +5,7 @@ import { byId, ctx2d } from "./dom.ts";
 import { doc, view } from "./session.ts";
 import type { Bitmap } from "./types.ts";
 import { paint, paintRegion } from "./process.ts";
-import { syncViewSeg } from "./ui-stage.ts";
 import { zoomViewport } from "./zoom.ts";
-import { syncRecipeUI } from "./recipes.ts";
 
 const viewCanvas = byId("view", HTMLCanvasElement);
 const vctx = ctx2d(viewCanvas);
@@ -45,8 +43,6 @@ function render() {
   const { full, prev } = doc.image;
   if (view.zoom === "actual") renderActual(full, zoomViewport()); else renderFit(prev);
   document.documentElement.style.setProperty("--accent", (doc.inks[1] || doc.inks[0]).color);
-  syncViewSeg();
-  syncRecipeUI();  // muestra y marca de cambios sin guardar, en vivo
 }
 
 // El canvas se repinta ante cualquier cambio del documento o de la vista

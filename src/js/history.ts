@@ -6,7 +6,6 @@ import { IS_MAC } from "./env.ts";
 import { HISTORY_MAX } from "./config.ts";
 import { doc, saveResumePoint } from "./session.ts";
 import type { Recipe, RecipeRef } from "./types.ts";
-import { applyRecipe, syncRecipeUI } from "./recipes.ts";
 
 /* ---------- Historial ---------- */
 type HistoryEntry = { recipe: Recipe, active: RecipeRef | null; };
@@ -27,14 +26,13 @@ function syncHistoryUI() {
 // Registrar el estado actual al terminar un gesto. Si nada cambió, no agrega entrada.
 export function commitHistory() {
   const e = currentEntry();
-  if (hist.index >= 0 && sameEntry(hist.stack[hist.index], e)) { syncRecipeUI(); return; }
+  if (hist.index >= 0 && sameEntry(hist.stack[hist.index], e)) return;
   hist.stack.splice(hist.index + 1);
   hist.stack.push(e);
   if (hist.stack.length > HISTORY_MAX) hist.stack.shift();
   hist.index = hist.stack.length - 1;
   saveResumePoint();
   syncHistoryUI();
-  syncRecipeUI();
 }
 
 // Cambiar la receta activa sin agregar un paso (por ejemplo, al guardar con otro nombre)
@@ -42,15 +40,13 @@ export function setActiveRecipe(ref: RecipeRef | null) {
   doc.setActive(ref);
   if (hist.index >= 0) hist.stack[hist.index] = { ...hist.stack[hist.index], active: doc.active };
   saveResumePoint();
-  syncRecipeUI();
 }
 
 function restoreCurrent() {
   const e = hist.stack[hist.index];
-  applyRecipe(e.recipe, e.active, { commit: false });
+  doc.loadRecipe(e.recipe, e.active, { commit: false });
   saveResumePoint();
   syncHistoryUI();
-  syncRecipeUI();
 }
 function undo() { if (hist.index > 0) { hist.index--; restoreCurrent(); } }
 function redo() { if (hist.index < hist.stack.length - 1) { hist.index++; restoreCurrent(); } }
@@ -60,7 +56,6 @@ export function initHistory() {
   hist.stack = [currentEntry()];
   hist.index = 0;
   syncHistoryUI();
-  syncRecipeUI();
 }
 
 /* ---------- Controles ---------- */

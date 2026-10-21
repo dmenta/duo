@@ -4,8 +4,6 @@ import { setStatus, attachMenu, byId, qs } from "./dom.ts";
 import { IS_MAC } from "./env.ts";
 import { BUILTIN_RECIPES as BUILTIN_DEFS, RECIPE_NAME_MAX } from "./config.ts";
 import { doc } from "./session.ts";
-import { renderInks } from "./ui-inks.ts";
-import { syncGrayUI } from "./ui-gray.ts";
 import { inkLUT } from "./process.ts";
 import { slug, save } from "./export.ts";
 import { askText, askConfirm } from "./dialogs.ts";
@@ -76,7 +74,7 @@ function recipeStatus() {
   return { active, dirty: !active || !sameRecipe(doc.getRecipe(), active.recipe), own: !!active && doc.active?.kind === "user" };
 }
 
-export function syncRecipeUI() {
+function syncRecipeUI() {
   const { active, dirty, own } = recipeStatus();
   recipeName.textContent = active ? active.name : "Receta sin guardar";
   recipeBtn.classList.toggle("dirty", !!active && dirty);
@@ -122,20 +120,10 @@ function renderList() {
     b.setAttribute("aria-checked", String(!!cur && cur.kind === b.dataset.kind && cur.id === b.dataset.id));
 }
 
-/**
- * Reemplaza la receta en curso y la activa, y redibuja la interfaz.
- * commit: false cuando viene del historial o del arranque.
- */
-export function applyRecipe(r: Recipe, active: RecipeRef | null, options?: { commit?: boolean }) {
-  doc.loadRecipe(r, active, options);
-  syncGrayUI();
-  renderInks();
-}
-
 // Aplicar una receta de la biblioteca: es un paso del historial, se puede deshacer
 function applyFromLibrary(ref: RecipeRef) {
   const r = findRecipe(ref); if (!r) return;
-  applyRecipe(r.recipe, ref);
+  doc.loadRecipe(r.recipe, ref);
   commitHistory();
 }
 
@@ -268,3 +256,6 @@ window.addEventListener("keydown", e => {
 
 // Si otra pestaña cambia la biblioteca, mantenerla al día
 onLibraryChange(() => { library = loadLibrary(); syncRecipeUI(); });
+
+// El estado de la receta (nombre, marca de cambios, tira de colores) refleja el documento
+doc.subscribe(syncRecipeUI);

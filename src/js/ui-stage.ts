@@ -8,9 +8,12 @@ import { loadFile, sampleImage } from "./loader.ts";
 import type { ViewMode } from "./types.ts";
 
 const viewSeg = byId("viewSeg");
-export function syncViewSeg() {
+function syncViewSeg() {
   viewSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === view.mode)));
 }
+// Los botones de vista reflejan la vista elegida
+syncViewSeg();
+view.subscribe(c => { if (c.what === "mode") syncViewSeg(); });
 viewSeg.addEventListener("click", e => {
   const b = (e.target as Element).closest("button");
   if (b) view.setMode(b.dataset.v as ViewMode);

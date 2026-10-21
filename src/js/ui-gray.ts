@@ -27,8 +27,8 @@ function syncMixer() {
   });
 }
 
-// Refleja doc.gray en todos los controles (al iniciar, deshacer o restablecer)
-export function syncGrayUI() {
+// Refleja doc.gray en todos los controles
+function syncGrayUI() {
   grayMode.value = doc.gray.mode;
   mixer.hidden = doc.gray.mode !== "mix";
   syncMixer();
@@ -36,16 +36,17 @@ export function syncGrayUI() {
 
 grayMode.addEventListener("change", () => {
   doc.setGrayMode(grayMode.value as "lum" | "mix");
-  mixer.hidden = grayMode.value !== "mix";
   commitHistory();
 });
 for (const k of CHANNELS) {
-  mixIns[k].addEventListener("input", () => { doc.setGrayWeights({ [k]: +mixIns[k].value }); syncMixer(); });
+  mixIns[k].addEventListener("input", () => { doc.setGrayWeights({ [k]: +mixIns[k].value }); });
   mixIns[k].addEventListener("change", () => commitHistory());  // una entrada por arrastre
 }
 filterBtns.forEach(b => b.addEventListener("click", () => {
   const [r, g, bl] = parseMix(b);
   doc.setGrayWeights({ r, g, b: bl });
-  syncMixer();
   commitHistory();
 }));
+
+// Los controles reflejan la conversión a gris del documento
+doc.subscribe(c => { if (c.what === "gray" || c.what === "recipe") syncGrayUI(); });

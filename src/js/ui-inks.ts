@@ -49,9 +49,8 @@ function bindInkCard(el: HTMLElement, ink: ReadonlyInk, signal: AbortSignal) {
   presetSel.value = ink.preset;
 
   // Editar la curva a mano la vuelve personalizada
-  const redraw = attachCurve(qs(el, ".curve", HTMLCanvasElement), ink, qs(el, ".readout"), points => {
-    set({ points, preset: "custom" }); presetSel.value = "custom";
-  }, signal);
+  const redraw = attachCurve(qs(el, ".curve", HTMLCanvasElement), ink, qs(el, ".readout"),
+    points => set({ points, preset: "custom" }), signal);
 
   const nameIn = qs(el, ".name", HTMLInputElement);
   const headSwatch = qs(el, ".head-swatch"), mainColor = qs(el, ".c-main", HTMLInputElement), mainHex = qs(el, ".hex-main", HTMLInputElement);
@@ -108,17 +107,18 @@ function bindInkCard(el: HTMLElement, ink: ReadonlyInk, signal: AbortSignal) {
       else if (wasPreset) changes.name = "Personalizado"; // de predefinido a propio
     }
     set(changes);
-    syncColors(); redraw();
   };
 
   const setMode = (mode: string | undefined) => {
     if ((mode === "gradient") === !!ink.color2) return;
-    if (mode === "gradient") { set({ color2: ink.color }); activeEnd = "color2"; }  // arranca sin cambio visible
+    // El extremo activo se fija antes del cambio: la tarjeta lo usa al reflejarlo
+    if (mode === "gradient") { activeEnd = "color2"; set({ color2: ink.color }); }  // arranca sin cambio visible
     else {
+      activeEnd = "color";
       const preset = swatchName(ink.color);
-      set(preset ? { color2: undefined, name: preset } : { color2: undefined }); activeEnd = "color";
+      set(preset ? { color2: undefined, name: preset } : { color2: undefined });
     }
-    syncColors(); redraw(); commitHistory();
+    commitHistory();
   };
   modeSeg.addEventListener("click", e => { const b = (e.target as Element).closest("button"); if (b) setMode(b.dataset.mode); });
 
@@ -150,7 +150,7 @@ function bindInkCard(el: HTMLElement, ink: ReadonlyInk, signal: AbortSignal) {
 
   nameIn.addEventListener("input", () => set({ name: nameIn.value }));
   nameIn.addEventListener("change", () => {
-    if (!nameIn.value.trim()) { set({ name: "Personalizado" }); nameIn.value = ink.name; }
+    if (!nameIn.value.trim()) set({ name: "Personalizado" });
     commitHistory();  // al terminar de editar
   });
   nameIn.addEventListener("keydown", e => { if (e.key === "Enter") nameIn.blur(); });
@@ -159,8 +159,8 @@ function bindInkCard(el: HTMLElement, ink: ReadonlyInk, signal: AbortSignal) {
 
   // Espejar: solo acciones; el resultado queda en los puntos de la curva
   const setPoints = (points: Point[]) => {
-    set({ points, preset: "custom" }); presetSel.value = "custom";
-    redraw(); commitHistory();
+    set({ points, preset: "custom" });
+    commitHistory();
   };
   qs(el, ".flip-x").addEventListener("click", () => setPoints(mirrorX(ink.points)));
   qs(el, ".flip-y").addEventListener("click", () => setPoints(mirrorY(ink.points)));
@@ -168,19 +168,26 @@ function bindInkCard(el: HTMLElement, ink: ReadonlyInk, signal: AbortSignal) {
   presetSel.addEventListener("change", () => {
     const p = CURVE_PRESETS[presetSel.value]; if (!p) return;
     set({ preset: presetSel.value as PresetKey, points: p.pts });
-    redraw();
     commitHistory();
   });
 
   const rm = qs(el, ".rm", HTMLButtonElement);
   rm.disabled = doc.inks.length < 2;
-  rm.addEventListener("click", () => { doc.removeInk(ink.id); renderInks(); commitHistory(); });
+  rm.addEventListener("click", () => { doc.removeInk(ink.id); commitHistory(); });
+
+  // La tarjeta refleja los cambios de su tinta, vengan de donde vengan
+  const unsubscribe = doc.subscribe(c => {
+    if (c.what !== "ink" || c.id !== ink.id) return;
+    presetSel.value = ink.preset;
+    syncColors(); redraw();
+  });
+  signal.addEventListener("abort", unsubscribe, { once: true });
 }
 
 // Se aborta al volver a dibujar las tarjetas: suelta lo que las anteriores dejaron fuera de ellas
 let cardsLife = new AbortController();
 
-export function renderInks() {
+function renderInks() {
   cardsLife.abort();
   cardsLife = new AbortController();
   inksEl.innerHTML = "";
@@ -188,7 +195,7 @@ export function renderInks() {
     const el = createInkCard();
     inksEl.append(el);
     bindInkCard(el, ink, cardsLife.signal);
-  };
+  }
   addInkBtn.disabled = doc.inks.length >= MAX_INKS;
 }
 
@@ -197,6 +204,8 @@ addInkBtn.addEventListener("click", () => {
   const used = new Set(doc.inks.map(i => i.color));
   const sw = SWATCHES.find(s => !used.has(s[1])) || SWATCHES[0];
   doc.addInk(newInk(sw[0], sw[1], "campana"));  // la nueva queda primera
-  renderInks();
   commitHistory();
 });
+
+// La lista se rearma cuando cambian las tintas (agregar, quitar) o la receta entera
+doc.subscribe(c => { if (c.what === "inks" || c.what === "recipe") renderInks(); });
