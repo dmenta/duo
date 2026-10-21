@@ -1,5 +1,5 @@
 /* Configuración de la app: valores fijos que define el código y no cambian en ejecución. */
-import type { GraySettings, InkData, Point, PresetKey, Recipe, RecipeRef } from "./state.ts";
+import type { GraySettings, InkData, Point, PresetKey, Recipe, RecipeRef } from "./types.ts";
 
 /* ---------- Límites ---------- */
 

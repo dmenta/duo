@@ -1,7 +1,7 @@
 /* Exportación a PNG y ZIP a resolución completa. */
 import { setStatus, attachMenu, byId, ctx2d, qs } from "./dom.ts";
 import { state, buf, loadedImage } from "./state.ts";
-import type { ViewMode } from "./state.ts";
+import type { ViewMode } from "./types.ts";
 import { grayLevels, resultLUT, grayLUT, paint } from "./process.ts";
 import { encodePNG } from "./png.ts";
 import { downloads } from "./env.ts";

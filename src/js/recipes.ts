@@ -7,10 +7,11 @@ import { state } from "./state.ts";
 import { inkLUT } from "./process.ts";
 import { slug, save } from "./export.ts";
 import { askText, askConfirm } from "./dialogs.ts";
-import { getRecipe, normalizeRecipe, applyRecipe, validRecipe, commitHistory, setActiveRecipe } from "./history.ts";
+import { getRecipe, applyRecipe, commitHistory, setActiveRecipe } from "./history.ts";
+import { normalizeRecipe, validRecipe } from "./recipe.ts";
 import { loadLibraryItems, saveLibraryItems, onLibraryChange } from "./storage.ts";
 
-import type { Recipe, RecipeRef } from "./state.ts";
+import type { Recipe, RecipeRef } from "./types.ts";
 /** receta propia */
 type LibraryItem = { id: string, name: string, recipe: Recipe, updated: number };
 type NamedRecipe = { id: string, name: string, recipe: Recipe };

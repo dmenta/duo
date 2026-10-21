@@ -3,7 +3,7 @@
    - 100%: se pinta solo la porción visible, desde la imagen a resolución completa. */
 import { byId, ctx2d } from "./dom.ts";
 import { state, buf, loadedImage } from "./state.ts";
-import type { Bitmap } from "./state.ts";
+import type { Bitmap } from "./types.ts";
 import { paint, paintRegion } from "./process.ts";
 import { syncViewSeg } from "./ui-stage.ts";
 import { zoom, zoomViewport } from "./zoom.ts";

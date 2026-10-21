@@ -2,10 +2,9 @@
    Al 100% la imagen se desplaza arrastrando o con la rueda; doble clic alterna los modos. */
 import { byId } from "./dom.ts";
 import { buf, loadedImage } from "./state.ts";
+import type { ZoomMode } from "./types.ts";
 import { scheduleRender } from "./render.ts";
 import { fitCanvas } from "./ui-stage.ts";
-
-type ZoomMode = "fit" | "actual";
 
 export const zoom: { mode: ZoomMode; x: number; y: number } = { mode: "fit", x: 0, y: 0 };  // x, y: esquina superior izquierda visible, en píxeles de imagen
 const zoomSeg = byId("zoomSeg");

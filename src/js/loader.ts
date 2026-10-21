@@ -1,5 +1,5 @@
 /* Carga de imágenes e imagen de prueba. */
-import type { Bitmap } from "./state.ts";
+import type { Bitmap } from "./types.ts";
 import { setStatus, byId, ctx2d } from "./dom.ts";
 import { enc, YfromL } from "./color.ts";
 import { PREVIEW_MAX, FULL_MAX } from "./config.ts";

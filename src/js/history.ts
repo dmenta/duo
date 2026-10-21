@@ -1,21 +1,17 @@
-import type { InkData, Point, Recipe, RecipeRef } from "./state.ts";
 /* Receta (configuración de gris y tintas) e historial de deshacer/rehacer.
    Cada entrada del historial es una copia completa de la receta más cuál receta de la
    biblioteca estaba activa: no hace falta programar la operación inversa de cada comando. */
 import { byId } from "./dom.ts";
 import { IS_MAC } from "./env.ts";
-import { CURVE_PRESETS, HISTORY_MAX, MAX_INKS } from "./config.ts";
-import { makeInk, state } from "./state.ts";
+import { HISTORY_MAX } from "./config.ts";
+import { state } from "./state.ts";
+import { inkData, makeInk, validRecipe } from "./recipe.ts";
+import type { Recipe, RecipeRef } from "./types.ts";
 import { scheduleRender } from "./render.ts";
 import { renderInks } from "./ui-inks.ts";
 import { syncGrayUI } from "./ui-gray.ts";
 import { syncRecipeUI } from "./recipes.ts";
 import { loadResume, saveResume } from "./storage.ts";
-
-// Datos de una tinta para la receta, con claves en orden fijo (color2 solo si es degradé)
-const inkData = ({ name, color, color2, preset, points }: InkData): InkData =>
-  color2 ? { name, color, color2, preset, points: points.map(p => (p.slice() as Point)) }
-         : { name, color, preset, points: points.map(p => (p.slice() as Point)) };
 
 // Receta actual, con claves en orden fijo para poder comparar recetas por su JSON
 export function getRecipe(): Recipe {
@@ -27,16 +23,6 @@ export function getRecipe(): Recipe {
   };
 }
 
-// Receta de cualquier origen -> misma forma que getRecipe (nombres y colores normalizados)
-export function normalizeRecipe(r: Recipe): Recipe {
-  const g = r.gray;
-  return {
-    v: 1,
-    gray: { mode: g.mode, r: g.r, g: g.g, b: g.b },
-    inks: r.inks.map(makeInk).map(inkData)
-  };
-}
-
 /** Reemplaza la configuración actual por la receta y redibuja todo. */
 export function applyRecipe(r: Recipe) {
   const g = r.gray;
@@ -45,27 +31,6 @@ export function applyRecipe(r: Recipe) {
   syncGrayUI();
   renderInks();
   scheduleRender();  // el gris se recalcula solo si cambió la conversión
-}
-
-/**
- * Comprueba que una receta (guardada, importada…) tenga una forma válida
- * @param r datos de origen desconocido
- */
-export function validRecipe(r: any): r is Recipe {
-  try {
-
-    const isHex = (c: unknown) => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c);
-    const g = r && r.gray;
-    if (!r || r.v !== 1 || !g || !["lum", "mix"].includes(g.mode) || ![g.r, g.g, g.b].every(Number.isFinite)) return false;
-    if (!Array.isArray(r.inks) || r.inks.length < 1 || r.inks.length > MAX_INKS) return false;
-    return r.inks.every((i: any) =>
-      typeof i.name === "string" && isHex(i.color) && (i.color2 === undefined || isHex(i.color2)) &&
-      (i.preset === "custom" || Object.hasOwn(CURVE_PRESETS, i.preset)) &&
-      Array.isArray(i.points) && i.points.length >= 2 &&
-      i.points[0][0] === 0 && i.points[i.points.length - 1][0] === 1 &&
-      i.points.every((p: any, k: number, a: any[]) => Array.isArray(p) && p.length === 2 &&
-        p.every((v: any) => Number.isFinite(v) && v >= 0 && v <= 1) && (k === 0 || p[0] > a[k - 1][0])));
-  } catch { return false; }
 }
 
 /* ---------- Punto de retorno ---------- */

@@ -3,12 +3,13 @@
 import { setStatus, cssColorToHex, byId, qs } from "./dom.ts";
 import { mirrorX, mirrorY } from "./curves.ts";
 import { CURVE_PRESETS, MAX_INKS, NAME_MAX, SWATCHES } from "./config.ts";
-import { swatchName, newInk, state } from "./state.ts";
+import { state } from "./state.ts";
+import { swatchName, newInk } from "./recipe.ts";
 import { scheduleRender } from "./render.ts";
 import { attachCurve } from "./curve-editor.ts";
 import { commitHistory } from "./history.ts";
 
-import type { Ink, Point } from "./state.ts";
+import type { Ink, Point } from "./types.ts";
 /** extremo de una tinta: color en los blancos o en los negros */
 type End = "color" | "color2";
 

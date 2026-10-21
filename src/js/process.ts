@@ -1,5 +1,5 @@
 /* Procesamiento: imagen -> niveles de gris -> tintas -> píxeles. */
-import type { Bitmap, InkData, ViewMode } from "./state.ts";
+import type { Bitmap, InkData, ViewMode } from "./types.ts";
 import { N, LIN, enc, hexToLin, YfromL, LfromY, coverage, gradientLin } from "./color.ts";
 import { makeCurve } from "./curves.ts";
 import { state } from "./state.ts";

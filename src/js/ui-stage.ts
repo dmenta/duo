@@ -6,7 +6,7 @@ import { state, buf } from "./state.ts";
 import { scheduleRender } from "./render.ts";
 import { loadFile, sampleImage } from "./loader.ts";
 import { zoom } from "./zoom.ts";
-import type { ViewMode } from "./state.ts";
+import type { ViewMode } from "./types.ts";
 
 const viewSeg = byId("viewSeg");
 export function syncViewSeg() {

@@ -1,5 +1,5 @@
 /* Editor interactivo de curvas (canvas). */
-import type { Ink, Point } from "./state.ts";
+import type { Ink, Point } from "./types.ts";
 import { ctx2d } from "./dom.ts";
 import { clamp01, contrastRatio, mixHex } from "./color.ts";
 import { makeCurve } from "./curves.ts";
