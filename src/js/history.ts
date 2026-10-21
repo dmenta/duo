@@ -1,5 +1,5 @@
 import type { InkData, Point, Recipe, RecipeRef } from "./state.ts";
-/* Receta (configuración de gris y tintas), historial de deshacer/rehacer y guardado local.
+/* Receta (configuración de gris y tintas) e historial de deshacer/rehacer.
    Cada entrada del historial es una copia completa de la receta más cuál receta de la
    biblioteca estaba activa: no hace falta programar la operación inversa de cada comando. */
 import { byId } from "./dom.ts";
@@ -10,9 +10,7 @@ import { scheduleRender } from "./render.ts";
 import { renderInks } from "./ui-inks.ts";
 import { syncGrayUI } from "./ui-gray.ts";
 import { syncRecipeUI } from "./recipes.ts";
-
-const STORAGE_KEY = "duotono:receta:v1";   // última receta en uso
-const ACTIVE_KEY = "duotono:activa:v1";    // receta de la biblioteca activa
+import { loadResume, saveResume } from "./storage.ts";
 
 // Datos de una tinta para la receta, con claves en orden fijo (color2 solo si es degradé)
 const inkData = ({ name, color, color2, preset, points }: InkData): InkData =>
@@ -70,24 +68,17 @@ export function validRecipe(r: any): r is Recipe {
   } catch { return false; }
 }
 
-/* ---------- Guardado local ---------- */
+/* ---------- Punto de retorno ---------- */
 
 const validRef = (a: any): a is RecipeRef | null => a === null || (a && ["builtin", "user"].includes(a.kind) && typeof a.id === "string");
 
-function persist(entry: HistoryEntry) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entry.recipe));
-    localStorage.setItem(ACTIVE_KEY, JSON.stringify(entry.active));
-  } catch { /* sin almacenamiento: se sigue sin guardar */ }
-}
+const persist = (entry: HistoryEntry) => saveResume(entry.recipe, entry.active);
+
+/** Receta y activa del punto de retorno, si la receta guardada es válida */
 function loadSaved() {
-  try {
-    const recipe = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
-    if (!validRecipe(recipe)) return null;
-    const raw = localStorage.getItem(ACTIVE_KEY);
-    const active = raw === null ? null : JSON.parse(raw);
-    return { recipe, active: validRef(active) ? active : null };
-  } catch { return null; }
+  const { recipe, active } = loadResume();
+  if (!validRecipe(recipe)) return null;
+  return { recipe, active: validRef(active) ? active : null };
 }
 
 /* ---------- Historial ---------- */
