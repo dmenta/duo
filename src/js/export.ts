@@ -4,12 +4,8 @@ import { state, buf, loadedImage, resultLUT } from "./state.ts";
 import type { ViewMode } from "./state.ts";
 import { grayLevels, buildLUT, grayLUT, paint } from "./process.ts";
 import { encodePNG } from "./png.ts";
+import { downloads } from "./env.ts";
 
-/** Capacidad de descargas de claude.ai, si la página corre ahí */
-let downloads: { save(o: { filename: string; data: Blob }): Promise<void> } | null = null;
-if (window.claude && typeof window.claude.use === "function") {
-  window.claude.use("downloads").then(d => { downloads = d; }).catch(() => {});
-}
 
 function fullCanvas(mode: ViewMode) {
   const full = loadedImage().full, { w, h } = full;
@@ -48,7 +44,7 @@ export const slug = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g
 export async function save(filename: string, blob: Blob, desc?: string) {
   const done = `Guardado: ${filename}${desc ? ` (${desc})` : ""}`;
   if (downloads) {
-    try { await (downloads as NonNullable<typeof downloads>).save({ filename, data: blob }); setStatus(done); }
+    try { await downloads.save({ filename, data: blob }); setStatus(done); }
     catch (err) { (err as { code?: string } | null)?.code === "declined" ? setStatus("Descarga cancelada.") : setStatus("No se pudo guardar el archivo en esta vista.", "error"); }
     return;
   }

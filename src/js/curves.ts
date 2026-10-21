@@ -32,12 +32,3 @@ const round4 = (v: number) => Math.round(v * 1e4) / 1e4;  // evita arrastrar err
 export const mirrorX = (pts: Point[]): Point[] => pts.map(([x, y]) => ([round4(1 - x), y] as Point)).reverse();
 // Espejar en Y: donde había mucha tinta pasa a haber poca
 export const mirrorY = (pts: Point[]): Point[] => pts.map(([x, y]) => ([x, round4(1 - y)] as Point));
-
-export const CURVE_PRESETS: Record<string, { label: string; pts: Point[] }> = {
-  lineal: { label: "Lineal", pts: [[0, 0], [1, 1]] },
-  luces: { label: "Limpia en luces", pts: [[0, 0], [0.35, 0.12], [0.7, 0.55], [1, 1]] },
-  medios: { label: "Medios tonos", pts: [[0, 0], [0.3, 0.38], [0.65, 0.7], [1, 0.8]] },
-  campana: { label: "Solo medios", pts: [[0, 0], [0.45, 0.6], [1, 0.25]] },
-  sombras: { label: "Sombras", pts: [[0, 0], [0.5, 0.18], [1, 1]] },
-  plano: { label: "Fondo plano", pts: [[0, 0.3], [1, 0.6]] }
-};

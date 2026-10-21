@@ -1,35 +1,25 @@
 /* Biblioteca de recetas: predeterminadas (solo lectura) y propias (guardadas en el navegador).
    Exportar e importar en archivos .json. */
-import { setStatus, IS_MAC, attachMenu, byId, qs } from "./dom.ts";
-import { CURVE_PRESETS } from "./curves.ts";
-import { defaultRecipe, state } from "./state.ts";
+import { setStatus, attachMenu, byId, qs } from "./dom.ts";
+import { IS_MAC } from "./env.ts";
+import { BUILTIN_RECIPES as BUILTIN_DEFS, RECIPE_NAME_MAX } from "./config.ts";
+import { state } from "./state.ts";
 import { inkLUT } from "./process.ts";
 import { slug, save } from "./export.ts";
 import { askText, askConfirm } from "./dialogs.ts";
 import { getRecipe, normalizeRecipe, applyRecipe, validRecipe, commitHistory, setActiveRecipe } from "./history.ts";
 
-import type { InkData, PresetKey, Recipe, RecipeRef } from "./state.ts";
+import type { Recipe, RecipeRef } from "./state.ts";
 /** receta propia */
 type LibraryItem = { id: string, name: string, recipe: Recipe, updated: number };
 type NamedRecipe = { id: string, name: string, recipe: Recipe };
 
 const LIBRARY_KEY = "duotono:recetas:v1";
-const RECIPE_NAME_MAX = 40;
 
 /* ---------- Recetas predeterminadas ---------- */
 
-const presetInk = (name: string, color: string, preset: PresetKey): InkData => ({ name, color, preset, points: CURVE_PRESETS[preset].pts });
-
-const withInks = (inks: InkData[]): Recipe => ({ v: 1, gray: { mode: "lum", r: 21.26, g: 71.52, b: 7.22 }, inks });
-const BUILTIN_RECIPES = [
-  { id: "negro-naranja", name: "Negro y naranja", recipe: defaultRecipe() },
-  { id: "sepia", name: "Sepia clásico", recipe: withInks([presetInk("Negro", "#231f20", "sombras"), presetInk("Sepia", "#704214", "medios")]) },
-  { id: "cianotipo", name: "Cianotipo", recipe: withInks([presetInk("Azul de Prusia", "#1b3a63", "lineal")]) },
-  { id: "negro-rojo", name: "Negro y rojo", recipe: withInks([presetInk("Negro", "#231f20", "luces"), presetInk("Rojo", "#c8102e", "medios")]) },
-  { id: "azul-magenta", name: "Azul y magenta", recipe: withInks([presetInk("Azul", "#1f4e9c", "lineal"), presetInk("Magenta", "#c4006e", "campana")]) }
-].map(b => ({ ...b, recipe: normalizeRecipe(b.recipe) }));
-
-export const DEFAULT_REF: RecipeRef = { kind: "builtin", id: "negro-naranja" };
+// Normalizadas como cualquier receta: nombres de colores predefinidos y claves en orden fijo
+const BUILTIN_RECIPES = BUILTIN_DEFS.map(b => ({ ...b, recipe: normalizeRecipe(b.recipe) }));
 
 /* ---------- Biblioteca propia ---------- */
 

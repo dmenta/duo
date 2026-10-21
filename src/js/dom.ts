@@ -43,7 +43,6 @@ export function setStatus(text: string, kind: "info" | "error" = "info") {
   toastTimer = setTimeout(() => toastEl.classList.remove("on"), kind === "error" ? 7000 : 3500);
 }
 
-export const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 
 // Cualquier color CSS -> "#rrggbb", usando el intérprete del navegador:
 // hex (con o sin #, abreviado), rgb(), hsl(), oklch(), nombres... También "255, 0, 0".

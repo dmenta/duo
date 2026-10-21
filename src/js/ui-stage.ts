@@ -1,5 +1,7 @@
 /* Zona de la imagen: selector de vista, abrir, arrastrar y pegar. */
-import { IS_MAC, byId } from "./dom.ts";
+import { byId } from "./dom.ts";
+import { IS_MAC } from "./env.ts";
+import { FIT_INSET } from "./config.ts";
 import { state, buf } from "./state.ts";
 import { scheduleRender } from "./render.ts";
 import { loadFile, sampleImage } from "./loader.ts";
@@ -35,7 +37,6 @@ export function setHasImage(has: boolean) {
 
 // Ajustar a la vista: el canvas ocupa el mayor tamaño posible dentro del escenario,
 // conservando la proporción (también agranda las imágenes chicas)
-const FIT_INSET = { top: 60, right: 32, bottom: 24, left: 32 };
 const viewEl = byId("view", HTMLCanvasElement);
 export function fitCanvas() {
   if (!buf.full) return;

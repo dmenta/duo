@@ -1,5 +1,5 @@
 /* Estado de la aplicación y buffers de imagen. */
-import { CURVE_PRESETS } from "./curves.ts";
+import { CURVE_PRESETS, NAME_MAX, SWATCHES, defaultRecipe } from "./config.ts";
 
 /** Punto de curva: [gris 0..1, tinta 0..1] */
 export type Point = [number, number];
@@ -52,16 +52,6 @@ export interface Bitmap {
   hasAlpha: boolean;
 }
 
-export const MAX_INKS = 4;
-export const NAME_MAX = 32;       // largo máximo del nombre de una tinta
-export const PREVIEW_MAX = 1400;  // lado mayor de la vista previa
-export const FULL_MAX = 8000;     // lado mayor máximo para exportar
-
-export const SWATCHES: [name: string, hex: string][] = [
-  ["Negro", "#231f20"], ["Sepia", "#704214"], ["Naranja", "#e3742f"], ["Rojo", "#c8102e"],
-  ["Magenta", "#c4006e"], ["Azul", "#1f4e9c"], ["Cian", "#0093c9"], ["Verde", "#00875a"], ["Amarillo", "#f2c500"]
-];
-
 // Nombre del color predefinido con ese hex, o undefined si es un color propio
 export const swatchName = (color: string): string | undefined => (SWATCHES.find(s => s[1] === color.toLowerCase()) || [])[0];
 
@@ -81,16 +71,6 @@ export const makeInk = ({ name, color, color2, preset, points }: InkData): Ink =
 };
 
 export const newInk = (name: string, color: string, preset: PresetKey) => makeInk({ name, color, preset, points: CURVE_PRESETS[preset].pts });
-
-// Receta inicial: lo que se usa la primera vez y al restablecer
-export const defaultRecipe = (): Recipe => ({
-  v: 1,
-  gray: { mode: "lum", r: 21.26, g: 71.52, b: 7.22 },
-  inks: [
-    { name: "Negro", color: "#231f20", preset: "luces", points: CURVE_PRESETS.luces.pts },
-    { name: "Naranja", color: "#e3742f", preset: "medios", points: CURVE_PRESETS.medios.pts }
-  ]
-});
 
 /**
  * Configuración que define el resultado

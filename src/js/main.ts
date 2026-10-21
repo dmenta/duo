@@ -18,7 +18,7 @@ import "./history.ts";
 import "./recipes.ts";
 import { setHasImage } from "./ui-stage.ts";
 import { initHistory } from "./history.ts";
-import { DEFAULT_REF } from "./recipes.ts";
+import { DEFAULT_REF } from "./config.ts";
 
 initHistory(DEFAULT_REF);   // restaura la última receta guardada, si hay
 setHasImage(false);         // arranca sin imagen: se ve la zona de carga

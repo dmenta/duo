@@ -2,9 +2,10 @@ import type { InkData, Point, Recipe, RecipeRef } from "./state.ts";
 /* Receta (configuración de gris y tintas), historial de deshacer/rehacer y guardado local.
    Cada entrada del historial es una copia completa de la receta más cuál receta de la
    biblioteca estaba activa: no hace falta programar la operación inversa de cada comando. */
-import { IS_MAC, byId } from "./dom.ts";
-import { CURVE_PRESETS } from "./curves.ts";
-import { MAX_INKS, makeInk, state } from "./state.ts";
+import { byId } from "./dom.ts";
+import { IS_MAC } from "./env.ts";
+import { CURVE_PRESETS, HISTORY_MAX, MAX_INKS } from "./config.ts";
+import { makeInk, state } from "./state.ts";
 import { scheduleRender } from "./render.ts";
 import { renderInks } from "./ui-inks.ts";
 import { syncGrayUI } from "./ui-gray.ts";
@@ -12,7 +13,6 @@ import { syncRecipeUI } from "./recipes.ts";
 
 const STORAGE_KEY = "duotono:receta:v1";   // última receta en uso
 const ACTIVE_KEY = "duotono:activa:v1";    // receta de la biblioteca activa
-const HISTORY_MAX = 100;
 
 // Datos de una tinta para la receta, con claves en orden fijo (color2 solo si es degradé)
 const inkData = ({ name, color, color2, preset, points }: InkData): InkData =>

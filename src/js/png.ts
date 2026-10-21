@@ -1,5 +1,6 @@
 /* Codificador PNG con el tipo de color justo (canvas.toBlob siempre da RGBA de 32 bits).
    Devuelve null si el navegador no tiene CompressionStream. */
+import { HAS_COMPRESSION } from "./env.ts";
 
 /** Canales -> tipo de color PNG (gris, gris+alfa, RGB, RGBA) */
 const PNG_COLOR_TYPE: Record<number, number> = { 1: 0, 2: 4, 3: 2, 4: 6 };
@@ -59,7 +60,7 @@ function filterRow(cur: Uint8Array, prev: Uint8Array, bpp: number, out: Uint8Arr
  * @returns null si el navegador no tiene CompressionStream
  */
 export async function encodePNG(w: number, h: number, channels: number, fillRow: (y: number, row: Uint8Array) => void): Promise<Blob | null> {
-  if (typeof CompressionStream === "undefined") return null;
+  if (!HAS_COMPRESSION) return null;
   const rowLen = w * channels;
   let cur = new Uint8Array(rowLen), prev = new Uint8Array(rowLen);
   const filtered = new Uint8Array(rowLen + 1);

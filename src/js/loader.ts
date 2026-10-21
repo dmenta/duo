@@ -2,7 +2,8 @@
 import type { Bitmap } from "./state.ts";
 import { setStatus, byId, ctx2d } from "./dom.ts";
 import { enc, YfromL } from "./color.ts";
-import { PREVIEW_MAX, FULL_MAX, state, buf } from "./state.ts";
+import { PREVIEW_MAX, FULL_MAX } from "./config.ts";
+import { state, buf } from "./state.ts";
 import { scheduleRender } from "./render.ts";
 import { setHasImage } from "./ui-stage.ts";
 import { setZoom } from "./zoom.ts";

@@ -1,8 +1,9 @@
 /* Panel de tintas: tarjetas, color, nombre, curva.
    Incluye el modo de cada tinta: color fijo o degradé (color en blancos -> color2 en negros). */
 import { setStatus, cssColorToHex, byId, qs } from "./dom.ts";
-import { mirrorX, mirrorY, CURVE_PRESETS } from "./curves.ts";
-import { MAX_INKS, NAME_MAX, SWATCHES, swatchName, newInk, state } from "./state.ts";
+import { mirrorX, mirrorY } from "./curves.ts";
+import { CURVE_PRESETS, MAX_INKS, NAME_MAX, SWATCHES } from "./config.ts";
+import { swatchName, newInk, state } from "./state.ts";
 import { scheduleRender } from "./render.ts";
 import { attachCurve } from "./curve-editor.ts";
 import { commitHistory } from "./history.ts";
