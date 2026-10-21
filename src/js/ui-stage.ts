@@ -13,7 +13,7 @@ export function syncViewSeg() {
 }
 viewSeg.addEventListener("click", e => {
   const b = (e.target as Element).closest("button");
-  if (b) { view.setMode(b.dataset.v as ViewMode); scheduleRender(); }
+  if (b) view.setMode(b.dataset.v as ViewMode);
 });
 
 const fileIn = byId("file", HTMLInputElement);

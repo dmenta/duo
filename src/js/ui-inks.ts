@@ -5,7 +5,6 @@ import { mirrorX, mirrorY } from "./curves.ts";
 import { CURVE_PRESETS, MAX_INKS, NAME_MAX, SWATCHES } from "./config.ts";
 import { doc } from "./session.ts";
 import { swatchName, newInk } from "./recipe.ts";
-import { scheduleRender } from "./render.ts";
 import { attachCurve } from "./curve-editor.ts";
 import { commitHistory } from "./history.ts";
 
@@ -109,7 +108,7 @@ function bindInkCard(el: HTMLElement, ink: ReadonlyInk, signal: AbortSignal) {
       else if (wasPreset) changes.name = "Personalizado"; // de predefinido a propio
     }
     set(changes);
-    syncColors(); redraw(); scheduleRender();
+    syncColors(); redraw();
   };
 
   const setMode = (mode: string | undefined) => {
@@ -119,7 +118,7 @@ function bindInkCard(el: HTMLElement, ink: ReadonlyInk, signal: AbortSignal) {
       const preset = swatchName(ink.color);
       set(preset ? { color2: undefined, name: preset } : { color2: undefined }); activeEnd = "color";
     }
-    syncColors(); redraw(); scheduleRender(); commitHistory();
+    syncColors(); redraw(); commitHistory();
   };
   modeSeg.addEventListener("click", e => { const b = (e.target as Element).closest("button"); if (b) setMode(b.dataset.mode); });
 
@@ -161,7 +160,7 @@ function bindInkCard(el: HTMLElement, ink: ReadonlyInk, signal: AbortSignal) {
   // Espejar: solo acciones; el resultado queda en los puntos de la curva
   const setPoints = (points: Point[]) => {
     set({ points, preset: "custom" }); presetSel.value = "custom";
-    redraw(); scheduleRender(); commitHistory();
+    redraw(); commitHistory();
   };
   qs(el, ".flip-x").addEventListener("click", () => setPoints(mirrorX(ink.points)));
   qs(el, ".flip-y").addEventListener("click", () => setPoints(mirrorY(ink.points)));
@@ -169,13 +168,13 @@ function bindInkCard(el: HTMLElement, ink: ReadonlyInk, signal: AbortSignal) {
   presetSel.addEventListener("change", () => {
     const p = CURVE_PRESETS[presetSel.value]; if (!p) return;
     set({ preset: presetSel.value as PresetKey, points: p.pts });
-    redraw(); scheduleRender();
+    redraw();
     commitHistory();
   });
 
   const rm = qs(el, ".rm", HTMLButtonElement);
   rm.disabled = doc.inks.length < 2;
-  rm.addEventListener("click", () => { doc.removeInk(ink.id); renderInks(); scheduleRender(); commitHistory(); });
+  rm.addEventListener("click", () => { doc.removeInk(ink.id); renderInks(); commitHistory(); });
 }
 
 // Se aborta al volver a dibujar las tarjetas: suelta lo que las anteriores dejaron fuera de ellas
@@ -198,6 +197,6 @@ addInkBtn.addEventListener("click", () => {
   const used = new Set(doc.inks.map(i => i.color));
   const sw = SWATCHES.find(s => !used.has(s[1])) || SWATCHES[0];
   doc.addInk(newInk(sw[0], sw[1], "campana"));  // la nueva queda primera
-  renderInks(); scheduleRender();
+  renderInks();
   commitHistory();
 });

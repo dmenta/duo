@@ -13,6 +13,7 @@ const viewCanvas = byId("view", HTMLCanvasElement);
 const vctx = ctx2d(viewCanvas);
 
 let rafPending = false;
+/** Agenda un pintado para el próximo cuadro; varios pedidos en el mismo cuadro pintan una vez */
 export function scheduleRender() {
   if (rafPending) return;
   rafPending = true;
@@ -47,3 +48,7 @@ function render() {
   syncViewSeg();
   syncRecipeUI();  // muestra y marca de cambios sin guardar, en vivo
 }
+
+// El canvas se repinta ante cualquier cambio del documento o de la vista
+doc.subscribe(scheduleRender);
+view.subscribe(scheduleRender);

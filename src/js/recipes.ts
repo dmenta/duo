@@ -4,7 +4,6 @@ import { setStatus, attachMenu, byId, qs } from "./dom.ts";
 import { IS_MAC } from "./env.ts";
 import { BUILTIN_RECIPES as BUILTIN_DEFS, RECIPE_NAME_MAX } from "./config.ts";
 import { doc } from "./session.ts";
-import { scheduleRender } from "./render.ts";
 import { renderInks } from "./ui-inks.ts";
 import { syncGrayUI } from "./ui-gray.ts";
 import { inkLUT } from "./process.ts";
@@ -131,7 +130,6 @@ export function applyRecipe(r: Recipe, active: RecipeRef | null, options?: { com
   doc.loadRecipe(r, active, options);
   syncGrayUI();
   renderInks();
-  scheduleRender();  // el gris se recalcula solo si cambió la conversión
 }
 
 // Aplicar una receta de la biblioteca: es un paso del historial, se puede deshacer

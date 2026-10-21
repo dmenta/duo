@@ -3,7 +3,6 @@
 import { byId } from "./dom.ts";
 import { doc, view } from "./session.ts";
 import type { ZoomMode } from "./types.ts";
-import { scheduleRender } from "./render.ts";
 import { fitCanvas } from "./ui-stage.ts";
 
 const zoomSeg = byId("zoomSeg");
@@ -39,7 +38,6 @@ export function setZoom(mode: ZoomMode, focus?: { ix: number; iy: number; sx: nu
   document.body.classList.toggle("zoom-actual", mode === "actual");
   zoomSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.z === mode)));
   if (mode === "fit") fitCanvas();
-  scheduleRender();
 }
 
 zoomSeg.addEventListener("click", e => { const b = (e.target as Element).closest("button"); if (b) setZoom(b.dataset.z as ZoomMode); });
@@ -69,7 +67,6 @@ zoomStage.addEventListener("pointerdown", e => {
 zoomStage.addEventListener("pointermove", e => {
   if (!panning) return;
   view.setXY(panning.x - (e.clientX - panning.px), panning.y - (e.clientY - panning.py));
-  scheduleRender();
 });
 const endPan = () => { panning = null; zoomStage.classList.remove("panning"); };
 zoomStage.addEventListener("pointerup", endPan);
@@ -78,7 +75,6 @@ zoomStage.addEventListener("wheel", e => {
   if (view.zoom !== "actual" || !doc.hasImage) return;
   e.preventDefault();
   view.setXY(view.x + (e.shiftKey ? e.deltaY : e.deltaX), view.y + (e.shiftKey ? 0 : e.deltaY));
-  scheduleRender();
 }, { passive: false });
 
 // Atajos: Ctrl+0 ajustar, Ctrl+1 tamaño real

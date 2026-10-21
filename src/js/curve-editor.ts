@@ -3,7 +3,6 @@ import type { Point, ReadonlyInk } from "./types.ts";
 import { ctx2d } from "./dom.ts";
 import { clamp01, contrastRatio, mixHex } from "./color.ts";
 import { makeCurve } from "./curves.ts";
-import { scheduleRender } from "./render.ts";
 import { commitHistory } from "./history.ts";
 
 /**
@@ -80,7 +79,7 @@ export function attachCurve(canvas: HTMLCanvasElement, ink: ReadonlyInk, readout
   const show = (a: number, b: number) => { readout.textContent = `Gris ${Math.round(a * 100)}% → tinta ${Math.round(b * 100)}%`; readout.classList.add("on"); };
   /** Copia editable de los puntos de la tinta */
   const copyPoints = () => ink.points.map(p => [p[0], p[1]] as Point);
-  const edited = (points: Point[]) => { onEdit(points); scheduleRender(); };
+  const edited = (points: Point[]) => onEdit(points);
 
   canvas.addEventListener("pointerdown", e => {
     if (!map) return;
