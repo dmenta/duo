@@ -24,7 +24,6 @@ import { DEFAULT_REF } from "./config.ts";
 
 // Arranca desde el punto de retorno, si hay; si no, con la receta de fábrica
 const saved = loadResumePoint();
-doc.setActive(saved ? saved.active : DEFAULT_REF);
-applyRecipe(saved?.recipe ?? doc.getRecipe());
+applyRecipe(saved?.recipe ?? doc.getRecipe(), saved ? saved.active : DEFAULT_REF, { commit: false });
 initHistory();
 setHasImage(false);  // arranca sin imagen: se ve la zona de carga

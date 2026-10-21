@@ -47,8 +47,7 @@ export function setActiveRecipe(ref: RecipeRef | null) {
 
 function restoreCurrent() {
   const e = hist.stack[hist.index];
-  doc.setActive(e.active);
-  applyRecipe(e.recipe);
+  applyRecipe(e.recipe, e.active, { commit: false });
   saveResumePoint();
   syncHistoryUI();
   syncRecipeUI();

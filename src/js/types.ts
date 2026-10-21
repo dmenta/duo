@@ -66,3 +66,23 @@ export interface Bitmap {
   data: Uint8ClampedArray;
   hasAlpha: boolean;
 }
+
+/* ---------- Avisos de cambio del estado ---------- */
+
+/** Opciones de un cambio: live mientras el gesto sigue (arrastrar, mover un control) */
+export interface ChangeOptions { live?: boolean }
+
+/**
+ * Qué cambió en el documento. live: el gesto sigue en curso (el historial espera al final).
+ * commit: false en "recipe" cuando la receta viene del historial o del arranque.
+ */
+export type DocChange =
+  | { what: "image" }
+  | { what: "recipe"; commit: boolean }
+  | { what: "active" }
+  | { what: "gray"; live: boolean }
+  | { what: "inks" }
+  | { what: "ink"; id: number; live: boolean };
+
+/** Qué cambió en la vista */
+export type ViewChange = { what: "mode" } | { what: "zoom" } | { what: "position" };

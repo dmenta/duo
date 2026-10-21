@@ -123,9 +123,12 @@ function renderList() {
     b.setAttribute("aria-checked", String(!!cur && cur.kind === b.dataset.kind && cur.id === b.dataset.id));
 }
 
-/** Reemplaza la receta en curso y redibuja la interfaz */
-export function applyRecipe(r: Recipe) {
-  doc.setRecipe(r);
+/**
+ * Reemplaza la receta en curso y la activa, y redibuja la interfaz.
+ * commit: false cuando viene del historial o del arranque.
+ */
+export function applyRecipe(r: Recipe, active: RecipeRef | null, options?: { commit?: boolean }) {
+  doc.loadRecipe(r, active, options);
   syncGrayUI();
   renderInks();
   scheduleRender();  // el gris se recalcula solo si cambió la conversión
@@ -134,8 +137,7 @@ export function applyRecipe(r: Recipe) {
 // Aplicar una receta de la biblioteca: es un paso del historial, se puede deshacer
 function applyFromLibrary(ref: RecipeRef) {
   const r = findRecipe(ref); if (!r) return;
-  doc.setActive(ref);
-  applyRecipe(r.recipe);
+  applyRecipe(r.recipe, ref);
   commitHistory();
 }
 
