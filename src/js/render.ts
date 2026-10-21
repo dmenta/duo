@@ -4,7 +4,7 @@
 import { byId, ctx2d } from "./dom.ts";
 import { state, buf, loadedImage } from "./state.ts";
 import type { Bitmap } from "./state.ts";
-import { buildLUT, paint, paintRegion } from "./process.ts";
+import { paint, paintRegion } from "./process.ts";
 import { syncViewSeg } from "./ui-stage.ts";
 import { zoom, zoomViewport } from "./zoom.ts";
 import { syncRecipeUI } from "./recipes.ts";
@@ -42,7 +42,6 @@ function renderActual(full: Bitmap, vp: ReturnType<typeof zoomViewport>) {
 function render() {
   if (!buf.prev) return;
   const { full, prev } = loadedImage();
-  if (state.view === "result") buildLUT();
   if (zoom.mode === "actual") renderActual(full, zoomViewport()); else renderFit(prev);
   document.documentElement.style.setProperty("--accent", (state.inks[1] || state.inks[0]).color);
   syncViewSeg();

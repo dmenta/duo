@@ -2,7 +2,7 @@
 import type { Bitmap, InkData, ViewMode } from "./state.ts";
 import { N, LIN, enc, hexToLin, YfromL, LfromY, coverage, gradientLin } from "./color.ts";
 import { makeCurve } from "./curves.ts";
-import { state, buf, resultLUT } from "./state.ts";
+import { state } from "./state.ts";
 
 function grayWeights() {
   return state.gray.mode === "lum"
@@ -70,7 +70,8 @@ export function inkLUT(inks: InkData[], size: number): Uint8Array {
   }
   return lut;
 }
-export function buildLUT() { buf.resultLUT = inkLUT(state.inks, N); }
+/** Tabla de colores de la receta en curso; se arma cuando se necesita (cuesta décimas de ms). */
+export const resultLUT = () => inkLUT(state.inks, N);
 
 // Tabla tono -> gris sRGB
 export const grayLUT = (() => {

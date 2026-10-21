@@ -1,8 +1,8 @@
 /* Exportación a PNG y ZIP a resolución completa. */
 import { setStatus, attachMenu, byId, ctx2d, qs } from "./dom.ts";
-import { state, buf, loadedImage, resultLUT } from "./state.ts";
+import { state, buf, loadedImage } from "./state.ts";
 import type { ViewMode } from "./state.ts";
-import { grayLevels, buildLUT, grayLUT, paint } from "./process.ts";
+import { grayLevels, resultLUT, grayLUT, paint } from "./process.ts";
 import { encodePNG } from "./png.ts";
 import { downloads } from "./env.ts";
 
@@ -86,7 +86,7 @@ async function runExport(action: keyof typeof EXPORTS) {
   const lbl = qs(dlMain, ".lbl"), t = lbl.textContent;
   dlAll.forEach(b => b.disabled = true); lbl.textContent = "Procesando…";
   await new Promise(r => setTimeout(r, 30));  // deja pintar el estado antes del cálculo
-  try { buildLUT(); await EXPORTS[action](); }
+  try { await EXPORTS[action](); }
   finally { dlAll.forEach(b => b.disabled = false); lbl.textContent = t; }
 }
 

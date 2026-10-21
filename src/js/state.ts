@@ -83,13 +83,10 @@ export const state: { gray: GraySettings; inks: Ink[]; view: ViewMode; active: R
   name: "imagen-de-prueba"
 };
 
-/**
- * Datos derivados de la imagen cargada
- */
-export const buf: { full: Bitmap | null; prev: Bitmap | null; resultLUT: Uint8Array | null } = {
+/** Imagen cargada: a resolución de exportación y reducida para la vista previa */
+export const buf: { full: Bitmap | null; prev: Bitmap | null } = {
   full: null,       // {w, h, data, hasAlpha} a resolución de exportación
-  prev: null,       // {w, h, data} reducida para la vista previa
-  resultLUT: null   // Uint8Array(N*3): color sRGB por nivel de gris
+  prev: null        // {w, h, data} reducida para la vista previa
 };
 
 /**
@@ -99,10 +96,4 @@ export function loadedImage(): { full: Bitmap; prev: Bitmap } {
   const { full, prev } = buf;
   if (!full || !prev) throw new Error("No hay imagen cargada");
   return { full, prev };
-}
-
-/** Tabla de colores del resultado; se arma con buildLUT antes de pintar. */
-export function resultLUT() {
-  if (!buf.resultLUT) throw new Error("Falta buildLUT() antes de pintar el resultado");
-  return buf.resultLUT;
 }
