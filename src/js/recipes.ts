@@ -3,11 +3,14 @@
 import { setStatus, attachMenu, byId, qs } from "./dom.ts";
 import { IS_MAC } from "./env.ts";
 import { BUILTIN_RECIPES as BUILTIN_DEFS, RECIPE_NAME_MAX } from "./config.ts";
-import { doc } from "./session.ts";
+import { doc, getRecipe, setRecipe } from "./session.ts";
+import { scheduleRender } from "./render.ts";
+import { renderInks } from "./ui-inks.ts";
+import { syncGrayUI } from "./ui-gray.ts";
 import { inkLUT } from "./process.ts";
 import { slug, save } from "./export.ts";
 import { askText, askConfirm } from "./dialogs.ts";
-import { getRecipe, applyRecipe, commitHistory, setActiveRecipe } from "./history.ts";
+import { commitHistory, setActiveRecipe } from "./history.ts";
 import { normalizeRecipe, validRecipe } from "./recipe.ts";
 import { loadLibraryItems, saveLibraryItems, onLibraryChange } from "./storage.ts";
 
@@ -118,6 +121,14 @@ function renderList() {
   const cur = doc.active;
   for (const b of recipeList.querySelectorAll<HTMLElement>(".ritem"))
     b.setAttribute("aria-checked", String(!!cur && cur.kind === b.dataset.kind && cur.id === b.dataset.id));
+}
+
+/** Reemplaza la receta en curso y redibuja la interfaz */
+export function applyRecipe(r: Recipe) {
+  setRecipe(r);
+  syncGrayUI();
+  renderInks();
+  scheduleRender();  // el gris se recalcula solo si cambió la conversión
 }
 
 // Aplicar una receta de la biblioteca: es un paso del historial, se puede deshacer
