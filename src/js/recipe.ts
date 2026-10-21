@@ -25,14 +25,14 @@ export const newInk = (name: string, color: string, preset: PresetKey) => makeIn
 // Datos de una tinta para la receta, con claves en orden fijo (color2 solo si es degradé)
 export const inkData = ({ name, color, color2, preset, points }: InkData): InkData =>
   color2 ? { name, color, color2, preset, points: points.map(p => (p.slice() as Point)) }
-         : { name, color, preset, points: points.map(p => (p.slice() as Point)) };
+    : { name, color, preset, points: points.map(p => (p.slice() as Point)) };
 
 // Receta de cualquier origen -> misma forma que getRecipe (nombres y colores normalizados)
 export function normalizeRecipe(r: Recipe): Recipe {
-  const g = r.gray;
+  const gs = r.gray;
   return {
     v: 1,
-    gray: { mode: g.mode, r: g.r, g: g.g, b: g.b },
+    gray: { mode: gs.mode, r: gs.r, g: gs.g, b: gs.b },
     inks: r.inks.map(makeInk).map(inkData)
   };
 }

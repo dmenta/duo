@@ -21,14 +21,14 @@ function scaled(src: HTMLImageElement | HTMLCanvasElement, max: number): Bitmap 
 }
 
 function setSource(src: HTMLImageElement | HTMLCanvasElement, name: string) {
-  doc.image = { full: scaled(src, FULL_MAX), prev: scaled(src, PREVIEW_MAX) };
-  doc.name = name;
+  const image = { full: scaled(src, FULL_MAX), prev: scaled(src, PREVIEW_MAX) };
+  doc.setImage(image, name);
   scheduleRender();
   const capped = Math.max(src.width, src.height) > FULL_MAX;
   byId("fileName").textContent = name;
   byId("fileName").title = name;
   byId("fileDims").textContent =
-    `${doc.image.full.w} × ${doc.image.full.h} px${capped ? " · reducida para exportar" : ""}`;
+    `${image.full.w} × ${image.full.h} px${capped ? " · reducida para exportar" : ""}`;
   setHasImage(true);
   setZoom("fit");
 }

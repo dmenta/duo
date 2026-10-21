@@ -2,7 +2,7 @@
    - Ajustar: se pinta la vista previa reducida y el canvas se escala a la vista.
    - 100%: se pinta solo la porción visible, desde la imagen a resolución completa. */
 import { byId, ctx2d } from "./dom.ts";
-import { doc, view, loadedImage } from "./session.ts";
+import { doc, view } from "./session.ts";
 import type { Bitmap } from "./types.ts";
 import { paint, paintRegion } from "./process.ts";
 import { syncViewSeg } from "./ui-stage.ts";
@@ -40,8 +40,8 @@ function renderActual(full: Bitmap, vp: ReturnType<typeof zoomViewport>) {
 }
 
 function render() {
-  if (!doc.image) return;
-  const { full, prev } = loadedImage();
+  if (!doc.hasImage) return;
+  const { full, prev } = doc.image;
   if (view.zoom === "actual") renderActual(full, zoomViewport()); else renderFit(prev);
   document.documentElement.style.setProperty("--accent", (doc.inks[1] || doc.inks[0]).color);
   syncViewSeg();

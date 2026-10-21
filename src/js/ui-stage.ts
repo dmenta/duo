@@ -13,7 +13,7 @@ export function syncViewSeg() {
 }
 viewSeg.addEventListener("click", e => {
   const b = (e.target as Element).closest("button");
-  if (b) { view.mode = b.dataset.v as ViewMode; scheduleRender(); }
+  if (b) { view.setMode(b.dataset.v as ViewMode); scheduleRender(); }
 });
 
 const fileIn = byId("file", HTMLInputElement);
@@ -38,14 +38,15 @@ export function setHasImage(has: boolean) {
 // conservando la proporción (también agranda las imágenes chicas)
 const viewEl = byId("view", HTMLCanvasElement);
 export function fitCanvas() {
-  if (!doc.image) return;
+  if (!doc.hasImage) return;
   if (view.zoom === "actual") { scheduleRender(); return; }  // al 100% el tamaño lo define la porción visible
   const r = stage.getBoundingClientRect();
   const aw = r.width - FIT_INSET.left - FIT_INSET.right, ah = r.height - FIT_INSET.top - FIT_INSET.bottom;
   if (aw <= 0 || ah <= 0) return;
-  const s = Math.min(aw / doc.image.full.w, ah / doc.image.full.h);
-  viewEl.style.width = Math.max(1, Math.floor(doc.image.full.w * s)) + "px";
-  viewEl.style.height = Math.max(1, Math.floor(doc.image.full.h * s)) + "px";
+  const full = doc.fullSize;
+  const s = Math.min(aw / full.w, ah / full.h);
+  viewEl.style.width = Math.max(1, Math.floor(full.w * s)) + "px";
+  viewEl.style.height = Math.max(1, Math.floor(full.h * s)) + "px";
 }
 new ResizeObserver(fitCanvas).observe(stage);
 fileIn.addEventListener("change", () => { loadFile(fileIn.files?.[0]); fileIn.value = ""; });

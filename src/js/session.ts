@@ -6,50 +6,78 @@ import { inkData, makeInk, validRecipe } from "./recipe.ts";
 import { loadResume, saveResume } from "./storage.ts";
 import type { Bitmap, GraySettings, Ink, Recipe, RecipeRef, ViewMode, ZoomMode } from "./types.ts";
 
-export const doc: {
-  /** Imagen cargada: a resolución de exportación y reducida para la vista previa */
-  image: { full: Bitmap; prev: Bitmap } | null;
-  name: string;
-  gray: GraySettings;
-  inks: Ink[];
-  /** Receta de la biblioteca en uso */
-  active: RecipeRef | null;
-} = {
-  image: null,
-  name: "imagen-de-prueba",
-  gray: { ...defaultRecipe().gray },
-  inks: defaultRecipe().inks.map(makeInk),
-  active: null
-};
+class Doc {
+  #image: { full: Bitmap; prev: Bitmap; } | null = null;
+  #name: string = 'sin imagen';
+  #gray: GraySettings;
+  #inks: Ink[];
+  #active: RecipeRef | null = null;
 
-export const view: {
-  mode: ViewMode;
-  zoom: ZoomMode;
-  /** Al 100%: esquina superior izquierda visible, en píxeles de imagen */
-  x: number;
-  y: number;
-} = { mode: "result", zoom: "fit", x: 0, y: 0 };
+  get name() { return this.#name; };
+  get gray() { return this.#gray; };
+  get inks() { return this.#inks; };
+  get active() { return this.#active; };
 
-/** La imagen cargada, para el código que solo corre cuando hay una (render, zoom, exportar). */
-export function loadedImage() {
-  if (!doc.image) throw new Error("No hay imagen cargada");
-  return doc.image;
+  get hasImage() { return this.#image !== null; }
+
+  get fullSize() {
+    if (!this.#image) throw new Error("No hay imagen cargada");
+    return { w: this.#image.full.w, h: this.#image.full.h };
+  }
+  get image() {
+    if (!this.#image) throw new Error("No hay imagen cargada");
+    return this.#image;
+  }
+
+  setActive(ref: RecipeRef | null) {
+    this.#active = ref ? { ...ref } : null;
+  }
+
+  setImage(image: { full: Bitmap; prev: Bitmap; }, name: string) {
+    this.#image = image;
+    this.#name = name;
+  }
+
+  getRecipe(): Recipe {
+    return { v: 1, gray: this.#normalizeGray(this.#gray), inks: this.#inks.map(inkData) };
+  }
+
+  setRecipe(r: Recipe) {
+    this.#gray = this.#normalizeGray(r.gray);
+    this.#inks = r.inks.map(makeInk);
+  }
+
+  #normalizeGray(gs: GraySettings) {
+    return { mode: gs.mode, r: gs.r, g: gs.g, b: gs.b };
+  }
+
+  constructor(r: Recipe) {
+    this.#gray = this.#normalizeGray(r.gray);
+    this.#inks = r.inks.map(makeInk);
+  }
 }
+export const doc = new Doc(defaultRecipe());
 
-/* ---------- Receta del documento ---------- */
+class View {
+  #mode: ViewMode = "result";
+  #zoom: ZoomMode = "fit";
+  #x = 0;
+  #y = 0;
 
-/** Receta en curso, con claves en orden fijo para poder comparar recetas por su JSON */
-export function getRecipe(): Recipe {
-  const g = doc.gray;
-  return { v: 1, gray: { mode: g.mode, r: g.r, g: g.g, b: g.b }, inks: doc.inks.map(inkData) };
+  get mode() { return this.#mode; }
+  get zoom() { return this.#zoom; }
+  get x() { return this.#x; }
+  get y() { return this.#y; }
+
+  setMode(mode: ViewMode) { this.#mode = mode; }
+  setZoom(mode: ZoomMode) { this.#zoom = mode; }
+
+  setXY(x: number, y: number) {
+    this.#x = x;
+    this.#y = y;
+  }
 }
-
-/** Reemplaza la receta en curso (no toca la interfaz) */
-export function setRecipe(r: Recipe) {
-  const g = r.gray;
-  doc.gray = { mode: g.mode, r: g.r, g: g.g, b: g.b };
-  doc.inks = r.inks.map(makeInk);
-}
+export const view = new View();
 
 /* ---------- Punto de retorno ---------- */
 // La receta en curso y la activa se guardan en cada paso para que la app, al abrirse,
@@ -57,7 +85,7 @@ export function setRecipe(r: Recipe) {
 
 const validRef = (a: any): a is RecipeRef | null => a === null || (a && ["builtin", "user"].includes(a.kind) && typeof a.id === "string");
 
-export const saveResumePoint = () => saveResume(getRecipe(), doc.active);
+export const saveResumePoint = () => saveResume(doc.getRecipe(), doc.active);
 
 /** Receta y activa guardadas, si la receta es válida */
 export function loadResumePoint() {

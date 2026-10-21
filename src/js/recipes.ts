@@ -3,7 +3,7 @@
 import { setStatus, attachMenu, byId, qs } from "./dom.ts";
 import { IS_MAC } from "./env.ts";
 import { BUILTIN_RECIPES as BUILTIN_DEFS, RECIPE_NAME_MAX } from "./config.ts";
-import { doc, getRecipe, setRecipe } from "./session.ts";
+import { doc } from "./session.ts";
 import { scheduleRender } from "./render.ts";
 import { renderInks } from "./ui-inks.ts";
 import { syncGrayUI } from "./ui-gray.ts";
@@ -16,8 +16,8 @@ import { loadLibraryItems, saveLibraryItems, onLibraryChange } from "./storage.t
 
 import type { Recipe, RecipeRef } from "./types.ts";
 /** receta propia */
-type LibraryItem = { id: string, name: string, recipe: Recipe, updated: number };
-type NamedRecipe = { id: string, name: string, recipe: Recipe };
+type LibraryItem = { id: string, name: string, recipe: Recipe, updated: number; };
+type NamedRecipe = { id: string, name: string, recipe: Recipe; };
 
 /* ---------- Recetas predeterminadas ---------- */
 
@@ -45,7 +45,7 @@ const findByName = (name: string, exceptId?: string) => library.find(r => r.id !
 
 const sameRecipe = (a: Recipe, b: Recipe) => JSON.stringify(a) === JSON.stringify(b);
 
-const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, "es", { sensitivity: "base" });
+const byName = (a: { name: string; }, b: { name: string; }) => a.name.localeCompare(b.name, "es", { sensitivity: "base" });
 /** base, o base (2), base (3)… si ya existe */
 function uniqueName(base: string) {
   if (!findByName(base)) return base;
@@ -74,7 +74,7 @@ const recipeImport = byId("recipeImport", HTMLInputElement);
 
 function recipeStatus() {
   const active = findRecipe(doc.active);
-  return { active, dirty: !active || !sameRecipe(getRecipe(), active.recipe), own: !!active && doc.active?.kind === "user" };
+  return { active, dirty: !active || !sameRecipe(doc.getRecipe(), active.recipe), own: !!active && doc.active?.kind === "user" };
 }
 
 export function syncRecipeUI() {
@@ -83,7 +83,7 @@ export function syncRecipeUI() {
   recipeBtn.classList.toggle("dirty", !!active && dirty);
   recipeBtn.classList.toggle("unsaved", !active);
   recipeBtn.title = active ? (dirty ? `${active.name}: cambios sin guardar` : active.name) : "La configuración actual no está guardada";
-  recipeStrip.style.background = stripCSS(getRecipe());
+  recipeStrip.style.background = stripCSS(doc.getRecipe());
   recipeSave.disabled = own && !dirty;
 }
 
@@ -94,7 +94,7 @@ const emptyEl = byId("recipesEmpty"), exportAllBtn = byId("recipesExportAll", HT
 /**
  * Fila de una receta. Las propias llevan además los botones de renombrar y eliminar.
  */
-function recipeRow(r: { id: string; name: string; recipe: Recipe }, kind: RecipeRef["kind"]) {
+function recipeRow(r: { id: string; name: string; recipe: Recipe; }, kind: RecipeRef["kind"]) {
   const row = qs(rowTpl.content.cloneNode(true) as DocumentFragment, ".rrow");
   const main = qs(row, ".ritem", HTMLButtonElement);
   main.dataset.kind = kind; main.dataset.id = r.id;
@@ -125,7 +125,7 @@ function renderList() {
 
 /** Reemplaza la receta en curso y redibuja la interfaz */
 export function applyRecipe(r: Recipe) {
-  setRecipe(r);
+  doc.setRecipe(r);
   syncGrayUI();
   renderInks();
   scheduleRender();  // el gris se recalcula solo si cambió la conversión
@@ -134,7 +134,7 @@ export function applyRecipe(r: Recipe) {
 // Aplicar una receta de la biblioteca: es un paso del historial, se puede deshacer
 function applyFromLibrary(ref: RecipeRef) {
   const r = findRecipe(ref); if (!r) return;
-  doc.active = { ...ref };
+  doc.setActive(ref);
   applyRecipe(r.recipe);
   commitHistory();
 }
@@ -152,7 +152,7 @@ async function saveRecipe() {
   if (!own || !active) return saveRecipeAs();
   if (!dirty) { setStatus("No hay cambios sin guardar."); return; }
   const item = active as LibraryItem;  // propia: viene de la biblioteca
-  item.recipe = getRecipe(); item.updated = Date.now();
+  item.recipe = doc.getRecipe(); item.updated = Date.now();
   if (saveLibrary()) setStatus(`Receta «${item.name}» guardada.`);
   syncRecipeUI();
 }
@@ -167,9 +167,9 @@ async function saveRecipeAs() {
   if (item) {
     const ok = await askConfirm({ title: "Ya existe una receta con ese nombre", message: `¿Reemplazar «${item.name}» con la configuración actual?`, confirm: "Reemplazar" });
     if (!ok) return;
-    item.recipe = getRecipe(); item.updated = Date.now();
+    item.recipe = doc.getRecipe(); item.updated = Date.now();
   } else {
-    item = { id: newId(), name, recipe: getRecipe(), updated: Date.now() };
+    item = { id: newId(), name, recipe: doc.getRecipe(), updated: Date.now() };
     library.push(item);
   }
   if (saveLibrary()) { setActiveRecipe({ kind: "user", id: item.id }); setStatus(`Receta «${item.name}» guardada.`); }
@@ -201,7 +201,7 @@ async function deleteRecipe(id: string) {
 
 /* ---------- Exportar e importar ---------- */
 
-const exportFile = (items: { name: string; recipe: Recipe }[]) => new Blob([JSON.stringify({
+const exportFile = (items: { name: string; recipe: Recipe; }[]) => new Blob([JSON.stringify({
   format: "duotono-recipes", v: 1,
   recipes: items.map(i => ({ name: i.name, ...i.recipe }))
 }, null, 2)], { type: "application/json" });
@@ -210,7 +210,7 @@ async function exportCurrent() {
   blurField();
   const { active } = recipeStatus();
   const name = active ? active.name : "Receta";
-  await save(`receta-${slug(name)}.json`, exportFile([{ name, recipe: getRecipe() }]));
+  await save(`receta-${slug(name)}.json`, exportFile([{ name, recipe: doc.getRecipe() }]));
 }
 async function exportAll() {
   if (!library.length) return;

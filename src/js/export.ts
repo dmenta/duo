@@ -1,6 +1,6 @@
 /* Exportación a PNG y ZIP a resolución completa. */
 import { setStatus, attachMenu, byId, ctx2d, qs } from "./dom.ts";
-import { doc, loadedImage } from "./session.ts";
+import { doc } from "./session.ts";
 import type { ViewMode } from "./types.ts";
 import { grayLevels, resultLUT, grayLUT, paint } from "./process.ts";
 import { encodePNG } from "./png.ts";
@@ -8,7 +8,7 @@ import { downloads } from "./env.ts";
 
 
 function fullCanvas(mode: ViewMode) {
-  const full = loadedImage().full, { w, h } = full;
+  const full = doc.image.full, { w, h } = full;
   const c = document.createElement("canvas"); c.width = w; c.height = h;
   const ctx = ctx2d(c), out = ctx.createImageData(w, h);
   paint(full, mode, out); ctx.putImageData(out, 0, 0);
@@ -20,7 +20,7 @@ const toBlob = (c: HTMLCanvasElement): Promise<Blob> => new Promise(res => c.toB
 // PNG con el tipo de color justo: gris 8 bits (o gris+alfa) y RGB 24 bits (o RGBA 32).
 // Devuelve { blob, desc }.
 async function exportPNG(mode: "result" | "gray") {
-  const full = loadedImage().full, { w, h, data, hasAlpha } = full;
+  const full = doc.image.full, { w, h, data, hasAlpha } = full;
   const idx = grayLevels(full);  // se calcula al primer uso y se reusa mientras no cambie la conversión
   const color = mode === "result", lut = color ? resultLUT() : grayLUT;
   const channels = (color ? 3 : 1) + (hasAlpha ? 1 : 0);
@@ -45,7 +45,7 @@ export async function save(filename: string, blob: Blob, desc?: string) {
   const done = `Guardado: ${filename}${desc ? ` (${desc})` : ""}`;
   if (downloads) {
     try { await downloads.save({ filename, data: blob }); setStatus(done); }
-    catch (err) { (err as { code?: string } | null)?.code === "declined" ? setStatus("Descarga cancelada.") : setStatus("No se pudo guardar el archivo en esta vista.", "error"); }
+    catch (err) { (err as { code?: string; } | null)?.code === "declined" ? setStatus("Descarga cancelada.") : setStatus("No se pudo guardar el archivo en esta vista.", "error"); }
     return;
   }
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename;
@@ -82,7 +82,7 @@ const EXPORTS = {
 };
 
 async function runExport(action: keyof typeof EXPORTS) {
-  if (!doc.image) return;
+  if (!doc.hasImage) return;
   const lbl = qs(dlMain, ".lbl"), t = lbl.textContent;
   dlAll.forEach(b => b.disabled = true); lbl.textContent = "Procesando…";
   await new Promise(r => setTimeout(r, 30));  // deja pintar el estado antes del cálculo

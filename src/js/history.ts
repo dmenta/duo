@@ -4,18 +4,18 @@
 import { byId } from "./dom.ts";
 import { IS_MAC } from "./env.ts";
 import { HISTORY_MAX } from "./config.ts";
-import { doc, getRecipe, saveResumePoint } from "./session.ts";
+import { doc, saveResumePoint } from "./session.ts";
 import type { Recipe, RecipeRef } from "./types.ts";
 import { applyRecipe, syncRecipeUI } from "./recipes.ts";
 
 /* ---------- Historial ---------- */
-type HistoryEntry = { recipe: Recipe, active: RecipeRef | null };
+type HistoryEntry = { recipe: Recipe, active: RecipeRef | null; };
 
-const hist: { stack: HistoryEntry[]; index: number } = { stack: [], index: -1 };
+const hist: { stack: HistoryEntry[]; index: number; } = { stack: [], index: -1 };
 const undoBtn = byId("undoBtn", HTMLButtonElement);
 const redoBtn = byId("redoBtn", HTMLButtonElement);
 
-const currentEntry = (): HistoryEntry => ({ recipe: getRecipe(), active: doc.active ? { ...doc.active } : null });
+const currentEntry = (): HistoryEntry => ({ recipe: doc.getRecipe(), active: doc.active ? { ...doc.active } : null });
 
 const sameEntry = (a: HistoryEntry, b: HistoryEntry) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -39,7 +39,7 @@ export function commitHistory() {
 
 // Cambiar la receta activa sin agregar un paso (por ejemplo, al guardar con otro nombre)
 export function setActiveRecipe(ref: RecipeRef | null) {
-  doc.active = ref ? { ...ref } : null;
+  doc.setActive(ref);
   if (hist.index >= 0) hist.stack[hist.index] = { ...hist.stack[hist.index], active: doc.active };
   saveResumePoint();
   syncRecipeUI();
@@ -47,7 +47,7 @@ export function setActiveRecipe(ref: RecipeRef | null) {
 
 function restoreCurrent() {
   const e = hist.stack[hist.index];
-  doc.active = e.active ? { ...e.active } : null;
+  doc.setActive(e.active);
   applyRecipe(e.recipe);
   saveResumePoint();
   syncHistoryUI();
