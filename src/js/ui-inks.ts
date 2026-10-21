@@ -9,7 +9,7 @@ import { scheduleRender } from "./render.ts";
 import { attachCurve } from "./curve-editor.ts";
 import { commitHistory } from "./history.ts";
 
-import type { Ink, Point } from "./types.ts";
+import type { InkChanges, Point, PresetKey, ReadonlyInk } from "./types.ts";
 /** extremo de una tinta: color en los blancos o en los negros */
 type End = "color" | "color2";
 
@@ -41,15 +41,17 @@ const cardTpl = byId("inkCardTpl", HTMLTemplateElement);
 const createInkCard = () => qs(cardTpl.content.cloneNode(true) as DocumentFragment, ".ink", HTMLDivElement);
 
 /**
- * Conecta una tarjeta a su tinta: todo cambio se escribe en `ink` y se refleja en la tarjeta.
- * @param j posición en doc.inks
+ * Conecta una tarjeta a su tinta. La tinta se lee de `ink` y se cambia con doc.updateInk,
+ * que la actualiza en el lugar: `ink` siempre muestra el estado vigente.
  */
-function bindInkCard(el: HTMLElement, ink: Ink, j: number, signal: AbortSignal) {
+function bindInkCard(el: HTMLElement, ink: ReadonlyInk, signal: AbortSignal) {
+  const set = (changes: InkChanges) => doc.updateInk(ink.id, changes);
   const presetSel = qs(el, ".preset", HTMLSelectElement);
   presetSel.value = ink.preset;
 
-  const redraw = attachCurve(qs(el, ".curve", HTMLCanvasElement), ink, qs(el, ".readout"), () => {
-    if (ink.preset !== "custom") { ink.preset = "custom"; presetSel.value = "custom"; }
+  // Editar la curva a mano la vuelve personalizada
+  const redraw = attachCurve(qs(el, ".curve", HTMLCanvasElement), ink, qs(el, ".readout"), points => {
+    set({ points, preset: "custom" }); presetSel.value = "custom";
   }, signal);
 
   const nameIn = qs(el, ".name", HTMLInputElement);
@@ -100,21 +102,22 @@ function bindInkCard(el: HTMLElement, ink: Ink, j: number, signal: AbortSignal) 
 
   /** Cambiar un extremo. En color fijo valen las reglas de nombre de siempre. */
   const setEndColor = (end: End, c: string) => {
+    const changes: InkChanges = { [end]: c };
     if (end === "color" && !ink.color2) {
       const preset = swatchName(c), wasPreset = swatchName(ink.color) !== undefined;
-      if (preset) ink.name = preset;                 // predefinido: su nombre
-      else if (wasPreset) ink.name = "Personalizado"; // de predefinido a propio
+      if (preset) changes.name = preset;                 // predefinido: su nombre
+      else if (wasPreset) changes.name = "Personalizado"; // de predefinido a propio
     }
-    ink[end] = c;
+    set(changes);
     syncColors(); redraw(); scheduleRender();
   };
 
   const setMode = (mode: string | undefined) => {
     if ((mode === "gradient") === !!ink.color2) return;
-    if (mode === "gradient") { ink.color2 = ink.color; activeEnd = "color2"; }  // arranca sin cambio visible
+    if (mode === "gradient") { set({ color2: ink.color }); activeEnd = "color2"; }  // arranca sin cambio visible
     else {
-      delete ink.color2; activeEnd = "color";
-      const preset = swatchName(ink.color); if (preset) ink.name = preset;
+      const preset = swatchName(ink.color);
+      set(preset ? { color2: undefined, name: preset } : { color2: undefined }); activeEnd = "color";
     }
     syncColors(); redraw(); scheduleRender(); commitHistory();
   };
@@ -146,9 +149,9 @@ function bindInkCard(el: HTMLElement, ink: Ink, j: number, signal: AbortSignal) 
     ends[k].box.addEventListener("focusin", () => { if (activeEnd !== k) { activeEnd = k; syncColors(); } });
   }
 
-  nameIn.addEventListener("input", () => { ink.name = nameIn.value; });
+  nameIn.addEventListener("input", () => set({ name: nameIn.value }));
   nameIn.addEventListener("change", () => {
-    if (!nameIn.value.trim()) { ink.name = "Personalizado"; nameIn.value = ink.name; }
+    if (!nameIn.value.trim()) { set({ name: "Personalizado" }); nameIn.value = ink.name; }
     commitHistory();  // al terminar de editar
   });
   nameIn.addEventListener("keydown", e => { if (e.key === "Enter") nameIn.blur(); });
@@ -156,8 +159,8 @@ function bindInkCard(el: HTMLElement, ink: Ink, j: number, signal: AbortSignal) 
   syncColors();
 
   // Espejar: solo acciones; el resultado queda en los puntos de la curva
-  const setPoints = (pts: Point[]) => {
-    ink.points = pts; ink.preset = "custom"; presetSel.value = "custom";
+  const setPoints = (points: Point[]) => {
+    set({ points, preset: "custom" }); presetSel.value = "custom";
     redraw(); scheduleRender(); commitHistory();
   };
   qs(el, ".flip-x").addEventListener("click", () => setPoints(mirrorX(ink.points)));
@@ -165,14 +168,14 @@ function bindInkCard(el: HTMLElement, ink: Ink, j: number, signal: AbortSignal) 
 
   presetSel.addEventListener("change", () => {
     const p = CURVE_PRESETS[presetSel.value]; if (!p) return;
-    ink.preset = presetSel.value; ink.points = p.pts.map(q => (q.slice() as Point));
+    set({ preset: presetSel.value as PresetKey, points: p.pts });
     redraw(); scheduleRender();
     commitHistory();
   });
 
   const rm = qs(el, ".rm", HTMLButtonElement);
   rm.disabled = doc.inks.length < 2;
-  rm.addEventListener("click", () => { doc.inks.splice(j, 1); renderInks(); scheduleRender(); commitHistory(); });
+  rm.addEventListener("click", () => { doc.removeInk(ink.id); renderInks(); scheduleRender(); commitHistory(); });
 }
 
 // Se aborta al volver a dibujar las tarjetas: suelta lo que las anteriores dejaron fuera de ellas
@@ -182,11 +185,11 @@ export function renderInks() {
   cardsLife.abort();
   cardsLife = new AbortController();
   inksEl.innerHTML = "";
-  doc.inks.forEach((ink, j) => {
+  for (const ink of doc.inks) {
     const el = createInkCard();
     inksEl.append(el);
-    bindInkCard(el, ink, j, cardsLife.signal);
-  });
+    bindInkCard(el, ink, cardsLife.signal);
+  };
   addInkBtn.disabled = doc.inks.length >= MAX_INKS;
 }
 
@@ -194,7 +197,7 @@ addInkBtn.addEventListener("click", () => {
   if (doc.inks.length >= MAX_INKS) return;
   const used = new Set(doc.inks.map(i => i.color));
   const sw = SWATCHES.find(s => !used.has(s[1])) || SWATCHES[0];
-  doc.inks.unshift(newInk(sw[0], sw[1], "campana"));  // la nueva queda primera
+  doc.addInk(newInk(sw[0], sw[1], "campana"));  // la nueva queda primera
   renderInks(); scheduleRender();
   commitHistory();
 });

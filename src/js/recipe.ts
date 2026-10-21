@@ -1,6 +1,6 @@
 /* Modelo de receta: crear, normalizar y validar recetas y tintas. Sin estado de la sesión. */
 import { CURVE_PRESETS, MAX_INKS, NAME_MAX, SWATCHES } from "./config.ts";
-import type { Ink, InkData, Point, PresetKey, Recipe } from "./types.ts";
+import type { Ink, InkData, Point, PresetKey, ReadonlyInkData, Recipe } from "./types.ts";
 
 // Nombre del color predefinido con ese hex, o undefined si es un color propio
 export const swatchName = (color: string): string | undefined => (SWATCHES.find(s => s[1] === color.toLowerCase()) || [])[0];
@@ -23,7 +23,7 @@ export const makeInk = ({ name, color, color2, preset, points }: InkData): Ink =
 export const newInk = (name: string, color: string, preset: PresetKey) => makeInk({ name, color, preset, points: CURVE_PRESETS[preset].pts });
 
 // Datos de una tinta para la receta, con claves en orden fijo (color2 solo si es degradé)
-export const inkData = ({ name, color, color2, preset, points }: InkData): InkData =>
+export const inkData = ({ name, color, color2, preset, points }: ReadonlyInkData): InkData =>
   color2 ? { name, color, color2, preset, points: points.map(p => (p.slice() as Point)) }
     : { name, color, preset, points: points.map(p => (p.slice() as Point)) };
 

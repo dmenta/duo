@@ -30,6 +30,18 @@ export interface Ink extends InkData {
   id: number;
 }
 
+/** Puntos de curva de solo lectura */
+export type ReadonlyPoints = readonly (readonly [number, number])[];
+
+/** Datos de una tinta de solo lectura */
+export type ReadonlyInkData = Readonly<Omit<InkData, "points">> & { readonly points: ReadonlyPoints };
+
+/** Tinta tal como la expone el documento: se lee acá y se cambia con doc.updateInk */
+export type ReadonlyInk = ReadonlyInkData & { readonly id: number };
+
+/** Cambios a una tinta; color2: undefined la vuelve de color fijo */
+export type InkChanges = Partial<Omit<InkData, "points">> & { points?: ReadonlyPoints };
+
 /** Receta: todo lo que define el resultado (se guarda, se exporta y va al historial). */
 export interface Recipe {
   v: 1;

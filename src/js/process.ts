@@ -1,5 +1,5 @@
 /* Procesamiento: imagen -> niveles de gris -> tintas -> píxeles. */
-import type { Bitmap, InkData, ViewMode } from "./types.ts";
+import type { Bitmap, ReadonlyInkData, ViewMode } from "./types.ts";
 import { N, LIN, enc, hexToLin, YfromL, LfromY, coverage, gradientLin } from "./color.ts";
 import { makeCurve } from "./curves.ts";
 import { doc } from "./session.ts";
@@ -50,7 +50,7 @@ export function grayLevels(img: Bitmap): Uint16Array {
 // simulando sobreimpresión multiplicativa en RGB lineal.
 // Una tinta en degradé (color2) cambia de color con el nivel: color en el blanco, color2 en el negro.
 /** @returns size*3 bytes RGB */
-export function inkLUT(inks: InkData[], size: number): Uint8Array {
+export function inkLUT(inks: readonly ReadonlyInkData[], size: number): Uint8Array {
   const solid = inks.map(i => hexToLin(i.color));
   const grads = inks.map(i => i.color2 ? gradientLin(i.color, i.color2, size) : null);
   const covs = inks.map(ink => {

@@ -1,12 +1,12 @@
 /* Curvas de transferencia por tinta. */
 import { clamp01 } from "./color.ts";
-import type { Point } from "./types.ts";
+import type { Point, ReadonlyPoints } from "./types.ts";
 
 // Interpolación cúbica monótona (Fritsch–Carlson): pasa por los puntos sin rebotes.
 /**
  * @returns cantidad de tinta (0..1) para un gris x (0..1)
  */
-export function makeCurve(pts: Point[]): (x: number) => number {
+export function makeCurve(pts: ReadonlyPoints): (x: number) => number {
   const n = pts.length, xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
   if (n === 2) return x => clamp01(ys[0] + (ys[1] - ys[0]) * (x - xs[0]) / (xs[1] - xs[0]));
   const d = [], m = new Array(n);
@@ -29,6 +29,6 @@ export function makeCurve(pts: Point[]): (x: number) => number {
 // Espejar en X: lo que afectaba a las luces pasa a las sombras y viceversa
 const round4 = (v: number) => Math.round(v * 1e4) / 1e4;  // evita arrastrar errores de coma flotante en la receta
 
-export const mirrorX = (pts: Point[]): Point[] => pts.map(([x, y]) => ([round4(1 - x), y] as Point)).reverse();
+export const mirrorX = (pts: ReadonlyPoints): Point[] => pts.map(([x, y]) => ([round4(1 - x), y] as Point)).reverse();
 // Espejar en Y: donde había mucha tinta pasa a haber poca
-export const mirrorY = (pts: Point[]): Point[] => pts.map(([x, y]) => ([x, round4(1 - y)] as Point));
+export const mirrorY = (pts: ReadonlyPoints): Point[] => pts.map(([x, y]) => ([x, round4(1 - y)] as Point));

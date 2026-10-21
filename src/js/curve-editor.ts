@@ -1,5 +1,5 @@
 /* Editor interactivo de curvas (canvas). */
-import type { Ink, Point } from "./types.ts";
+import type { Point, ReadonlyInk } from "./types.ts";
 import { ctx2d } from "./dom.ts";
 import { clamp01, contrastRatio, mixHex } from "./color.ts";
 import { makeCurve } from "./curves.ts";
@@ -7,13 +7,14 @@ import { scheduleRender } from "./render.ts";
 import { commitHistory } from "./history.ts";
 
 /**
- * Conecta el editor de curva al canvas de una tarjeta de tinta. Edita ink.points en el lugar.
+ * Conecta el editor de curva al canvas de una tarjeta de tinta. No cambia la tinta: arma los
+ * puntos nuevos y los entrega en onEdit, que los guarda.
  * @param readout etiqueta que muestra el punto bajo el cursor
- * @param onEdit se llama en cada cambio de la curva
+ * @param onEdit se llama en cada cambio de la curva con los puntos nuevos
  * @param signal al abortarse suelta lo que vive fuera del canvas (tema, tamaño)
  * @returns redibuja la curva
  */
-export function attachCurve(canvas: HTMLCanvasElement, ink: Ink, readout: HTMLElement, onEdit: () => void, signal: AbortSignal): () => void {
+export function attachCurve(canvas: HTMLCanvasElement, ink: ReadonlyInk, readout: HTMLElement, onEdit: (points: Point[]) => void, signal: AbortSignal): () => void {
   const PAD = 12;
   let drag = -1;
   /**
@@ -77,7 +78,9 @@ export function attachCurve(canvas: HTMLCanvasElement, ink: Ink, readout: HTMLEl
   }
 
   const show = (a: number, b: number) => { readout.textContent = `Gris ${Math.round(a * 100)}% → tinta ${Math.round(b * 100)}%`; readout.classList.add("on"); };
-  const edited = () => { onEdit(); scheduleRender(); };
+  /** Copia editable de los puntos de la tinta */
+  const copyPoints = () => ink.points.map(p => [p[0], p[1]] as Point);
+  const edited = (points: Point[]) => { onEdit(points); scheduleRender(); };
 
   canvas.addEventListener("pointerdown", e => {
     if (!map) return;
@@ -87,18 +90,18 @@ export function attachCurve(canvas: HTMLCanvasElement, ink: Ink, readout: HTMLEl
       const [ux, uy] = toUnit(e);
       const i = ink.points.findIndex(p => p[0] > ux); if (i <= 0) return;
       if (ink.points[i][0] - ux < 0.02 || ux - ink.points[i - 1][0] < 0.02) return;
-      ink.points.splice(i, 0, [ux, uy]); drag = i; edited();
+      const pts = copyPoints(); pts.splice(i, 0, [ux, uy]); drag = i; edited(pts);
     }
     draw();
   });
   canvas.addEventListener("pointermove", e => {
     if (!map) return;
     if (drag < 0) { const [ux] = toUnit(e); show(ux, makeCurve(ink.points)(ux)); return; }
-    const [ux, uy] = toUnit(e), pts = ink.points, last = pts.length - 1;
+    const [ux, uy] = toUnit(e), pts = copyPoints(), last = pts.length - 1;
     if (drag === 0) pts[0][1] = uy;
     else if (drag === last) pts[last][1] = uy;
     else { pts[drag][0] = Math.min(pts[drag + 1][0] - 0.02, Math.max(pts[drag - 1][0] + 0.02, ux)); pts[drag][1] = uy; }
-    show(pts[drag][0], pts[drag][1]); edited(); draw();
+    show(pts[drag][0], pts[drag][1]); edited(pts); draw();
   });
   // Fin del gesto: una sola entrada de historial (agregar + arrastrar cuenta como una)
   const end = () => { const was = drag; drag = -1; draw(); if (was >= 0) commitHistory(); };
@@ -107,7 +110,7 @@ export function attachCurve(canvas: HTMLCanvasElement, ink: Ink, readout: HTMLEl
   canvas.addEventListener("pointerleave", () => { if (drag < 0) readout.classList.remove("on"); });
   canvas.addEventListener("dblclick", e => {
     const i = nearest(e);
-    if (i > 0 && i < ink.points.length - 1) { ink.points.splice(i, 1); edited(); draw(); commitHistory(); }
+    if (i > 0 && i < ink.points.length - 1) { const pts = copyPoints(); pts.splice(i, 1); edited(pts); draw(); commitHistory(); }
   });
   // Los listeners del canvas se van con él; estos dos no, porque los retiene el navegador
   // y a través de draw retienen la tarjeta entera aunque ya no esté en la página.

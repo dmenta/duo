@@ -36,18 +36,18 @@ export function syncGrayUI() {
 }
 
 grayMode.addEventListener("change", () => {
-  doc.gray.mode = grayMode.value as "lum" | "mix";
+  doc.setGrayMode(grayMode.value as "lum" | "mix");
   mixer.hidden = grayMode.value !== "mix";
   scheduleRender();
   commitHistory();
 });
 for (const k of CHANNELS) {
-  mixIns[k].addEventListener("input", () => { doc.gray[k] = +mixIns[k].value; syncMixer(); scheduleRender(); });
+  mixIns[k].addEventListener("input", () => { doc.setGrayWeights({ [k]: +mixIns[k].value }); syncMixer(); scheduleRender(); });
   mixIns[k].addEventListener("change", () => commitHistory());  // una entrada por arrastre
 }
 filterBtns.forEach(b => b.addEventListener("click", () => {
   const [r, g, bl] = parseMix(b);
-  Object.assign(doc.gray, { r, g, b: bl });
+  doc.setGrayWeights({ r, g, b: bl });
   syncMixer(); scheduleRender();
   commitHistory();
 }));

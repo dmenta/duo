@@ -4,7 +4,7 @@
 import { defaultRecipe } from "./config.ts";
 import { inkData, makeInk, validRecipe } from "./recipe.ts";
 import { loadResume, saveResume } from "./storage.ts";
-import type { Bitmap, GraySettings, Ink, Recipe, RecipeRef, ViewMode, ZoomMode } from "./types.ts";
+import type { Bitmap, GraySettings, Ink, InkChanges, ReadonlyInk, Recipe, RecipeRef, ViewMode, ZoomMode } from "./types.ts";
 
 class Doc {
   #image: { full: Bitmap; prev: Bitmap; } | null = null;
@@ -13,10 +13,10 @@ class Doc {
   #inks: Ink[];
   #active: RecipeRef | null = null;
 
-  get name() { return this.#name; };
-  get gray() { return this.#gray; };
-  get inks() { return this.#inks; };
-  get active() { return this.#active; };
+  get name() { return this.#name; }
+  get gray(): Readonly<GraySettings> { return this.#gray; }
+  get inks(): readonly ReadonlyInk[] { return this.#inks; }
+  get active() { return this.#active; }
 
   get hasImage() { return this.#image !== null; }
 
@@ -45,6 +45,29 @@ class Doc {
   setRecipe(r: Recipe) {
     this.#gray = this.#normalizeGray(r.gray);
     this.#inks = r.inks.map(makeInk);
+  }
+
+  /* ---------- Conversión a gris ---------- */
+
+  setGrayMode(mode: GraySettings["mode"]) { this.#gray.mode = mode; }
+
+  setGrayWeights(w: Partial<Pick<GraySettings, "r" | "g" | "b">>) { Object.assign(this.#gray, w); }
+
+  /* ---------- Tintas ---------- */
+  // Se cambian en el lugar: quien tiene una tinta de doc.inks la ve actualizada.
+
+  /** Agrega una tinta al principio */
+  addInk(ink: Ink) { this.#inks.unshift(ink); }
+
+  removeInk(id: number) { this.#inks = this.#inks.filter(i => i.id !== id); }
+
+  updateInk(id: number, changes: InkChanges) {
+    const ink = this.#inks.find(i => i.id === id);
+    if (!ink) return;
+    const { points, ...rest } = changes;
+    Object.assign(ink, rest);
+    if ("color2" in changes && changes.color2 === undefined) delete ink.color2;
+    if (points) ink.points = points.map(p => [p[0], p[1]]);
   }
 
   #normalizeGray(gs: GraySettings) {
