@@ -22,10 +22,11 @@ export function zoomViewport() {
 }
 
 /**
+ * Cambia el zoom de la vista; al 100% también la posición.
  * @param focus punto de la imagen (ix, iy) que debe quedar
  *   bajo el punto (sx, sy) del escenario
  */
-export function setZoom(mode: ZoomMode, focus?: { ix: number; iy: number; sx: number; sy: number; }) {
+function setZoom(mode: ZoomMode, focus?: { ix: number; iy: number; sx: number; sy: number; }) {
   view.setZoom(mode);
   if (mode === "actual" && doc.hasImage) {
     const full = doc.fullSize;
@@ -35,10 +36,19 @@ export function setZoom(mode: ZoomMode, focus?: { ix: number; iy: number; sx: nu
     if (focus) { view.setXY(focus.ix - (focus.sx - left), focus.iy - (focus.sy - top)); }
     else { view.setXY((iw - cw) / 2, (ih - ch) / 2); }
   }
-  document.body.classList.toggle("zoom-actual", mode === "actual");
-  zoomSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.z === mode)));
-  if (mode === "fit") fitCanvas();
 }
+
+// La página y los botones reflejan el zoom; al volver a ajustar, el canvas se reacomoda
+function syncZoomUI() {
+  document.body.classList.toggle("zoom-actual", view.zoom === "actual");
+  zoomSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.z === view.zoom)));
+  if (view.zoom === "fit") fitCanvas();
+}
+syncZoomUI();
+view.subscribe(c => { if (c.what === "zoom") syncZoomUI(); });
+
+// Cada imagen nueva arranca ajustada a la vista
+doc.subscribe(c => { if (c.what === "image") setZoom("fit"); });
 
 zoomSeg.addEventListener("click", e => { const b = (e.target as Element).closest("button"); if (b) setZoom(b.dataset.z as ZoomMode); });
 

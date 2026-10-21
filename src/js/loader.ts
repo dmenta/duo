@@ -4,8 +4,6 @@ import { setStatus, byId, ctx2d } from "./dom.ts";
 import { enc, YfromL } from "./color.ts";
 import { PREVIEW_MAX, FULL_MAX } from "./config.ts";
 import { doc } from "./session.ts";
-import { setHasImage } from "./ui-stage.ts";
-import { setZoom } from "./zoom.ts";
 
 /** @param max lado mayor máximo */
 function scaled(src: HTMLImageElement | HTMLCanvasElement, max: number): Bitmap {
@@ -27,8 +25,6 @@ function setSource(src: HTMLImageElement | HTMLCanvasElement, name: string) {
   byId("fileName").title = name;
   byId("fileDims").textContent =
     `${image.full.w} × ${image.full.h} px${capped ? " · reducida para exportar" : ""}`;
-  setHasImage(true);
-  setZoom("fit");
 }
 
 

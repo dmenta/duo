@@ -28,13 +28,12 @@ byId("dzSub").textContent = `También podés pegarla con ${pasteKey} · JPG, PNG
 byId("dropzone", HTMLButtonElement).addEventListener("click", () => fileIn.click());
 byId("sampleBtn", HTMLButtonElement).addEventListener("click", () => sampleImage());
 
-// Con o sin imagen: muestra la zona de carga o el visor, y habilita las descargas.
-// El tamaño del canvas no se toca acá: lo resuelven setZoom (al cargar) y el ResizeObserver.
+// Con o sin imagen: muestra la zona de carga o el visor, y habilita las descargas
 const dlButtons = ["expDuo", "expMenuBtn"].map(id => byId(id, HTMLButtonElement));
 
-export function setHasImage(has: boolean) {
-  document.body.classList.toggle("no-image", !has);
-  dlButtons.forEach(b => b.disabled = !has);
+function syncHasImage() {
+  document.body.classList.toggle("no-image", !doc.hasImage);
+  dlButtons.forEach(b => b.disabled = !doc.hasImage);
 }
 
 // Ajustar a la vista: el canvas ocupa el mayor tamaño posible dentro del escenario,
@@ -52,6 +51,10 @@ export function fitCanvas() {
   viewEl.style.height = Math.max(1, Math.floor(full.h * s)) + "px";
 }
 new ResizeObserver(fitCanvas).observe(stage);
+
+// Imagen nueva: primero se oculta la zona de carga (cambia el escenario) y después se ajusta
+syncHasImage();
+doc.subscribe(c => { if (c.what === "image") { syncHasImage(); fitCanvas(); } });
 fileIn.addEventListener("change", () => { loadFile(fileIn.files?.[0]); fileIn.value = ""; });
 ["dragenter", "dragover"].forEach(t => stage.addEventListener(t, e => { e.preventDefault(); stage.classList.add("drag"); }));
 // dragleave también se dispara al pasar entre elementos internos: solo cuenta si el puntero salió de #stage

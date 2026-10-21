@@ -16,7 +16,6 @@ import "./export.ts";
 import "./dialogs.ts";
 import "./history.ts";
 import "./recipes.ts";
-import { setHasImage } from "./ui-stage.ts";
 import { initHistory } from "./history.ts";
 import { doc, loadResumePoint } from "./session.ts";
 import { DEFAULT_REF } from "./config.ts";
@@ -25,4 +24,3 @@ import { DEFAULT_REF } from "./config.ts";
 const saved = loadResumePoint();
 doc.loadRecipe(saved?.recipe ?? doc.getRecipe(), saved ? saved.active : DEFAULT_REF, { commit: false });
 initHistory();
-setHasImage(false);  // arranca sin imagen: se ve la zona de carga
