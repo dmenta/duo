@@ -5,7 +5,7 @@ import type { InkData, Point, Recipe, RecipeRef } from "./state.ts";
 import { IS_MAC, byId } from "./dom.ts";
 import { CURVE_PRESETS } from "./curves.ts";
 import { MAX_INKS, makeInk, state } from "./state.ts";
-import { recomputeGray } from "./loader.ts";
+import { scheduleRender } from "./render.ts";
 import { renderInks } from "./ui-inks.ts";
 import { syncGrayUI } from "./ui-gray.ts";
 import { syncRecipeUI } from "./recipes.ts";
@@ -46,7 +46,7 @@ export function applyRecipe(r: Recipe) {
   state.inks = r.inks.map(makeInk);
   syncGrayUI();
   renderInks();
-  recomputeGray();
+  scheduleRender();  // el gris se recalcula solo si cambió la conversión
 }
 
 /**

@@ -4,7 +4,7 @@ import { N, LIN, enc, hexToLin, YfromL, LfromY, coverage, gradientLin } from "./
 import { makeCurve } from "./curves.ts";
 import { state, buf, resultLUT } from "./state.ts";
 
-function grayWeights() {
+export function grayWeights() {
   return state.gray.mode === "lum"
     ? [0.2126, 0.7152, 0.0722]
     : [state.gray.r / 100, state.gray.g / 100, state.gray.b / 100];
@@ -21,7 +21,7 @@ const IDX_FROM_Y = (() => {
 
 // Cada píxel -> índice de tono (0 = blanco, N-1 = negro) según L*.
 // La transparencia no se mezcla acá: se conserva aparte en img.data para exportar.
-export function computeIdx(img: Bitmap): Uint16Array {
+function computeIdx(img: Bitmap): Uint16Array {
   const [wr, wg, wb] = grayWeights(), d = img.data, n = img.w * img.h, out = new Uint16Array(n);
   for (let p = 0, i = 0; p < n; p++, i += 4) {
     let Y = wr * LIN[d[i]] + wg * LIN[d[i + 1]] + wb * LIN[d[i + 2]];
@@ -29,6 +29,21 @@ export function computeIdx(img: Bitmap): Uint16Array {
     out[p] = IDX_FROM_Y[(Y * Y_STEPS + 0.5) | 0];
   }
   return out;
+}
+
+// Niveles de gris de cada imagen, con los pesos con que se calcularon. Solo dependen de la
+// imagen y de los pesos efectivos: cambiar tintas o curvas, o aplicar una receta con la
+// misma conversión, no los recalcula. Al soltar la imagen, su entrada se libera sola.
+const grayCache = new WeakMap<Bitmap, { weights: string; idx: Uint16Array }>();
+
+/** Niveles de gris de `img` con la conversión vigente; los calcula solo si cambiaron los pesos. */
+export function grayLevels(img: Bitmap): Uint16Array {
+  const weights = grayWeights().join(",");
+  const cached = grayCache.get(img);
+  if (cached?.weights === weights) return cached.idx;
+  const idx = computeIdx(img);
+  grayCache.set(img, { weights, idx });
+  return idx;
 }
 
 // Tabla tono -> color sRGB de `size` niveles para un conjunto de tintas,
@@ -64,8 +79,9 @@ export const grayLUT = (() => {
   return a;
 })();
 
-// Escribe en `out` (ImageData) la vista pedida, con la transparencia compuesta sobre blanco
-export function paint(img: Bitmap, idx: Uint16Array, mode: ViewMode, out: ImageData) {
+// Escribe en `out` (ImageData) la vista pedida, con la transparencia compuesta sobre blanco.
+// La vista original no necesita los niveles de gris; las otras los piden a grayLevels.
+export function paint(img: Bitmap, mode: ViewMode, out: ImageData) {
   const o = out.data, n = img.w * img.h;
   if (mode === "original") {
     const d = img.data;
@@ -77,7 +93,7 @@ export function paint(img: Bitmap, idx: Uint16Array, mode: ViewMode, out: ImageD
     }
     return;
   }
-  const lut = mode === "result" ? resultLUT() : grayLUT, d = img.data;
+  const lut = mode === "result" ? resultLUT() : grayLUT, d = img.data, idx = grayLevels(img);
   for (let p = 0, i = 0; p < n; p++, i += 4) {
     const k = idx[p];
     if (mode === "result") { o[i] = lut[k * 3]; o[i + 1] = lut[k * 3 + 1]; o[i + 2] = lut[k * 3 + 2]; }

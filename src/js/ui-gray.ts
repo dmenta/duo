@@ -1,7 +1,7 @@
 /* Panel de conversión a gris: método, filtros y mezclador de canales. */
 import { byId } from "./dom.ts";
 import { state } from "./state.ts";
-import { recomputeGray } from "./loader.ts";
+import { scheduleRender } from "./render.ts";
 import { commitHistory } from "./history.ts";
 
 const grayMode = byId("grayMode", HTMLSelectElement);
@@ -38,16 +38,16 @@ export function syncGrayUI() {
 grayMode.addEventListener("change", () => {
   state.gray.mode = grayMode.value as "lum" | "mix";
   mixer.hidden = grayMode.value !== "mix";
-  recomputeGray();
+  scheduleRender();
   commitHistory();
 });
 for (const k of CHANNELS) {
-  mixIns[k].addEventListener("input", () => { state.gray[k] = +mixIns[k].value; syncMixer(); recomputeGray(); });
+  mixIns[k].addEventListener("input", () => { state.gray[k] = +mixIns[k].value; syncMixer(); scheduleRender(); });
   mixIns[k].addEventListener("change", () => commitHistory());  // una entrada por arrastre
 }
 filterBtns.forEach(b => b.addEventListener("click", () => {
   const [r, g, bl] = parseMix(b);
   Object.assign(state.gray, { r, g, b: bl });
-  syncMixer(); recomputeGray();
+  syncMixer(); scheduleRender();
   commitHistory();
 }));

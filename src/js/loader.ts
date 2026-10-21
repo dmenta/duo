@@ -3,7 +3,6 @@ import type { Bitmap } from "./state.ts";
 import { setStatus, byId, ctx2d } from "./dom.ts";
 import { enc, YfromL } from "./color.ts";
 import { PREVIEW_MAX, FULL_MAX, state, buf } from "./state.ts";
-import { computeIdx } from "./process.ts";
 import { scheduleRender } from "./render.ts";
 import { setHasImage } from "./ui-stage.ts";
 import { setZoom } from "./zoom.ts";
@@ -24,7 +23,7 @@ function setSource(src: HTMLImageElement | HTMLCanvasElement, name: string) {
   buf.full = scaled(src, FULL_MAX);
   buf.prev = scaled(src, PREVIEW_MAX);
   state.name = name;
-  recomputeGray();
+  scheduleRender();
   const capped = Math.max(src.width, src.height) > FULL_MAX;
   byId("fileName").textContent = name;
   byId("fileName").title = name;
@@ -34,13 +33,6 @@ function setSource(src: HTMLImageElement | HTMLCanvasElement, name: string) {
   setZoom("fit");
 }
 
-// Recalcular niveles de gris (cambió la imagen o el método de conversión)
-export function recomputeGray() {
-  if (!buf.prev) return;
-  buf.prevIdx = computeIdx(buf.prev);
-  buf.fullIdx = null;
-  scheduleRender();
-}
 
 /** Si no es una imagen (o no hay archivo), avisa y no hace nada. */
 export function loadFile(file: File | null | undefined) {

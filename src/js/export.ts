@@ -2,7 +2,7 @@
 import { setStatus, attachMenu, byId, ctx2d, qs } from "./dom.ts";
 import { state, buf, loadedImage, resultLUT } from "./state.ts";
 import type { ViewMode } from "./state.ts";
-import { computeIdx, buildLUT, grayLUT, paint } from "./process.ts";
+import { grayLevels, buildLUT, grayLUT, paint } from "./process.ts";
 import { encodePNG } from "./png.ts";
 
 /** Capacidad de descargas de claude.ai, si la página corre ahí */
@@ -11,16 +11,11 @@ if (window.claude && typeof window.claude.use === "function") {
   window.claude.use("downloads").then(d => { downloads = d; }).catch(() => {});
 }
 
-// Niveles de gris de la imagen completa: se calculan recién al exportar
-function fullIdx() {
-  return buf.fullIdx ??= computeIdx(loadedImage().full);
-}
-
 function fullCanvas(mode: ViewMode) {
   const full = loadedImage().full, { w, h } = full;
   const c = document.createElement("canvas"); c.width = w; c.height = h;
   const ctx = ctx2d(c), out = ctx.createImageData(w, h);
-  paint(full, fullIdx(), mode, out); ctx.putImageData(out, 0, 0);
+  paint(full, mode, out); ctx.putImageData(out, 0, 0);
   return c;
 }
 
@@ -29,7 +24,8 @@ const toBlob = (c: HTMLCanvasElement): Promise<Blob> => new Promise(res => c.toB
 // PNG con el tipo de color justo: gris 8 bits (o gris+alfa) y RGB 24 bits (o RGBA 32).
 // Devuelve { blob, desc }.
 async function exportPNG(mode: "result" | "gray") {
-  const { w, h, data, hasAlpha } = loadedImage().full, idx = fullIdx();
+  const full = loadedImage().full, { w, h, data, hasAlpha } = full;
+  const idx = grayLevels(full);  // se calcula al primer uso y se reusa mientras no cambie la conversión
   const color = mode === "result", lut = color ? resultLUT() : grayLUT;
   const channels = (color ? 3 : 1) + (hasAlpha ? 1 : 0);
   const blob = await encodePNG(w, h, channels, (y, row) => {

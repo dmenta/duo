@@ -106,21 +106,19 @@ export const state: { gray: GraySettings; inks: Ink[]; view: ViewMode; active: R
 /**
  * Datos derivados de la imagen cargada
  */
-export const buf: { full: Bitmap | null; prev: Bitmap | null; prevIdx: Uint16Array | null; fullIdx: Uint16Array | null; resultLUT: Uint8Array | null } = {
+export const buf: { full: Bitmap | null; prev: Bitmap | null; resultLUT: Uint8Array | null } = {
   full: null,       // {w, h, data, hasAlpha} a resolución de exportación
   prev: null,       // {w, h, data} reducida para la vista previa
-  prevIdx: null,    // Uint16Array: nivel de gris (0..N-1) por píxel de prev
-  fullIdx: null,    // idem para full, se calcula al exportar
   resultLUT: null   // Uint8Array(N*3): color sRGB por nivel de gris
 };
 
 /**
  * La imagen cargada, para el código que solo corre cuando hay una (render, zoom, exportar).
  */
-export function loadedImage(): { full: Bitmap; prev: Bitmap; prevIdx: Uint16Array } {
-  const { full, prev, prevIdx } = buf;
-  if (!full || !prev || !prevIdx) throw new Error("No hay imagen cargada");
-  return { full, prev, prevIdx };
+export function loadedImage(): { full: Bitmap; prev: Bitmap } {
+  const { full, prev } = buf;
+  if (!full || !prev) throw new Error("No hay imagen cargada");
+  return { full, prev };
 }
 
 /** Tabla de colores del resultado; se arma con buildLUT antes de pintar. */
