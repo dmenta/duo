@@ -64,20 +64,20 @@ export function initHistory() {
     else if (c.what === "recipe" && !c.commit) saveResumePoint();  // deshacer o rehacer
     else commitHistory();
   });
+
+  // Controles: se conectan recién con la pila armada
+  undoBtn.title = `Deshacer (${IS_MAC ? "⌘Z" : "Ctrl+Z"})`;
+  redoBtn.title = `Rehacer (${IS_MAC ? "⇧⌘Z" : "Ctrl+Y"})`;
+  undoBtn.addEventListener("click", undo);
+  redoBtn.addEventListener("click", redo);
+
+  window.addEventListener("keydown", e => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    if (document.querySelector("dialog[open]")) return;
+    // En campos de texto, el navegador maneja su propio deshacer
+    if (e.target instanceof Element && e.target.closest('input[type="text"], input:not([type]), textarea, [contenteditable]')) return;
+    const k = e.key.toLowerCase();
+    if (k === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
+    else if ((k === "z" && e.shiftKey) || k === "y") { e.preventDefault(); redo(); }
+  });
 }
-
-/* ---------- Controles ---------- */
-undoBtn.title = `Deshacer (${IS_MAC ? "⌘Z" : "Ctrl+Z"})`;
-redoBtn.title = `Rehacer (${IS_MAC ? "⇧⌘Z" : "Ctrl+Y"})`;
-undoBtn.addEventListener("click", undo);
-redoBtn.addEventListener("click", redo);
-
-window.addEventListener("keydown", e => {
-  if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
-  if (document.querySelector("dialog[open]")) return;
-  // En campos de texto, el navegador maneja su propio deshacer
-  if (e.target instanceof Element && e.target.closest('input[type="text"], input:not([type]), textarea, [contenteditable]')) return;
-  const k = e.key.toLowerCase();
-  if (k === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
-  else if ((k === "z" && e.shiftKey) || k === "y") { e.preventDefault(); redo(); }
-});

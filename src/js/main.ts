@@ -14,7 +14,6 @@ import "./zoom.ts";
 import "./png.ts";
 import "./export.ts";
 import "./dialogs.ts";
-import "./history.ts";
 import "./recipes.ts";
 import { initHistory } from "./history.ts";
 import { doc, loadResumePoint } from "./session.ts";
