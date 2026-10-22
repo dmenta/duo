@@ -1,6 +1,7 @@
 /* Arranque. */
 import "./ui-inks.ts";
 import "./ui-gray.ts";
+import "./histogram.ts";
 import "./ui-stage.ts";
 import "./recipes.ts";
 import { initHistory } from "./history.ts";

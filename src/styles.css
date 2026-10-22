@@ -1298,3 +1298,13 @@ select:not(:disabled):hover {
     cursor: default;
 }
 
+/* Histograma de grises: las barras toman el color de .hist */
+.hist {
+    display: block;
+    width: 100%;
+    height: 64px;
+    margin-top: 10px;
+    color: var(--muted);
+}
+.hist[hidden] { display: none; }
+
