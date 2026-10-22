@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <style>.base { fill: #1d1e20 } @media (prefers-color-scheme: dark) { .base { fill: #e8e8e6 } }</style>
+  <rect class="base" x="1" y="1" width="22" height="22" rx="5" />
+  <path d="M21.53 2.47 a5 5 0 01 1.47 3.53 v12a5 5 0 01-5 5H6 a5 5 0 01 -3.53 -1.47z" fill="#e3742f" />
+</svg>
