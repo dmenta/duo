@@ -1,19 +1,7 @@
 /* Arranque. */
-import "./dom.ts";
-import "./color.ts";
-import "./curves.ts";
-import "./session.ts";
-import "./process.ts";
-import "./render.ts";
-import "./loader.ts";
-import "./curve-editor.ts";
 import "./ui-inks.ts";
 import "./ui-gray.ts";
 import "./ui-stage.ts";
-import "./zoom.ts";
-import "./png.ts";
-import "./export.ts";
-import "./dialogs.ts";
 import "./recipes.ts";
 import { initHistory } from "./history.ts";
 import { doc, loadResumePoint } from "./session.ts";

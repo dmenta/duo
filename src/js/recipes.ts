@@ -1,6 +1,6 @@
 /* Biblioteca de recetas: predeterminadas (solo lectura) y propias (guardadas en el navegador).
    Exportar e importar en archivos .json. */
-import { setStatus, attachMenu, byId, qs } from "./dom.ts";
+import { attachMenu, byId, qs } from "./dom.ts";
 import { IS_MAC } from "./env.ts";
 import { BUILTIN_RECIPES as BUILTIN_DEFS, RECIPE_NAME_MAX } from "./config.ts";
 import { doc } from "./session.ts";
@@ -9,6 +9,7 @@ import { slug, save } from "./export.ts";
 import { askText, askConfirm } from "./dialogs.ts";
 import { normalizeRecipe, validRecipe } from "./recipe.ts";
 import { library } from "./library.ts";
+import { setStatus } from "./status.ts";
 
 import type { Recipe, RecipeRef } from "./types.ts";
 type NamedRecipe = { id: string, name: string, recipe: Recipe; };
@@ -197,7 +198,7 @@ recipeImport.addEventListener("change", async () => {
   catch { setStatus("El archivo no es un JSON válido.", "error"); return; }
   // Acepta el formato exportado, una lista de recetas o una receta suelta
   const list = Array.isArray(data) ? data : Array.isArray(data && data.recipes) ? data.recipes : [data];
-  const entries: { name: string; recipe: Recipe }[] = [], taken = new Set<string>();
+  const entries: { name: string; recipe: Recipe; }[] = [], taken = new Set<string>();
   let skipped = 0;
   for (const r of list) {
     const rec = r && { v: 1, gray: r.gray, inks: r.inks };

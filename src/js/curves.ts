@@ -1,6 +1,7 @@
 /* Curvas de transferencia por tinta. */
-import { clamp01 } from "./color.ts";
 import type { Point, ReadonlyPoints } from "./types.ts";
+
+export const clamp01 = (v: number) => v < 0 ? 0 : v > 1 ? 1 : v;
 
 // Interpolación cúbica monótona (Fritsch–Carlson): pasa por los puntos sin rebotes.
 /**

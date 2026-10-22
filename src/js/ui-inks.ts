@@ -1,6 +1,6 @@
 /* Panel de tintas: tarjetas, color, nombre, curva.
    Incluye el modo de cada tinta: color fijo o degradé (color en blancos -> color2 en negros). */
-import { setStatus, cssColorToHex, byId, qs } from "./dom.ts";
+import { byId, ctx2d, qs } from "./dom.ts";
 import { mirrorX, mirrorY } from "./curves.ts";
 import { CURVE_PRESETS, MAX_INKS, NAME_MAX, SWATCHES } from "./config.ts";
 import { doc } from "./session.ts";
@@ -8,6 +8,7 @@ import { swatchName, newInk } from "./recipe.ts";
 import { attachCurve } from "./curve-editor.ts";
 
 import type { ChangeOptions, InkChanges, Point, PresetKey, ReadonlyInk } from "./types.ts";
+import { setStatus } from "./status.ts";
 /** extremo de una tinta: color en los blancos o en los negros */
 type End = "color" | "color2";
 
@@ -191,6 +192,29 @@ function renderInks() {
     bindInkCard(el, ink, cardsLife.signal);
   }
   addInkBtn.disabled = doc.inks.length >= MAX_INKS;
+}
+
+// Cualquier color CSS -> "#rrggbb", usando el intérprete del navegador:
+// hex (con o sin #, abreviado), rgb(), hsl(), oklch(), nombres... También "255, 0, 0".
+// Los colores fuera de sRGB se ajustan al más cercano. Devuelve null si no es un color válido.
+const colorProbe = ctx2d(document.createElement("canvas"), { willReadFrequently: true });
+
+function cssColorToHex(input: string): string | null {
+  let s = input.trim();
+  if (/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.test(s)) {
+    s = s.replace("#", "");
+    if (s.length === 3) s = [...s].map(c => c + c).join("");
+    return "#" + s.toLowerCase();
+  }
+  if (/^\d{1,3}\s*[, ]\s*\d{1,3}\s*[, ]\s*\d{1,3}$/.test(s)) s = `rgb(${s.split(/[\s,]+/).join(", ")})`;
+  if (!s || !CSS.supports("color", s)) return null;
+  colorProbe.canvas.width = colorProbe.canvas.height = 1;
+  colorProbe.clearRect(0, 0, 1, 1);
+  colorProbe.fillStyle = s;
+  colorProbe.fillRect(0, 0, 1, 1);
+  const [r, g, b, a] = colorProbe.getImageData(0, 0, 1, 1).data;
+  if (a === 0) return null;
+  return "#" + [r, g, b].map(v => v.toString(16).padStart(2, "0")).join("");
 }
 
 addInkBtn.addEventListener("click", () => {

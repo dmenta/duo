@@ -1,8 +1,8 @@
 /* Editor interactivo de curvas (canvas). */
 import type { ChangeOptions, Point, ReadonlyInk } from "./types.ts";
 import { ctx2d } from "./dom.ts";
-import { clamp01, contrastRatio, mixHex } from "./color.ts";
-import { makeCurve } from "./curves.ts";
+import { contrastRatio, mixHex } from "./color.ts";
+import { clamp01, makeCurve } from "./curves.ts";
 
 /**
  * Conecta el editor de curva al canvas de una tarjeta de tinta. No cambia la tinta: arma los
@@ -20,7 +20,7 @@ export function attachCurve(canvas: HTMLCanvasElement, ink: ReadonlyInk, readout
   /**
    * Escala del último dibujo (null si todavía no se dibujó): unidades de curva -> píxeles CSS
    */
-  let map: { X: (v: number) => number; Yp: (v: number) => number; iw: number; ih: number } | null = null;
+  let map: { X: (v: number) => number; Yp: (v: number) => number; iw: number; ih: number; } | null = null;
 
   function draw() {
     const r = canvas.getBoundingClientRect(), w = r.width, h = r.height, dpr = window.devicePixelRatio || 1;

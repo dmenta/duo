@@ -1,9 +1,9 @@
 /* Carga de imágenes e imagen de prueba. */
 import type { Bitmap } from "./types.ts";
-import { setStatus, byId, ctx2d } from "./dom.ts";
+import { setStatus } from "./status.ts";
+import { byId, ctx2d } from "./dom.ts";
 import { PREVIEW_MAX, FULL_MAX } from "./config.ts";
 import { doc } from "./session.ts";
-import { createSampleImage } from "./sample-image.ts";
 
 /** @param max lado mayor máximo */
 function scaled(src: HTMLImageElement | HTMLCanvasElement, max: number): Bitmap {
@@ -37,6 +37,10 @@ export function loadFile(file: File | null | undefined) {
   img.src = url;
 }
 
-export function sampleImage() {
+export async function sampleImage() {
+  let createSampleImage: () => HTMLCanvasElement;
+  try { ({ createSampleImage } = await import("./sample-image.ts")); }
+  catch { setStatus("No se pudo cargar el la imagen de ejemplo.", "error"); return; }
+
   setSource(createSampleImage(), "imagen-de-prueba");
 }

@@ -1,9 +1,9 @@
 /* Exportación a PNG y ZIP a resolución completa. */
-import { setStatus, attachMenu, byId, ctx2d, qs } from "./dom.ts";
+import { attachMenu, byId, ctx2d, qs } from "./dom.ts";
+import { setStatus } from "./status.ts";
 import { doc } from "./session.ts";
 import type { ViewMode } from "./types.ts";
 import { grayLevels, resultLUT, grayLUT, paint } from "./process.ts";
-import { encodePNG } from "./png.ts";
 import { downloads } from "./env.ts";
 
 
@@ -16,6 +16,8 @@ function fullCanvas(mode: ViewMode) {
 }
 
 const toBlob = (c: HTMLCanvasElement): Promise<Blob> => new Promise(res => c.toBlob(b => res(b as Blob), "image/png"));
+let encodePNG: ((w: number, h: number, channels: number, fillRow: (y: number, row: Uint8Array) => void) => Promise<Blob | null>) | null = null;
+
 
 // PNG con el tipo de color justo: gris 8 bits (o gris+alfa) y RGB 24 bits (o RGBA 32).
 // Devuelve { blob, desc }.
@@ -24,7 +26,7 @@ async function exportPNG(mode: "result" | "gray") {
   const idx = grayLevels(full);  // se calcula al primer uso y se reusa mientras no cambie la conversión
   const color = mode === "result", lut = color ? resultLUT() : grayLUT;
   const channels = (color ? 3 : 1) + (hasAlpha ? 1 : 0);
-  const blob = await encodePNG(w, h, channels, (y, row) => {
+  const blob = await encodePNG!(w, h, channels, (y, row) => {
     for (let x = 0, p = y * w, o = 0; x < w; x++, p++) {
       const k = idx[p];
       if (color) { row[o++] = lut[k * 3]; row[o++] = lut[k * 3 + 1]; row[o++] = lut[k * 3 + 2]; }
@@ -83,6 +85,9 @@ const EXPORTS = {
 
 async function runExport(action: keyof typeof EXPORTS) {
   if (!doc.hasImage) return;
+  try { ({ encodePNG } = await import("./png.ts")); }
+  catch { setStatus("No se pudo cargar el encoder de PNG.", "error"); return; }
+
   const lbl = qs(dlMain, ".lbl"), t = lbl.textContent;
   dlAll.forEach(b => b.disabled = true); lbl.textContent = "Procesando…";
   await new Promise(r => setTimeout(r, 30));  // deja pintar el estado antes del cálculo

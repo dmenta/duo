@@ -30,42 +30,6 @@ export function ctx2d(canvas: HTMLCanvasElement, options?: CanvasRenderingContex
   return ctx;
 }
 
-// Aviso flotante: desaparece solo; los errores quedan más tiempo. Texto vacío lo oculta.
-const toastEl = byId("toast");
-let toastTimer = 0;
-/** Texto vacío lo oculta. */
-export function setStatus(text: string, kind: "info" | "error" = "info") {
-  clearTimeout(toastTimer);
-  if (!text) { toastEl.classList.remove("on"); return; }
-  toastEl.textContent = text;
-  toastEl.dataset.kind = kind;
-  toastEl.classList.add("on");
-  toastTimer = setTimeout(() => toastEl.classList.remove("on"), kind === "error" ? 7000 : 3500);
-}
-
-
-// Cualquier color CSS -> "#rrggbb", usando el intérprete del navegador:
-// hex (con o sin #, abreviado), rgb(), hsl(), oklch(), nombres... También "255, 0, 0".
-// Los colores fuera de sRGB se ajustan al más cercano. Devuelve null si no es un color válido.
-const colorProbe = ctx2d(document.createElement("canvas"), { willReadFrequently: true });
-
-export function cssColorToHex(input: string): string | null {
-  let s = input.trim();
-  if (/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.test(s)) {
-    s = s.replace("#", "");
-    if (s.length === 3) s = [...s].map(c => c + c).join("");
-    return "#" + s.toLowerCase();
-  }
-  if (/^\d{1,3}\s*[, ]\s*\d{1,3}\s*[, ]\s*\d{1,3}$/.test(s)) s = `rgb(${s.split(/[\s,]+/).join(", ")})`;
-  if (!s || !CSS.supports("color", s)) return null;
-  colorProbe.canvas.width = colorProbe.canvas.height = 1;
-  colorProbe.clearRect(0, 0, 1, 1);
-  colorProbe.fillStyle = s;
-  colorProbe.fillRect(0, 0, 1, 1);
-  const [r, g, b, a] = colorProbe.getImageData(0, 0, 1, 1).data;
-  if (a === 0) return null;
-  return "#" + [r, g, b].map(v => v.toString(16).padStart(2, "0")).join("");
-}
 
 // Menú desplegable accesible: abre con clic o flecha abajo, se recorre con flechas,
 // Inicio y Fin, se cierra con Escape, Tab, clic afuera o al elegir una opción.
@@ -74,7 +38,7 @@ export function cssColorToHex(input: string): string | null {
  * @param menu contenedor de los [role="menuitem"]
  * @param options onOpen corre justo antes de mostrarlo
  */
-export function attachMenu(toggle: HTMLElement, menu: HTMLElement, { onOpen }: { onOpen?: () => void } = {}): { open: (focusFirst: boolean) => void; close: (returnFocus: boolean) => void } {
+export function attachMenu(toggle: HTMLElement, menu: HTMLElement, { onOpen }: { onOpen?: () => void; } = {}): { open: (focusFirst: boolean) => void; close: (returnFocus: boolean) => void; } {
   const items = () => ([...menu.querySelectorAll('[role^="menuitem"]:not([disabled])')] as HTMLElement[]);
 
   const open = (focusFirst: boolean) => {
