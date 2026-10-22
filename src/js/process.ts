@@ -70,15 +70,41 @@ export function inkLUT(inks: readonly ReadonlyInkData[], size: number): Uint8Arr
   }
   return lut;
 }
+// Puntos negro y blanco: cada tono pasa a otro antes de buscar su color. Se aplican sobre las
+// tablas, no sobre los niveles de gris: moverlos no recalcula la imagen.
+/** tono -> tono con los puntos de la receta; null si no cambian nada */
+function levelsMap(): Uint16Array | null {
+  const { black, white } = doc.gray;
+  if (black === 0 && white === 100) return null;
+  const m = new Uint16Array(N);
+  for (let k = 0; k < N; k++) {
+    const t = (100 * (1 - k / (N - 1)) - black) / (white - black);
+    m[k] = Math.round((1 - (t < 0 ? 0 : t > 1 ? 1 : t)) * (N - 1));
+  }
+  return m;
+}
+
 /** Tabla de colores de la receta en curso; se arma cuando se necesita (cuesta décimas de ms). */
-export const resultLUT = () => inkLUT(doc.inks, N);
+export function resultLUT() {
+  const lut = inkLUT(doc.inks, N), m = levelsMap();
+  if (!m) return lut;
+  const out = new Uint8Array(N * 3);
+  for (let k = 0; k < N; k++) out.set(lut.subarray(m[k] * 3, m[k] * 3 + 3), k * 3);
+  return out;
+}
 
 // Tabla tono -> gris sRGB
-export const grayLUT = (() => {
+const GRAY = (() => {
   const a = new Uint8Array(N);
   for (let k = 0; k < N; k++) a[k] = enc(YfromL(100 * (1 - k / (N - 1))));
   return a;
 })();
+
+/** Tabla tono -> gris sRGB con los puntos negro y blanco de la receta */
+export function grayLUT() {
+  const m = levelsMap();
+  return m ? GRAY.map((_, k) => GRAY[m[k]]) : GRAY;
+}
 
 // Escribe en `out` (ImageData) la vista pedida, con la transparencia compuesta sobre blanco.
 // La vista original no necesita los niveles de gris; las otras los piden a grayLevels.
@@ -94,11 +120,11 @@ export function paint(img: Bitmap, mode: ViewMode, out: ImageData) {
     }
     return;
   }
-  const lut = mode === "result" ? resultLUT() : grayLUT, d = img.data, idx = grayLevels(img);
+  const lut = mode === "result" ? resultLUT() : grayLUT(), d = img.data, idx = grayLevels(img);
   for (let p = 0, i = 0; p < n; p++, i += 4) {
     const k = idx[p];
     if (mode === "result") { o[i] = lut[k * 3]; o[i + 1] = lut[k * 3 + 1]; o[i + 2] = lut[k * 3 + 2]; }
-    else { const v = grayLUT[k]; o[i] = v; o[i + 1] = v; o[i + 2] = v; }
+    else { const v = lut[k]; o[i] = v; o[i + 1] = v; o[i + 2] = v; }
     const a = d[i + 3];
     if (a < 255) { const t = a / 255; for (let c = 0; c < 3; c++) o[i + c] = enc(LIN[o[i + c]] * t + (1 - t)); }
     o[i + 3] = 255;
@@ -110,7 +136,7 @@ export function paint(img: Bitmap, mode: ViewMode, out: ImageData) {
  * se usa al 100%, donde solo se procesa lo visible y siempre con la conversión a gris vigente.
  */
 export function paintRegion(img: Bitmap, x0: number, y0: number, w: number, h: number, mode: ViewMode, out: ImageData) {
-  const [wr, wg, wb] = grayWeights(), d = img.data, o = out.data, lut = mode === "result" ? resultLUT() : grayLUT, iw = img.w;
+  const [wr, wg, wb] = grayWeights(), d = img.data, o = out.data, lut = mode === "result" ? resultLUT() : grayLUT(), iw = img.w;
   for (let y = 0, i = 0; y < h; y++) {
     for (let x = 0, s = ((y0 + y) * iw + x0) * 4; x < w; x++, s += 4, i += 4) {
       if (mode === "original") { o[i] = d[s]; o[i + 1] = d[s + 1]; o[i + 2] = d[s + 2]; }
@@ -119,7 +145,7 @@ export function paintRegion(img: Bitmap, x0: number, y0: number, w: number, h: n
         Y = Y < 0 ? 0 : Y > 1 ? 1 : Y;
         const k = IDX_FROM_Y[(Y * Y_STEPS + 0.5) | 0];
         if (mode === "result") { o[i] = lut[k * 3]; o[i + 1] = lut[k * 3 + 1]; o[i + 2] = lut[k * 3 + 2]; }
-        else { const v = grayLUT[k]; o[i] = v; o[i + 1] = v; o[i + 2] = v; }
+        else { const v = lut[k]; o[i] = v; o[i + 1] = v; o[i + 2] = v; }
       }
       const a = d[s + 3];
       if (a < 255) { const t = a / 255; for (let c = 0; c < 3; c++) o[i + c] = enc(LIN[o[i + c]] * t + (1 - t)); }

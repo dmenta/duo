@@ -24,13 +24,13 @@ let encodePNG: typeof import("./png.ts").encodePNG;
 async function exportPNG(mode: "result" | "gray") {
   const full = doc.image.full, { w, h, data, hasAlpha } = full;
   const idx = grayLevels(full);  // se calcula al primer uso y se reusa mientras no cambie la conversión
-  const color = mode === "result", lut = color ? resultLUT() : grayLUT;
+  const color = mode === "result", lut = color ? resultLUT() : grayLUT();
   const channels = (color ? 3 : 1) + (hasAlpha ? 1 : 0);
   const blob = await encodePNG(w, h, channels, (y, row) => {
     for (let x = 0, p = y * w, o = 0; x < w; x++, p++) {
       const k = idx[p];
       if (color) { row[o++] = lut[k * 3]; row[o++] = lut[k * 3 + 1]; row[o++] = lut[k * 3 + 2]; }
-      else row[o++] = grayLUT[k];
+      else row[o++] = lut[k];
       if (hasAlpha) row[o++] = data[p * 4 + 3];
     }
   });

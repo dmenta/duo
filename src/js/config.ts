@@ -36,7 +36,7 @@ export const CURVE_PRESETS: Record<string, { label: string; pts: Point[] }> = {
 /* ---------- Recetas ---------- */
 
 /** Conversión a gris de partida: luminancia perceptual (el mezclador arranca con sus mismos pesos) */
-export const DEFAULT_GRAY: GraySettings = { mode: "lum", r: 21.26, g: 71.52, b: 7.22 };
+export const DEFAULT_GRAY: GraySettings = { mode: "lum", r: 21.26, g: 71.52, b: 7.22, black: 0, white: 100 };
 
 const presetInk = (name: string, color: string, preset: PresetKey): InkData =>
   ({ name, color, preset, points: CURVE_PRESETS[preset].pts });

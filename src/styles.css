@@ -1302,9 +1302,11 @@ select:not(:disabled):hover {
 .hist {
     display: block;
     width: 100%;
-    height: 64px;
+    height: 78px;
     margin-top: 10px;
     color: var(--muted);
+    cursor: ew-resize;
+    touch-action: none;
 }
 .hist[hidden] { display: none; }
 
