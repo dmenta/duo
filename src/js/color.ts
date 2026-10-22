@@ -31,7 +31,6 @@ export const LfromY = (Y: number) => Y > 0.008856 ? 116 * Math.cbrt(Y) - 16 : 90
 // Tono de tinta perceptual (0 = nada, 1 = sólido) -> cobertura física
 export const coverage = (y: number) => 1 - YfromL(100 * (1 - y));
 
-
 // Contraste WCAG entre dos colores hex (1 = iguales, 21 = blanco contra negro)
 export function contrastRatio(a: string, b: string) {
 

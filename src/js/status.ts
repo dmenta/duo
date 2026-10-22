@@ -1,4 +1,5 @@
-import { byId } from "./dom";
+/* Aviso flotante para el usuario. */
+import { byId } from "./dom.ts";
 
 // Aviso flotante: desaparece solo; los errores quedan más tiempo. Texto vacío lo oculta.
 const toastEl = byId("toast");

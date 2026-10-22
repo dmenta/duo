@@ -16,8 +16,8 @@ function fullCanvas(mode: ViewMode) {
 }
 
 const toBlob = (c: HTMLCanvasElement): Promise<Blob> => new Promise(res => c.toBlob(b => res(b as Blob), "image/png"));
-let encodePNG: ((w: number, h: number, channels: number, fillRow: (y: number, row: Uint8Array) => void) => Promise<Blob | null>) | null = null;
-
+/** Encoder de PNG: se carga recién al primer export */
+let encodePNG: typeof import("./png.ts").encodePNG;
 
 // PNG con el tipo de color justo: gris 8 bits (o gris+alfa) y RGB 24 bits (o RGBA 32).
 // Devuelve { blob, desc }.
@@ -26,7 +26,7 @@ async function exportPNG(mode: "result" | "gray") {
   const idx = grayLevels(full);  // se calcula al primer uso y se reusa mientras no cambie la conversión
   const color = mode === "result", lut = color ? resultLUT() : grayLUT;
   const channels = (color ? 3 : 1) + (hasAlpha ? 1 : 0);
-  const blob = await encodePNG!(w, h, channels, (y, row) => {
+  const blob = await encodePNG(w, h, channels, (y, row) => {
     for (let x = 0, p = y * w, o = 0; x < w; x++, p++) {
       const k = idx[p];
       if (color) { row[o++] = lut[k * 3]; row[o++] = lut[k * 3 + 1]; row[o++] = lut[k * 3 + 2]; }

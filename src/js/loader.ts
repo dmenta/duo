@@ -40,7 +40,7 @@ export function loadFile(file: File | null | undefined) {
 export async function sampleImage() {
   let createSampleImage: () => HTMLCanvasElement;
   try { ({ createSampleImage } = await import("./sample-image.ts")); }
-  catch { setStatus("No se pudo cargar el la imagen de ejemplo.", "error"); return; }
+  catch { setStatus("No se pudo cargar la imagen de ejemplo.", "error"); return; }
 
   setSource(createSampleImage(), "imagen-de-prueba");
 }
