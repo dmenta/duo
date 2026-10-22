@@ -1,4 +1,3 @@
-duotono.html
+dist/
 *.zip
-node_modules
-dist
+node_modules/

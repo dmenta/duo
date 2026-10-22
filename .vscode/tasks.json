@@ -5,19 +5,35 @@
   "tasks": [
     {
       "label": "build",
-      "command": "python",
+      "type": "npm",
+      "script": "build",
       "group": {
         "kind": "build",
         "isDefault": true
       },
-      "args": [
-        "${workspaceFolder}\\src\\build.py"
-      ],
+      "problemMatcher": [],
       "presentation": {
         "reveal": "always",
         "panel": "shared",
         "close": false
       }
+    },
+    {
+      "label": "dev",
+      "type": "npm",
+      "script": "dev",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "check",
+      "type": "npm",
+      "script": "check",
+      "problemMatcher": "$tsc"
     }
   ]
 }

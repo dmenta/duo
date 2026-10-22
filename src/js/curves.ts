@@ -1,10 +1,13 @@
-"use strict";
-/* Curvas de transferencia por tinta.
-   Expone: makeCurve, mirrorX, mirrorY, CURVE_PRESETS
-   Usa: clamp01 */
+/* Curvas de transferencia por tinta. */
+import type { Point, ReadonlyPoints } from "./types.ts";
+
+export const clamp01 = (v: number) => v < 0 ? 0 : v > 1 ? 1 : v;
 
 // Interpolación cúbica monótona (Fritsch–Carlson): pasa por los puntos sin rebotes.
-function makeCurve(pts) {
+/**
+ * @returns cantidad de tinta (0..1) para un gris x (0..1)
+ */
+export function makeCurve(pts: ReadonlyPoints): (x: number) => number {
   const n = pts.length, xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
   if (n === 2) return x => clamp01(ys[0] + (ys[1] - ys[0]) * (x - xs[0]) / (xs[1] - xs[0]));
   const d = [], m = new Array(n);
@@ -25,16 +28,8 @@ function makeCurve(pts) {
 }
 
 // Espejar en X: lo que afectaba a las luces pasa a las sombras y viceversa
-const round4 = v => Math.round(v * 1e4) / 1e4;  // evita arrastrar errores de coma flotante en la receta
-const mirrorX = pts => pts.map(([x, y]) => [round4(1 - x), y]).reverse();
-// Espejar en Y: donde había mucha tinta pasa a haber poca
-const mirrorY = pts => pts.map(([x, y]) => [x, round4(1 - y)]);
+const round4 = (v: number) => Math.round(v * 1e4) / 1e4;  // evita arrastrar errores de coma flotante en la receta
 
-const CURVE_PRESETS = {
-  lineal: { label: "Lineal", pts: [[0, 0], [1, 1]] },
-  luces: { label: "Limpia en luces", pts: [[0, 0], [0.35, 0.12], [0.7, 0.55], [1, 1]] },
-  medios: { label: "Medios tonos", pts: [[0, 0], [0.3, 0.38], [0.65, 0.7], [1, 0.8]] },
-  campana: { label: "Solo medios", pts: [[0, 0], [0.45, 0.6], [1, 0.25]] },
-  sombras: { label: "Sombras", pts: [[0, 0], [0.5, 0.18], [1, 1]] },
-  plano: { label: "Fondo plano", pts: [[0, 0.3], [1, 0.6]] }
-};
+export const mirrorX = (pts: ReadonlyPoints): Point[] => pts.map(([x, y]) => ([round4(1 - x), y] as Point)).reverse();
+// Espejar en Y: donde había mucha tinta pasa a haber poca
+export const mirrorY = (pts: ReadonlyPoints): Point[] => pts.map(([x, y]) => ([x, round4(1 - y)] as Point));

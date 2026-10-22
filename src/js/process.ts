@@ -1,12 +1,13 @@
-"use strict";
-/* Procesamiento: imagen -> niveles de gris -> tintas -> píxeles.
-   Expone: grayWeights, computeIdx, inkLUT, buildLUT, grayLUT, paint, paintRegion
-   Usa: state, buf, N, LIN, enc, hexToLin, gradientLin, YfromL, LfromY, coverage, makeCurve */
+/* Procesamiento: imagen -> niveles de gris -> tintas -> píxeles. */
+import type { Bitmap, ReadonlyInkData, ViewMode } from "./types.ts";
+import { N, LIN, enc, hexToLin, YfromL, LfromY, coverage, gradientLin } from "./color.ts";
+import { makeCurve } from "./curves.ts";
+import { doc } from "./session.ts";
 
 function grayWeights() {
-  return state.gray.mode === "lum"
+  return doc.gray.mode === "lum"
     ? [0.2126, 0.7152, 0.0722]
-    : [state.gray.r / 100, state.gray.g / 100, state.gray.b / 100];
+    : [doc.gray.r / 100, doc.gray.g / 100, doc.gray.b / 100];
 }
 
 // Luminancia lineal Y (0..1) -> índice de tono, precalculado: evita la raíz cúbica de L* por píxel.
@@ -20,7 +21,7 @@ const IDX_FROM_Y = (() => {
 
 // Cada píxel -> índice de tono (0 = blanco, N-1 = negro) según L*.
 // La transparencia no se mezcla acá: se conserva aparte en img.data para exportar.
-function computeIdx(img) {
+function computeIdx(img: Bitmap): Uint16Array {
   const [wr, wg, wb] = grayWeights(), d = img.data, n = img.w * img.h, out = new Uint16Array(n);
   for (let p = 0, i = 0; p < n; p++, i += 4) {
     let Y = wr * LIN[d[i]] + wg * LIN[d[i + 1]] + wb * LIN[d[i + 2]];
@@ -30,10 +31,26 @@ function computeIdx(img) {
   return out;
 }
 
+// Niveles de gris de cada imagen, con los pesos con que se calcularon. Solo dependen de la
+// imagen y de los pesos efectivos: cambiar tintas o curvas, o aplicar una receta con la
+// misma conversión, no los recalcula. Al soltar la imagen, su entrada se libera sola.
+const grayCache = new WeakMap<Bitmap, { weights: string; idx: Uint16Array }>();
+
+/** Niveles de gris de `img` con la conversión vigente; los calcula solo si cambiaron los pesos. */
+export function grayLevels(img: Bitmap): Uint16Array {
+  const weights = grayWeights().join(",");
+  const cached = grayCache.get(img);
+  if (cached?.weights === weights) return cached.idx;
+  const idx = computeIdx(img);
+  grayCache.set(img, { weights, idx });
+  return idx;
+}
+
 // Tabla tono -> color sRGB de `size` niveles para un conjunto de tintas,
 // simulando sobreimpresión multiplicativa en RGB lineal.
 // Una tinta en degradé (color2) cambia de color con el nivel: color en el blanco, color2 en el negro.
-function inkLUT(inks, size) {
+/** @returns size*3 bytes RGB */
+export function inkLUT(inks: readonly ReadonlyInkData[], size: number): Uint8Array {
   const solid = inks.map(i => hexToLin(i.color));
   const grads = inks.map(i => i.color2 ? gradientLin(i.color, i.color2, size) : null);
   const covs = inks.map(ink => {
@@ -53,17 +70,19 @@ function inkLUT(inks, size) {
   }
   return lut;
 }
-function buildLUT() { buf.resultLUT = inkLUT(state.inks, N); }
+/** Tabla de colores de la receta en curso; se arma cuando se necesita (cuesta décimas de ms). */
+export const resultLUT = () => inkLUT(doc.inks, N);
 
 // Tabla tono -> gris sRGB
-const grayLUT = (() => {
+export const grayLUT = (() => {
   const a = new Uint8Array(N);
   for (let k = 0; k < N; k++) a[k] = enc(YfromL(100 * (1 - k / (N - 1))));
   return a;
 })();
 
-// Escribe en `out` (ImageData) la vista pedida, con la transparencia compuesta sobre blanco
-function paint(img, idx, mode, out) {
+// Escribe en `out` (ImageData) la vista pedida, con la transparencia compuesta sobre blanco.
+// La vista original no necesita los niveles de gris; las otras los piden a grayLevels.
+export function paint(img: Bitmap, mode: ViewMode, out: ImageData) {
   const o = out.data, n = img.w * img.h;
   if (mode === "original") {
     const d = img.data;
@@ -75,7 +94,7 @@ function paint(img, idx, mode, out) {
     }
     return;
   }
-  const lut = buf.resultLUT, d = img.data;
+  const lut = mode === "result" ? resultLUT() : grayLUT, d = img.data, idx = grayLevels(img);
   for (let p = 0, i = 0; p < n; p++, i += 4) {
     const k = idx[p];
     if (mode === "result") { o[i] = lut[k * 3]; o[i + 1] = lut[k * 3 + 1]; o[i + 2] = lut[k * 3 + 2]; }
@@ -86,10 +105,12 @@ function paint(img, idx, mode, out) {
   }
 }
 
-// Pinta la región (x0, y0, w, h) de la imagen calculando el gris al vuelo: se usa al 100%,
-// donde solo se procesa lo visible y siempre con la conversión a gris vigente
-function paintRegion(img, x0, y0, w, h, mode, out) {
-  const [wr, wg, wb] = grayWeights(), d = img.data, o = out.data, lut = buf.resultLUT, iw = img.w;
+/**
+ * Pinta la región (x0, y0, w, h) de la imagen en `out` (w×h) calculando el gris al vuelo:
+ * se usa al 100%, donde solo se procesa lo visible y siempre con la conversión a gris vigente.
+ */
+export function paintRegion(img: Bitmap, x0: number, y0: number, w: number, h: number, mode: ViewMode, out: ImageData) {
+  const [wr, wg, wb] = grayWeights(), d = img.data, o = out.data, lut = mode === "result" ? resultLUT() : grayLUT, iw = img.w;
   for (let y = 0, i = 0; y < h; y++) {
     for (let x = 0, s = ((y0 + y) * iw + x0) * 4; x < w; x++, s += 4, i += 4) {
       if (mode === "original") { o[i] = d[s]; o[i + 1] = d[s + 1]; o[i + 2] = d[s + 2]; }
