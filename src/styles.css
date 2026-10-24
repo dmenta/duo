@@ -1,23 +1,14 @@
-/* latin-ext */
-@font-face {
-  font-family: 'Archivo';
-  font-style: normal;
-  font-weight: 400 720;
-  font-stretch: 70% 100%;
-  font-display: swap;
-  src: url(./Archivo-Variable-subset.woff2) format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
 /* latin */
 @font-face {
-  font-family: 'Archivo';
+  font-family: 'Roboto';
   font-style: normal;
-  font-weight: 400 720;
-  font-stretch: 70% 100%;
+  font-weight: 400 700;
+  font-stretch: 100%;
   font-display: swap;
-  src: url(./Archivo-Variable-subset.woff2) format('woff2');
+  src: url(https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3yUBA.woff2) format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
+
 
 :root {
     --bar-h: 56px; /* alto común de la toolbar y la barra del panel: sus bordes quedan alineados */
@@ -36,6 +27,13 @@
     box-sizing: border-box;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
+
+    --round-md: 6px;
+    --round-lg: 12px;
+    --round-full: 50%;
+    --round-max: 999px;
+    --border-trans: 1px solid transparent;
+    --border-line: 1px solid var(--line);
 }
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme='light']) {
@@ -79,11 +77,10 @@ body {
     background: var(--bg);
     color: var(--text);
     font-family:
-        'Archivo',
+        Roboto,
         system-ui,
         -apple-system,
         'Segoe UI',
-        Roboto,
         sans-serif;
     font-size: 16px;
     line-height: 1.45;
@@ -137,6 +134,13 @@ select {
     height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
     height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
 }
+
+:disabled{
+  opacity: .5;
+  cursor: default;
+  pointer-events: none;
+}
+
 @media (max-width: 900px) {
     .app {
         grid-template-columns: 1fr;
@@ -157,28 +161,41 @@ select {
     min-width: 0;
     padding: 0 16px;
     background: var(--chrome);
-    border-bottom: 1px solid var(--line);
+    border-bottom: var(--border-line);
 }
 .brand {
     flex: none;
+
+    .brand-mark {
+        display: block;
+        flex: none;
+    }
+    
+    .brand-name {
+        margin: 0;
+        font-size: 30px;
+        line-height: 1;
+        font-family:
+        'Archivo',
+        Roboto,
+        system-ui,
+        -apple-system,
+        'Segoe UI',
+        sans-serif;
+        font-weight: 720;
+        font-variation-settings: 'wdth' 70;
+        letter-spacing: -0.01em;
+        
+        :first-child {
+            color: var(--text);
+        }
+        
+        :last-child {
+          color: var(--accent);
+        }
+    }  
 }
-.brand-mark {
-    display: block;
-    flex: none;
-}
-.brand-name {
-    width: max-content;
-    margin: 0;
-    font-size: 30px;
-    line-height: 1;
-    font-weight: 720;
-    font-variation-settings: 'wdth' 70;
-    letter-spacing: -0.01em;
-    background: linear-gradient(90deg, var(--text) 0 50%, var(--accent) 50% 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-}
+  
 .tb-sep {
     width: 1px;
     height: 24px;
@@ -195,12 +212,25 @@ select {
     flex: none;
     cursor: pointer;
     border: 1px solid var(--text);
-    border-radius: 6px;
+    border-radius: var(--round-md);
     background: var(--text);
     color: var(--surface);
     font-weight: 600;
     white-space: nowrap;
 }
+.hbtn {
+    display: inline-flex;
+    flex: none;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: var(--border-line);
+    border-radius: var(--round-md);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+}
+
 .file-info {
     display: flex;
     align-items: baseline;
@@ -261,10 +291,10 @@ select {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    border: 1px solid var(--line);
+    border: var(--border-line);
     background: var(--surface);
     padding: 8px 14px;
-    border-radius: 6px;
+    border-radius: var(--round-md);
     cursor: pointer;
     font-weight: 550;
     white-space: nowrap;
@@ -274,46 +304,45 @@ select {
     color: var(--bg);
     border-color: var(--text);
 }
-.btn:disabled {
-    opacity: 0.5;
-    cursor: default;
-}
 .split {
     position: relative;
     display: inline-flex;
 }
 .dl {
-    display: inline-flex;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: var(--surface);
-}
-.dl button {
+  display: inline-flex;
+  border: var(--border-line);
+  border-radius: var(--round-md);
+  background: var(--surface);
+
+  button {
     display: inline-flex;
     align-items: center;
     gap: 7px;
+
     border: 0;
     background: transparent;
-    padding: 8px 13px;
+    padding: 8px 12px;
     cursor: pointer;
     font-weight: 500;
     white-space: nowrap;
+    &:first-child {
+      border-radius: var(--round-md) 0 0 var(--round-md);
+    }
+    &:last-child {
+      border-left: var(--border-line);
+      border-radius: 0 var(--round-md) var(--round-md) 0;
+    }
+  }
+
+  .caret {
+    padding: 0 8px;
+  }
+
+  .caret[aria-expanded='true'] {
+    background: var(--hover);
+  }
 }
-.dl button:first-child {
-    border-radius: 5px 0 0 5px;
-}
-.dl button:last-child {
-    border-radius: 0 5px 5px 0;
-}
-.dl button + button {
-    border-left: 1px solid var(--line);
-}
-.dl .caret {
-    padding: 8px 9px;
-}
-.dl .caret[aria-expanded='true'] {
-    background: var(--sunk);
-}
+
 .menu {
     position: absolute;
     top: calc(100% + 6px);
@@ -324,8 +353,8 @@ select {
     flex-direction: column;
     padding: 4px;
     background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 8px;
+    border: var(--border-line);
+    border-radius: var(--round-md);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
 }
 .menu[hidden] {
@@ -340,7 +369,7 @@ select {
     background: transparent;
     text-align: left;
     padding: 8px 10px;
-    border-radius: 5px;
+    border-radius: var(--round-md);
     cursor: pointer;
     font-weight: 550;
 }
@@ -358,10 +387,6 @@ select {
 .add svg {
     flex: none;
     color: var(--muted);
-}
-.dl button:disabled {
-    opacity: 0.5;
-    cursor: default;
 }
 
 .stage {
@@ -408,7 +433,7 @@ select {
     z-index: 2;
 }
 .zoom-seg button {
-    padding: 5px 12px;
+    padding: 6px 12px;
 }
 .view-seg,
 .zoom-seg {
@@ -437,7 +462,7 @@ select {
     width: min(520px, 100%);
     padding: 44px 28px;
     border: 2px dashed color-mix(in srgb, var(--text) 28%, transparent);
-    border-radius: 14px;
+    border-radius: var(--round-lg);
     background: color-mix(in srgb, var(--surface) 55%, transparent);
     color: var(--text);
     transition:
@@ -453,7 +478,7 @@ select {
     display: inline-flex;
     width: 56px;
     height: 56px;
-    border-radius: 50%;
+    border-radius: var(--round-full);
     margin-bottom: 4px;
     background: var(--text);
     color: var(--surface);
@@ -511,7 +536,7 @@ body:not(.no-image) .empty {
     position: absolute;
     inset: 10px;
     border: 2px dashed var(--accent);
-    border-radius: 4px;
+    border-radius: var(--round-md);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -530,7 +555,7 @@ body:not(.no-image) .empty {
     pointer-events: none;
     max-width: calc(100% - 48px);
     padding: 7px 14px;
-    border-radius: 999px;
+    border-radius: var(--round-max);
     font-size: 13px;
     font-weight: 550;
     background: var(--text);
@@ -552,14 +577,14 @@ body:not(.no-image) .empty {
     display: inline-flex;
     gap: 2px;
     padding: 3px;
-    border-radius: 999px;
+    border-radius: var(--round-max);
     background: color-mix(in srgb, var(--text) 10%, transparent);
 }
 .seg button {
     border: 0;
     background: transparent;
     padding: 5px 16px;
-    border-radius: 999px;
+    border-radius: var(--round-max);
     cursor: pointer;
     color: var(--muted);
     font-size: 14px;
@@ -576,14 +601,14 @@ body:not(.no-image) .empty {
     grid-column: 2;
     grid-row: 1 / -1;
     background: var(--surface);
-    border-left: 1px solid var(--line);
+    border-left: var(--border-line);
     overflow-y: auto;
     min-height: 0;
 }
 @media (max-width: 900px) {
     .panel {
         border-left: 0;
-        border-top: 1px solid var(--line);
+        border-top: var(--border-line);
         max-height: none;
     }
 }
@@ -596,7 +621,7 @@ body:not(.no-image) .empty {
     align-items: center;
     padding: 0 12px;
     background: var(--surface);
-    border-bottom: 1px solid var(--line);
+    border-bottom: var(--border-line);
 }
 .bar-row {
 }
@@ -608,32 +633,13 @@ body:not(.no-image) .empty {
     text-transform: uppercase;
     color: var(--muted);
 }
-.hbtn {
-    display: inline-flex;
-    flex: none;
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: var(--surface);
-    color: var(--text);
-    cursor: pointer;
-}
-.hbtn:disabled {
-    opacity: 0.4;
-    cursor: default;
-}
+
 .save-split {
     flex: none;
 }
 .save-split .dl button {
     height: 34px;
-    padding: 0 12px;
     font-weight: 550;
-}
-.save-split .dl .caret {
-    padding: 0 8px;
 }
 .save-split .menu {
     min-width: 250px;
@@ -647,8 +653,8 @@ body:not(.no-image) .empty {
     align-items: center;
     gap: 6px;
     padding: 0 8px 6px 10px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
+    border: var(--border-line);
+    border-radius: var(--round-md);
     background: var(--sunk);
     cursor: pointer;
     text-align: left;
@@ -665,7 +671,7 @@ body:not(.no-image) .empty {
 .recipe-dot {
     width: 7px;
     height: 7px;
-    border-radius: 50%;
+    border-radius: var(--round-full);
     background: var(--accent);
     flex: none;
     display: none;
@@ -683,7 +689,7 @@ body:not(.no-image) .empty {
     right: 9px;
     bottom: 4px;
     height: 4px;
-    border-radius: 2px;
+    border-radius: var(--round-max);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 12%, transparent);
 }
 
@@ -696,13 +702,8 @@ body:not(.no-image) .empty {
 }
 .menu hr {
     border: 0;
-    border-top: 1px solid var(--line);
+    border-top: var(--border-line);
     margin: 4px 2px;
-}
-.menu button:disabled {
-    opacity: 0.4;
-    cursor: default;
-    background: transparent;
 }
 .rgroup {
     font-size: 11px;
@@ -721,7 +722,7 @@ body:not(.no-image) .empty {
 /* Fila de receta propia: la tira usa todo el ancho; los íconos aparecen encima al pasar el cursor */
 .rrow {
     position: relative;
-    border-radius: 5px;
+    border-radius: var(--round-md);
 }
 .rrow:hover,
 .rrow:focus-within {
@@ -788,7 +789,7 @@ body:not(.no-image) .empty {
 .rfoot {
     display: flex;
     gap: 4px;
-    border-top: 1px solid var(--line);
+    border-top: var(--border-line);
     margin-top: 6px;
     padding-top: 4px;
 }
@@ -824,15 +825,15 @@ body:not(.no-image) .empty {
 .rstrip {
     grid-column: 2;
     height: 8px;
-    border-radius: 3px;
+    border-radius: var(--round-max);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 12%, transparent);
 }
 
 /* Diálogos */
 .dlg {
     padding: 0;
-    border: 1px solid var(--line);
-    border-radius: 10px;
+    border: var(--border-line);
+    border-radius: var(--round-lg);
     background: var(--surface);
     color: var(--text);
     width: min(380px, calc(100vw - 32px));
@@ -866,9 +867,9 @@ body:not(.no-image) .empty {
     color: var(--muted);
 }
 .dlg input {
-    border: 1px solid var(--line);
+    border: var(--border-line);
     background: var(--sunk);
-    border-radius: 6px;
+    border-radius: var(--round-md);
     padding: 8px 10px;
     font-size: 15px;
     color: var(--text);
@@ -900,7 +901,7 @@ body:not(.no-image) .empty {
     display: inline-flex;
     width: 20px;
     height: 20px;
-    border-radius: 50%;
+    border-radius: var(--round-full);
     flex: none;
     background: color-mix(in srgb, var(--text) 12%, transparent);
     color: var(--text);
@@ -911,6 +912,13 @@ body:not(.no-image) .empty {
     margin: 0;
     font-size: 17px;
     line-height: 1.2;
+    font-family:
+        'Archivo',
+        Roboto,
+        system-ui,
+        -apple-system,
+        'Segoe UI',
+        sans-serif;
     font-weight: 650;
     font-variation-settings: 'wdth' 85;
     letter-spacing: 0.005em;
@@ -928,11 +936,12 @@ body:not(.no-image) .empty {
 }
 
 select {
-    border: 1px solid var(--line);
+    border: var(--border-line);
     background: var(--sunk);
-    border-radius: 5px;
+    border-radius: var(--round-md);
     padding: 6px 8px;
     width: 100%;
+    cursor: pointer;
 }
 
 /* Mixer */
@@ -961,21 +970,21 @@ select {
 }
 .mix input[type='range']::-webkit-slider-runnable-track {
     height: 10px;
-    border-radius: 5px;
+    border-radius: var(--round-md);
     background: var(--track);
-    border: 1px solid var(--line);
+    border: var(--border-line);
 }
 .mix input[type='range']::-moz-range-track {
     height: 10px;
-    border-radius: 5px;
+    border-radius: var(--round-md);
     background: var(--track);
-    border: 1px solid var(--line);
+    border: var(--border-line);
 }
 .mix input[type='range']::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 18px;
     height: 18px;
-    border-radius: 50%;
+    border-radius: var(--round-full);
     background: var(--surface);
     border: 2px solid var(--text);
     margin-top: -5px;
@@ -984,7 +993,7 @@ select {
 .mix input[type='range']::-moz-range-thumb {
     width: 14px;
     height: 14px;
-    border-radius: 50%;
+    border-radius: var(--round-full);
     background: var(--surface);
     border: 2px solid var(--text);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -1004,8 +1013,8 @@ select {
     flex-wrap: wrap;
 }
 .filters .btn {
-    padding: 5px 12px;
-    font-weight: 500;
+    padding: 3px 8px;
+    font-weight: 00;
 }
 .filters .btn[aria-pressed='true'] {
     background: var(--text);
@@ -1015,9 +1024,9 @@ select {
 
 /* Inks */
 .ink {
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 12px;
+    border: var(--border-line);
+    border-radius: var(--round-md);
+    padding: 8px 12px;
     margin-bottom: 12px;
     background: var(--sunk);
     position: relative;
@@ -1026,8 +1035,8 @@ select {
     content: '';
     position: absolute;
     left: -1px;
-    top: 12px;
-    bottom: 12px;
+    top: 8px;
+    bottom: 8px;
     width: 4px;
     border-radius: 0 3px 3px 0;
     background: var(--ink-bar, var(--ink));
@@ -1042,7 +1051,7 @@ select {
     position: relative;
     width: 40px;
     height: 40px;
-    border-radius: 6px;
+    border-radius: var(--round-md);
     background: var(--ink);
     border: 1px solid color-mix(in srgb, var(--text) 22%, transparent);
     overflow: hidden;
@@ -1059,10 +1068,10 @@ select {
 .ink-head input[type='text'] {
     width: 100%;
     min-width: 0;
-    border: 1px solid transparent;
+    border: var(--border-trans);
     background: transparent;
-    padding: 5px 6px;
-    border-radius: 5px;
+    padding: 6px;
+    border-radius: var(--round-md);
     font-weight: 600;
 }
 .ink-head input[type='text']:not([readonly]):hover,
@@ -1083,12 +1092,8 @@ select {
     cursor: pointer;
     color: var(--muted);
     padding: 6px;
-    border-radius: 5px;
+    border-radius: var(--round-md);
     line-height: 0;
-}
-.icon-btn:disabled {
-    opacity: 0.35;
-    cursor: default;
 }
 /* Tipo de color de la tinta y fila del degradé */
 .ink-mode {
@@ -1125,15 +1130,19 @@ select {
     grid-template-columns: 26px minmax(0, 1fr);
     gap: 3px 6px;
     align-items: center;
-    padding: 5px 6px;
-    border-radius: 7px;
-    border: 1px solid transparent;
+    padding: 6px;
+    border-radius: var(--round-md);
+    border: var(--border-trans);
     min-width: 0;
     cursor: pointer;
 }
 .grad-end.active {
     border-color: var(--text);
     background: var(--surface);
+    cursor: auto;
+}
+.grad-end:hover {
+    border-color: var(--line);
 }
 .end-label {
     grid-column: 1 / -1;
@@ -1143,15 +1152,15 @@ select {
 .swatch.sm {
     width: 26px;
     height: 26px;
-    border-radius: 5px;
+    border-radius: var(--round-md);
 }
 .grad-end input[type='text'] {
     width: 100%;
     min-width: 0;
-    border: 1px solid transparent;
+    border: var(--border-trans);
     background: transparent;
-    padding: 3px 5px;
-    border-radius: 5px;
+    padding: 3px 6px;
+    border-radius: var(--round-md);
     font-size: 13px;
     color: var(--muted);
 }
@@ -1167,7 +1176,7 @@ select {
 .grad-strip {
     grid-column: 1 / -1;
     height: 8px;
-    border-radius: 4px;
+    border-radius: var(--round-md);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 12%, transparent);
 }
 .chips {
@@ -1179,7 +1188,7 @@ select {
 .chip {
     width: 20px;
     height: 20px;
-    border-radius: 50%;
+    border-radius: var(--round-full);
     border: 1px solid color-mix(in srgb, var(--text) 22%, transparent);
     cursor: pointer;
     padding: 0;
@@ -1193,9 +1202,9 @@ select {
     display: block;
     touch-action: none;
     cursor: crosshair;
-    border-radius: 5px;
+    border-radius: var(--round-md);
     background: var(--surface);
-    border: 1px solid var(--line);
+    border: var(--border-line);
 }
 .readout {
     position: absolute;
@@ -1205,7 +1214,7 @@ select {
     font-size: 12px;
     background: color-mix(in srgb, var(--surface) 88%, transparent);
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: var(--round-md);
     color: var(--text);
     white-space: nowrap;
     opacity: 0;
@@ -1221,7 +1230,7 @@ select {
     margin-top: 8px;
 }
 .curve-foot .icon-btn {
-    border: 1px solid var(--line);
+    border: var(--border-line);
     background: var(--surface);
     padding: 6px;
 }
@@ -1232,7 +1241,7 @@ select {
 .add {
     margin-left: auto;
     align-self: center;
-    padding: 5px 11px;
+    padding: 6px 12px;
     font-weight: 500;
     font-size: 14px;
     gap: 6px;
@@ -1259,9 +1268,6 @@ select {
    5. Deshabilitados: sin hover.
    El foco de teclado (:focus-visible) es independiente y se ve siempre.
    ========================================================================== */
-select {
-    cursor: pointer;
-}
 
 /* 1. Fondo */
 .btn:not(.primary):not(.danger):not(:disabled):not([aria-pressed='true']):hover,

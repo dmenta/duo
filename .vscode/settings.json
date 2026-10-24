@@ -1,3 +1,10 @@
 {
-  "editor.formatOnSave": false
+  "editor.formatOnSave": false,
+  "github.copilot.nextEditSuggestions.enabled": false,
+  "github.copilot.nextEditSuggestions.extendedRange": false,
+  "github.copilot.nextEditSuggestions.fixes": false,
+  "github.copilot.nextEditSuggestions.allowWhitespaceOnlyChanges": false,
+  "github.copilot.renameSuggestions.triggerAutomatically": false,
+  "css.format.enable": true,
+  "editor.defaultFormatter": "vscode.css-language-features"
 }

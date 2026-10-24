@@ -6,7 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Duotono</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@70,720;85,650&display=swap&text=CDTaeginorstuvó"
+    rel="stylesheet" /> 
+     <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
@@ -17,7 +21,7 @@
           <rect x="1" y="1" width="22" height="22" rx="5" fill="var(--text)" />
           <path d="M21.53 2.47 a5 5 0 01 1.47 3.53 v12a5 5 0 01-5 5H6 a5 5 0 01 -3.53 -1.47z" fill="var(--accent)" />
         </svg>
-        <h1 class="brand-name">Duotono</h1>
+        <h1 class="brand-name"><span>Duo</span><span>tono</span></h1>
       </div>
       <span class="tb-sep" aria-hidden="true"></span>
       <input type="file" id="file" accept="image/*" class="sr" />
@@ -249,7 +253,7 @@
       <div class="curve-foot">
         <span>Curva</span>
         <select class="preset" aria-label="Curva">
-          <option value="custom" disabled>Personalizada</option>
+          <option value="custom" disabled>(personalizada)</option>
         </select>
         <button class="icon-btn flip-x" title="Espejar en X: intercambia luces y sombras" aria-label="Espejar la curva horizontalmente">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5v13" stroke-dasharray="1.6 1.6"/><path d="M5.5 4L1.5 12h4z" fill="currentColor"/><path d="M10.5 4l4 8h-4z"/></svg>
