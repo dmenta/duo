@@ -11,9 +11,6 @@ export interface GraySettings {
   r: number;
   g: number;
   b: number;
-  /** Puntos negro y blanco (L* del gris, 0..100): lo más oscuro que black pasa a negro puro, lo más claro que white a blanco */
-  black: number;
-  white: number;
 }
 
 /** Tinta tal como se guarda en una receta. */

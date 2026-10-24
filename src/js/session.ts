@@ -2,7 +2,7 @@
    - doc: el documento, lo que el usuario edita y exporta.
    - view: cómo se mira el documento. */
 import { defaultRecipe } from "./config.ts";
-import { inkData, makeInk, normalizeGray, validRecipe } from "./recipe.ts";
+import { inkData, makeInk, validRecipe } from "./recipe.ts";
 import { loadResume, saveResume } from "./storage.ts";
 import { Emitter } from "./emitter.ts";
 import type { Bitmap, ChangeOptions, DocChange, GraySettings, Ink, InkChanges, ReadonlyInk, Recipe, RecipeRef, ViewChange, ViewMode, ZoomMode } from "./types.ts";
@@ -43,7 +43,7 @@ class Doc extends Emitter<DocChange> {
   }
 
   getRecipe(): Recipe {
-    return { v: 1, gray: normalizeGray(this.#gray), inks: this.#inks.map(inkData) };
+    return { v: 1, gray: this.#normalizeGray(this.#gray), inks: this.#inks.map(inkData) };
   }
 
   /**
@@ -57,7 +57,7 @@ class Doc extends Emitter<DocChange> {
   }
 
   #setRecipe(r: Recipe) {
-    this.#gray = normalizeGray(r.gray);
+    this.#gray = this.#normalizeGray(r.gray);
     this.#inks = r.inks.map(makeInk);
   }
 
@@ -70,12 +70,6 @@ class Doc extends Emitter<DocChange> {
 
   setGrayWeights(w: Partial<Pick<GraySettings, "r" | "g" | "b">>, { live = false }: ChangeOptions = {}) {
     Object.assign(this.#gray, w);
-    this.emit({ what: "gray", live });
-  }
-
-  /** Puntos negro y blanco; quien llama cuida que black < white */
-  setGrayLevels(levels: Partial<Pick<GraySettings, "black" | "white">>, { live = false }: ChangeOptions = {}) {
-    Object.assign(this.#gray, levels);
     this.emit({ what: "gray", live });
   }
 
@@ -103,9 +97,13 @@ class Doc extends Emitter<DocChange> {
     this.emit({ what: "ink", id, live });
   }
 
+  #normalizeGray(gs: GraySettings) {
+    return { mode: gs.mode, r: gs.r, g: gs.g, b: gs.b };
+  }
+
   constructor(r: Recipe) {
     super();
-    this.#gray = normalizeGray(r.gray);
+    this.#gray = this.#normalizeGray(r.gray);
     this.#inks = r.inks.map(makeInk);
   }
 }

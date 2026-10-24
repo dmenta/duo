@@ -1,6 +1,6 @@
 /* Modelo de receta: crear, normalizar y validar recetas y tintas. Sin estado de la sesión. */
 import { CURVE_PRESETS, MAX_INKS, NAME_MAX, SWATCHES } from "./config.ts";
-import type { GraySettings, Ink, InkData, Point, PresetKey, ReadonlyInkData, Recipe } from "./types.ts";
+import type { Ink, InkData, Point, PresetKey, ReadonlyInkData, Recipe } from "./types.ts";
 
 // Nombre del color predefinido con ese hex, o undefined si es un color propio
 export const swatchName = (color: string): string | undefined => (SWATCHES.find(s => s[1] === color.toLowerCase()) || [])[0];
@@ -27,15 +27,12 @@ export const inkData = ({ name, color, color2, preset, points }: ReadonlyInkData
   color2 ? { name, color, color2, preset, points: points.map(p => (p.slice() as Point)) }
     : { name, color, preset, points: points.map(p => (p.slice() as Point)) };
 
-/** Conversión a gris con todas sus claves; las recetas anteriores a los puntos negro y blanco no los traen */
-export const normalizeGray = (gs: GraySettings): GraySettings =>
-  ({ mode: gs.mode, r: gs.r, g: gs.g, b: gs.b, black: gs.black ?? 0, white: gs.white ?? 100 });
-
 // Receta de cualquier origen -> misma forma que getRecipe (nombres y colores normalizados)
 export function normalizeRecipe(r: Recipe): Recipe {
+  const gs = r.gray;
   return {
     v: 1,
-    gray: normalizeGray(r.gray),
+    gray: { mode: gs.mode, r: gs.r, g: gs.g, b: gs.b },
     inks: r.inks.map(makeInk).map(inkData)
   };
 }
@@ -49,8 +46,6 @@ export function validRecipe(r: any): r is Recipe {
     const isHex = (c: unknown) => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c);
     const g = r && r.gray;
     if (!r || r.v !== 1 || !g || !["lum", "mix"].includes(g.mode) || ![g.r, g.g, g.b].every(Number.isFinite)) return false;
-    const black = g.black ?? 0, white = g.white ?? 100;
-    if (![black, white].every(Number.isFinite) || black < 0 || white > 100 || black >= white) return false;
     if (!Array.isArray(r.inks) || r.inks.length < 1 || r.inks.length > MAX_INKS) return false;
     return r.inks.every((i: any) =>
       typeof i.name === "string" && isHex(i.color) && (i.color2 === undefined || isHex(i.color2)) &&
